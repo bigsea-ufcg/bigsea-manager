@@ -22,9 +22,8 @@ rest = u.Rest('v10', __name__)
 
 
 @rest.post('/manager/application_started')
-def application_started(app_id, cluster_id, token, project_id):
-    return u.render(api.application_started(app_id, cluster_id, token,
-                                            project_id))
+def application_started(data):
+    return u.render(api.application_started(data))
 
 
 @rest.post('/manager/application_stopped')

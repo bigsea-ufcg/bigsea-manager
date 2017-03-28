@@ -19,4 +19,4 @@ from application_manager.api.v10 import rest
 def main():
     app = Flask(__name__)
     app.register_blueprint(rest)
-    app.run(host='0.0.0.0', port=1515, debug=True)
+    app.run(host='0.0.0.0', port=1514, debug=True)

@@ -28,7 +28,11 @@ LOG = Log("Servicev10", "serviceAPIv10.log")
 # def application_started():
 
 
-def application_started(app_id, cluster_id, token, project_id):
+def application_started(data):
+    cluster_id = data['cluster_id']
+    project_id = data['project_id']
+    app_id = data['app_id']
+    token = data['token']
     connector = os_connector.OpenStackConnector(LOG)
     auth_ip = '0.0.0.0'
     sahara = connector.get_sahara_client(token, project_id, auth_ip)
