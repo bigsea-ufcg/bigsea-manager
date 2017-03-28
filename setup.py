@@ -31,7 +31,7 @@ setup(
 
     keywords='webservice sahara application management',
 
-    #packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
+    packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
     install_requires=['flask'],
 

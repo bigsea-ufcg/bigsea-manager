@@ -1,4 +1,4 @@
-# Copyright (c) 2017 LSD - UFCG.
+# Copyright (c) 2013 Mirantis Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from flask import Flask
-from application_manager.api.v10 import rest
+"""Handles database requests from other Sahara services."""
 
-def main():
-    app = Flask(__name__)
-    app.register_blueprint(rest)
-    app.run(host='0.0.0.0', port=1515, debug=True)
+import copy
+
+
+class ConductorManager():
+
+    def application_started(self):
+        pass
+
+    def application_stopped(self):
+        pass

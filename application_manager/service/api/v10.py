@@ -13,16 +13,63 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from application_manager.utils.logger import *
+from datetime import datetime
+import time
+
+from application_manager.utils.logger import Log
+from application_manager.openstack import connector as os_connector
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
-
-# Cluster ops
-
-def start_application(**kwargs):
-    pass
+# def application_started():
 
 
-def stop_application(app_id):
-    pass
+def application_started(app_id, token, project_id):
+    connector = os_connector.OpenStackConnector(LOG)
+    auth_ip = '0.0.0.0'
+    sahara = connector.get_sahara_client(token, project_id, auth_ip)
+    is_monitoring = False
+
+    job_status = connector.get_job_status(sahara, app_id)
+
+    LOG.log("%s | Sahara job status: %s" % (time.strftime("%H:%M:%S"),
+                                            job_status))
+
+    completed = failed = False
+    start_time = datetime.now()
+    while not (completed or failed):
+        job_status = connector.get_job_status(sahara, app_id)
+        LOG.log("%s | Sahara current job status: %s" % (time.strftime(
+            "%H:%M:%S"), job_status))
+        if job_status == 'RUNNING' and not is_monitoring:
+            is_monitoring = True
+
+            # monitoring
+
+            # controller
+
+        time.sleep(10)
+        current_time = datetime.now()
+        current_job_time = (current_time - start_time).total_seconds()
+        if current_job_time > 3600:
+            LOG.log("Job execution killed due to inactivity")
+            job_status = 'TIMEOUT'
+
+        completed = connector.is_job_completed(job_status)
+        failed = connector.is_job_failed(job_status)
+
+    end_time = datetime.now()
+    total_time = end_time - start_time
+    LOG.log("%s | Sahara job took %s seconds to execute" %
+            (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
+    return job_status, total_time.total_seconds()
+
+    # return conductor.application_started()
+
+
+def application_stopped(app_id, **kwargs):
+
+    # stop monitoring
+    # stop scaling
+
+    return
