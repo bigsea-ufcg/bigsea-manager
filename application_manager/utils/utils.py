@@ -28,6 +28,7 @@ import sys
 R_PREFIX = 'Rscript '
 PYTHON_PREFIX = 'python '
 
+
 class Shell(object):
     def execute_r_script(self, script, args):
         command = R_PREFIX + script + " " + " ".join(args)
@@ -63,6 +64,7 @@ class ActionDispatcher(object):
 
     def default(self, data):
         raise NotImplementedError()
+
 
 class DictSerializer(ActionDispatcher):
     """Default request body serialization."""

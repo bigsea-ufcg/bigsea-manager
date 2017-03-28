@@ -26,6 +26,8 @@ from application_manager.service.api import monitor_url
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
 # def application_started():
+
+
 def application_started(app_id, cluster_id, token, project_id):
     connector = os_connector.OpenStackConnector(LOG)
     auth_ip = '0.0.0.0'
@@ -39,8 +41,8 @@ def application_started(app_id, cluster_id, token, project_id):
 
     worker_instances = connector.get_worker_instances(sahara, cluster_id)
     start_scaling_dict = {
-        'expected_time' : 1000,
-        'instances' : worker_instances
+        'expected_time': 1000,
+        'instances': worker_instances
     }
     start_scaling_body = json.dumps(start_scaling_dict)
     start_scaling_url = controller_url + '/start_scaling/' + app_id

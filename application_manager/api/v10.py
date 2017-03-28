@@ -26,6 +26,7 @@ def application_started(app_id, cluster_id, token, project_id):
     return u.render(api.application_started(app_id, cluster_id, token,
                                             project_id))
 
+
 @rest.post('/manager/application_stopped')
 def application_stopped(app_id):
     api.application_stopped(app_id)

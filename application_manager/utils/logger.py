@@ -1,6 +1,7 @@
 import logging
 import time
 
+
 class Log:
     def __init__(self, name, output_file_path):
         self.logger = logging.getLogger(name)
@@ -13,5 +14,6 @@ class Log:
     def log(self, text):
         self.logger.info(text)
 
+
 def configure_logging():
-        logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)

@@ -19,6 +19,7 @@ from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from saharaclient.api.client import Client as saharaclient
 
+
 class OpenStackConnector(object):
     def __init__(self, logger):
         self.logger = logger
