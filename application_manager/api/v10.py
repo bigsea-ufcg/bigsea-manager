@@ -21,12 +21,12 @@ from application_manager.service.api import v10 as api
 rest = u.Rest('v10', __name__)
 
 
-@rest.post('/application_started')
+@rest.post('/manager/application_started')
 def application_started(app_id, cluster_id, token, project_id):
     return u.render(api.application_started(app_id, cluster_id, token,
                                             project_id))
 
-@rest.post('/application_stopped')
+@rest.post('/manager/application_stopped')
 def application_stopped(app_id):
     api.application_stopped(app_id)
     return httplib.ACCEPTED

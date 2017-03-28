@@ -1,4 +1,4 @@
-# Copyright (c) 2013 Mirantis Inc.
+# Copyright (c) 2017 UFCG-LSD.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,17 +14,19 @@
 # limitations under the License.
 
 from datetime import datetime
+import json
 import time
+import requests
 
 from application_manager.utils.logger import Log
 from application_manager.openstack import connector as os_connector
+from application_manager.service.api import controller_url
+from application_manager.service.api import monitor_url
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
 # def application_started():
-
-
-def application_started(app_id, token, project_id):
+def application_started(app_id, cluster_id, token, project_id):
     connector = os_connector.OpenStackConnector(LOG)
     auth_ip = '0.0.0.0'
     sahara = connector.get_sahara_client(token, project_id, auth_ip)
@@ -34,6 +36,14 @@ def application_started(app_id, token, project_id):
 
     LOG.log("%s | Sahara job status: %s" % (time.strftime("%H:%M:%S"),
                                             job_status))
+
+    worker_instances = connector.get_worker_instances(sahara, cluster_id)
+    start_scaling_dict = {
+        'expected_time' : 1000,
+        'instances' : worker_instances
+    }
+    start_scaling_body = json.dumps(start_scaling_dict)
+    start_scaling_url = controller_url + '/start_scaling/' + app_id
 
     completed = failed = False
     start_time = datetime.now()
@@ -47,6 +57,7 @@ def application_started(app_id, token, project_id):
             # monitoring
 
             # controller
+            requests.post(start_scaling_url, data=start_scaling_body)
 
         time.sleep(10)
         current_time = datetime.now()
@@ -68,8 +79,9 @@ def application_started(app_id, token, project_id):
 
 
 def application_stopped(app_id, **kwargs):
-
     # stop monitoring
+    stop_monitor_url = monitor_url + '/stop_monitor/' + app_id
+    requests.post(stop_monitor_url)
     # stop scaling
-
-    return
+    stop_scaling_url = controller_url + '/stop_scaling/' + app_id
+    requests.post(stop_scaling_url)

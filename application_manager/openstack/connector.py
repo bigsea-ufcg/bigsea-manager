@@ -46,17 +46,6 @@ class OpenStackConnector(object):
     def get_timestamp_raw(self):
         return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-    def get_worker_host_ip(self, worker_id):
-        # FIXME hardcoded
-        hosts = ["c4-compute11", "c4-compute12"]
-        for host in hosts:
-            if int(check_output("ssh root@%s test -e "
-                                "\"/var/lib/nova/instances/%s\" && echo "
-                                "\"1\" || echo \"0\"" % (host, worker_id),
-                                shell=True)) == 1:
-                return host
-        return None
-
     def get_job_status(self, sahara, job_id):
         return sahara.job_executions.get(job_id).info['status']
 
@@ -87,7 +76,7 @@ class OpenStackConnector(object):
         self.logger.log("There is no slave instance on host: %s" % host)
         return None
 
-    def _get_worker_instances(self, sahara, cluster_id):
+    def get_worker_instances(self, sahara, cluster_id):
         instances = []
         cluster = sahara.clusters.get(cluster_id)
         node_groups = cluster.node_groups
@@ -98,7 +87,7 @@ class OpenStackConnector(object):
                     instances.append(instance_name)
         return instances
 
-    def _get_master_instance(self, sahara, cluster_id, type):
+    def get_master_instance(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
         node_groups = cluster.node_groups
         for node_group in node_groups:
