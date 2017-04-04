@@ -21,3 +21,4 @@ config.read('./manager.cfg')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
+hosts = config.get('openstack', 'hosts').split(' ')

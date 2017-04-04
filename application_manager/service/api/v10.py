@@ -18,25 +18,34 @@ import json
 import time
 import requests
 
-from application_manager.utils.logger import Log
 from application_manager.openstack import connector as os_connector
 from application_manager.service.api import controller_url
 from application_manager.service.api import monitor_url
+from application_manager.service.api import hosts
+from application_manager.service.horizontal_scale import r_predictor
+from application_manager.utils import monitor as monasca_monitor
+from application_manager.utils.logger import Log
+
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
+predictor = r_predictor.RPredictor()
+monitor = monasca_monitor.MonascaMonitor()
 
 # def application_started():
 
 
-def application_started(data):
+def application_started(app_id, data):
     cluster_id = data['cluster_id']
     project_id = data['project_id']
-    app_id = data['app_id']
     token = data['token']
     connector = os_connector.OpenStackConnector(LOG)
     auth_ip = '0.0.0.0'
     sahara = connector.get_sahara_client(token, project_id, auth_ip)
     is_monitoring = False
+    LOG.log('Runnning job with opportunistic cluster')
+
+    monitor.get_host_cpu_utilization()
+    cluster_size = _get_new_cluster_size(hosts)
 
     job_status = connector.get_job_status(sahara, app_id)
 
@@ -62,6 +71,7 @@ def application_started(data):
 
             # monitoring
 
+
             # controller
             requests.post(start_scaling_url, data=start_scaling_body)
 
@@ -81,8 +91,6 @@ def application_started(data):
             (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
     return job_status, total_time.total_seconds()
 
-    # return conductor.application_started()
-
 
 def application_stopped(app_id, **kwargs):
     # stop monitoring
@@ -91,3 +99,7 @@ def application_stopped(app_id, **kwargs):
     # stop scaling
     stop_scaling_url = controller_url + '/stop_scaling/' + app_id
     requests.post(stop_scaling_url)
+
+
+def _get_new_cluster_size(hosts):
+    return predictor.predict(hosts)
