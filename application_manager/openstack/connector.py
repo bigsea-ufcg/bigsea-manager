@@ -14,20 +14,26 @@
 # limitations under the License.
 
 import datetime
+import time
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from saharaclient.api.client import Client as saharaclient
+from saharaclient.api.base import APIException as SaharaAPIException
+from subprocess import *
 
 
 class OpenStackConnector(object):
     def __init__(self, logger):
         self.logger = logger
 
-    def get_sahara_client(self, token, project_id, auth_ip):
-        auth = v3.Token(auth_url=auth_ip + ':5000/v3',
-                        token=token,
-                        project_id=project_id)
+    def get_sahara_client(self, username, password, project_id, auth_ip,
+                          domain):
+        auth = v3.Password(auth_url=auth_ip + ':5000/v3',
+                           username=username,
+                           password=password,
+                           project_id=project_id,
+                           user_domain_name=domain)
         ses = session.Session(auth=auth)
 
         return saharaclient('1.1', session=ses)
@@ -42,6 +48,16 @@ class OpenStackConnector(object):
         clusters = sahara.clusters.list(query)
         if len(clusters) > 0:
             return clusters[0]
+        return None
+
+    def get_existing_cluster_by_size(self, sahara, size):
+        clusters = sahara.clusters.list()
+        for cluster in clusters:
+            cluster_node_groups = cluster['node_groups']
+            for cluster_node_group in cluster_node_groups:
+                if node_group['name'] == 'slave':
+                    if node_group['count'] == size:
+                        return cluster
         return None
 
     def get_timestamp_raw(self):
@@ -96,4 +112,146 @@ class OpenStackConnector(object):
                 for instance in node_group['instances']:
                     return instance
 
+        return None
+
+    def get_job_configs(self, plugin, cluster_size=None, username=None,
+                         password=None, args=[], main_class=None):
+        if plugin == 'hadoop':
+            reducers = int(cluster_size) * 2
+            configs = {'configs': {'mapreduce.job.reduces': reducers}}
+        else:
+            configs = {'configs': {
+                            'edp.java.main_class': main_class,
+                            'edp.spark.adapt_for_swift': 'True',
+                            },
+                       'args': args
+                       }
+
+        return configs
+
+    def create_job_execution(self, sahara, job_id, cluster_id, input_ds_id,
+                             output_ds_id, configs):
+        return sahara.job_executions.create(job_id, cluster_id, input_ds_id,
+                                            output_ds_id, configs=configs)
+
+    def create_cluster(self, sahara, cluster_size, public_key, net_id,
+                       image_id, plugin, version):
+        size = max(3, cluster_size - 1)
+        cluster_template = self.get_cluster_template(sahara, size, plugin)
+        if cluster_template:
+            cluster = self._create_cluster(saharaclient, cluster_template,
+                                           public_key, net_id, image_id,
+                                           plugin, version)
+        return cluster.id
+
+    def _create_cluster(self, sahara, cluster_template, public_key_name, 
+                        net_id, image_id, plugin, version, max_tries=5):
+        cluster_is_ready = False
+        cluster_tries = 0
+        cluster_name = "cluster-osahara-" + self.get_timestamp_raw()
+        while not cluster_is_ready and cluster_tries < max_tries:
+            cluster_tries += 1
+            self.logger.log("Tyring to create cluster. Try " +
+                            str(cluster_tries))
+
+            cluster = self._create_sahara_cluster(sahara, cluster_template,
+                                                  cluster_name, public_key_name,
+                                                  net_id, image_id, plugin,
+                                                  version)
+            time.sleep(30)
+
+            if not self.is_cluster_in_api_error(cluster):
+                cluster_id = cluster.id
+                self.logger.log("Cluster is being created with id " +
+                                cluster_id)
+                cluster_status = self.get_cluster_status(sahara, cluster_id)
+            else:
+                self.logger.log("Sahara returned API error")
+                cluster_status = 'Error'
+                cluster_id = None
+
+            already_deleted_cluster = False
+            while cluster_status != 'Active' and not already_deleted_cluster:
+                self.logger.log("Cluster is in status %s" % cluster_status)
+                if cluster_status == 'Error':
+                    self.logger.log(
+                        "Cluster %s is in ERROR status and will be deleted." %
+                        str(cluster))
+                    self.delete_cluster(sahara, cluster_id, cluster_name)
+                    self.logger.log("Cluster deleted.")
+                    already_deleted_cluster = True
+                    time.sleep(60)
+                else:
+                    time.sleep(10)
+                    cluster_status = self.get_cluster_status(
+                        sahara, cluster_id)
+            cluster_is_ready = cluster_status == 'Active'
+
+        return cluster
+
+    def _create_sahara_cluster(self, sahara, cluster_template_id, cluster_name,
+                               public_key_name, net_id, image_id, plugin,
+                               version):
+        self.logger.log(cluster_name)
+        self.logger.log(cluster_template_id)
+        self.logger.log(image_id)
+        self.logger.log(net_id)
+        self.logger.log(public_key_name)
+        try:
+
+            return sahara.clusters.create(cluster_name, plugin, version,
+                                          cluster_template_id,
+                                          image_id, net_id=(net_id),
+                                          user_keypair_id=public_key_name)
+
+        except SaharaAPIException as e:
+            self.logger.log('Exception returned by sahara: %s' % e)
+            if "Quota exceeded" in str(e):
+                raise e
+            return 'api_exception'
+
+    def get_worker_host_ip(self, worker_id):
+        # FIXME hardcoded
+        hosts = ["c4-compute11", "c4-compute12"]
+        for host in hosts:
+            if int(check_output("ssh root@%s test -e "
+                                "\"/var/lib/nova/instances/%s\" && echo "
+                                "\"1\" || echo \"0\"" % (host, worker_id),
+                                shell=True)) == 1:
+                return host
+        return None
+
+    def get_cluster_template(self, sahara, size, plugin):
+        cluster_templates = sahara.cluster_templates.list()
+        for template in cluster_templates:
+            for node_group in template['node_groups']:
+                if node_group['name'] == 'slave':
+                    if node_group['count'] == size:
+                        return template
+        return None
+
+    def create_cluster_template(self, sahara, name, plugin_name,
+                                plugin_version, node_groups):
+
+        cluster_template = sahara.cluster_templates.create(name, plugin_name,
+                                                           plugin_version,
+                                                           node_groups)
+        return cluster_template['id']
+
+    def create_job_template(self, sahara, name, job_type, mains=None,
+                            libs=None):
+
+        job_template = sahara.jobs.create(name, job_type, mains, libs)
+
+        return job_template['id']
+
+    def delete_cluster(self, sahara, cluster_id, cluster_name=None):
+        if not cluster_id:
+            cluster = self.get_cluster_by_name(sahara, cluster_name)
+            if cluster:
+                cluster_id = cluster.id
+        if cluster_id:
+            sahara.clusters.delete(cluster_id)
+
+    def upload_job_binary(self, binary):
         return None

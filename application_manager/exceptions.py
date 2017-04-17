@@ -138,3 +138,8 @@ class MaxRetriesExceeded(SaharaException):
                                                      'attempts': attempts}
 
         super(MaxRetriesExceeded, self).__init__(formatted_message)
+
+class ClusterNotCreatedException(SaharaException):
+    code = "CLUSTER_NOT_CREATED"
+    message = "Cluster could not be created"
+

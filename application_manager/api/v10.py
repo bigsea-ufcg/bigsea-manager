@@ -13,20 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import httplib
-
 from application_manager.utils import api as u
 from application_manager.service.api import v10 as api
 
 rest = u.Rest('v10', __name__)
 
 
-@rest.post('/manager/application_started/<app_id>')
-def application_started(app_id, data):
-    return u.render(api.application_started(app_id, data))
+@rest.post('/manager/execute')
+def execute(data):
+    return u.render(api.execute(data))
 
 
-@rest.post('/manager/application_stopped/<app_id>')
-def application_stopped(app_id, data):
-    api.application_stopped(app_id)
-    return httplib.ACCEPTED
+@rest.post('/manager/stop_app/<app_id>')
+def stop_app(app_id, data):
+    api.stop_app(app_id)
+    return u.render()
+
+
+@rest.post('/manager/kill_all')
+def kill_all(data):
+    api.kill_all()
+    return u.render()

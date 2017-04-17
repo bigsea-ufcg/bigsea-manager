@@ -15,44 +15,172 @@
 
 from datetime import datetime
 import json
-import time
 import requests
+import time
 
+from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
-from application_manager.service.api import controller_url
-from application_manager.service.api import monitor_url
-from application_manager.service.api import hosts
+from application_manager.openstack import utils as os_utils
+from application_manager.service import api
 from application_manager.service.horizontal_scale import r_predictor
-from application_manager.utils import monitor as monasca_monitor
+from application_manager.utils import spark
 from application_manager.utils.logger import Log
+
+from saharaclient.api.base import APIException as SaharaAPIException
 
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 predictor = r_predictor.RPredictor()
-monitor = monasca_monitor.MonascaMonitor()
-
-# def application_started():
 
 
-def application_started(app_id, data):
+def execute(data):
+    project_id = api.project_id
+    auth_ip = api.auth_ip
+    user = api.user
+    password = api.password
+    domain = api.domain
+    public_key = api.plubic_key
+    net_id = api.net_id
+    image_id = api.image_id
+    hosts = api.hosts
+    monitor_url = api.monitor_url
+    controller_url = api.controller_url
+
+    plugin = data['plugin']
+    version = data['version']
     cluster_id = data['cluster_id']
-    project_id = data['project_id']
-    token = data['token']
-    connector = os_connector.OpenStackConnector(LOG)
-    auth_ip = '0.0.0.0'
-    sahara = connector.get_sahara_client(token, project_id, auth_ip)
-    is_monitoring = False
-    LOG.log('Runnning job with opportunistic cluster')
+    opportunistic = data['opportunistic']
+    req_cluster_size = data['cluster_size']
+    main_class = data['main_class']
+    args = data['args']
+    job_id = data['job_id']
+    input_ds_id = data['input_ds_id']
+    output_ds_id = data['output_ds_id']
 
-    monitor.get_host_cpu_utilization()
+    connector = os_connector.OpenStackConnector(LOG)
+
+    sahara = connector.get_sahara_client(user, password, project_id, auth_ip,
+                                         domain)
+
+    # monitor.get_host_cpu_utilization()
+
+    cluster_size = int(req_cluster_size)
     cluster_size = _get_new_cluster_size(hosts)
 
-    job_status = connector.get_job_status(sahara, app_id)
+    cluster_id = connector.get_existing_cluster_by_size(sahara, cluster_size)
 
-    LOG.log("%s | Sahara job status: %s" % (time.strftime("%H:%M:%S"),
-                                            job_status))
+    if not cluster_id:
+        if opportunistic:
+            LOG.log('Runnning job with opportunistic cluster')
+            cluster_delete = True
+            cluster_size = connector.get_new_cluster_size(hosts)
+            try:
+                cluster_id = connector.create_cluster(sahara, cluster_size,
+                                                      public_key, net_id, 
+                                                      image_id, plugin, 
+                                                      version)
+            except SaharaAPIException as e:
+                raise SaharaAPIException('Could not create clusters')
 
-    worker_instances = connector.get_worker_instances(sahara, cluster_id)
+        else:
+            LOG.log('Runnning job with non opportunistic cluster')
+            cluster_id = connector.create_cluster(sahara, cluster_size,
+                                                  public_key, net_id, image_id,
+                                                  plugin, version)
+    if cluster_id:
+
+        master = connector.get_master_instance(sahara, cluster_id,
+                                               plugin)['internal_ip']
+        LOG.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"), master))
+
+        is_monitoring = False
+
+        configs = os_utils.get_job_config(connector, plugin, cluster_size,
+                                          user, password, args, main_class)
+
+        workers = connector.get_worker_instances(sahara, cluster_id)
+        host_ips = {}
+
+        for worker in workers:
+            worker_id = worker['instance_id']
+            host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
+
+        job = connector.create_job_execution(sahara, job_id, cluster_id,
+                                             input_ds_id, output_ds_id,
+                                             configs=configs)
+
+        spark_c = spark.Spark(master)
+        job_exec_id = job.id
+        job_status = connector.get_job_status(sahara, job_exec_id)
+
+        LOG.log("%s | Sahara job status: %s" %
+                (time.strftime("%H:%M:%S"), job_status))
+
+        start_scaling_url, start_scaling_body = _get_scaling_data(
+            controller_url, app_id, worker_instances)
+        start_monitor_url, start_monitor_body = _get_monitor_data(
+            monitor_url, app_id, worker_instances)
+
+        is_monitoring = False
+        completed = failed = False
+        start_time = datetime.now()
+        while not (completed or failed):
+            job_status = connector.get_job_status(sahara, job_exec_id)
+            LOG.log("%s | Sahara current job status: %s" %
+                    (time.strftime("%H:%M:%S"), job_status))
+            if job_status == 'RUNNING' and not is_monitoring:
+                is_monitoring = True
+
+                # monitoring
+                requests.post(start_monitor_url, data=start_monitor_body)
+
+                # controller
+                requests.post(start_scaling_url, data=start_scaling_body)
+
+                time.sleep(10)
+
+            current_time = datetime.now()
+            current_job_time = (current_time - start_time).total_seconds()
+            if current_job_time > 3600:
+                LOG.log("Job execution killed due to inactivity")
+                job_status = 'TIMEOUT'
+
+            completed = connector.is_job_completed(job_status)
+            failed = connector.is_job_failed(job_status)
+
+        end_time = datetime.now()
+        total_time = end_time - start_time
+        LOG.log("%s | Sahara job took %s seconds to execute" %
+                (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
+
+        _stop_monitoring(monitor_url, spark_app_id)
+        _stop_scaling(controller_url, spark_app_id)
+    else:
+        raise ex.ClusterNotCreatedException()
+
+    if cluster_delete:
+        print "Deleting cluster"
+        # delete_cluster(saharaclient, cluster_id)
+        # decrease_project_quota(novaclient, project_id, increase_dict)
+
+    return job_status
+
+
+def stop_app(app_id):
+    # stop monitoring
+    # stop scaling
+    return 'ok'
+
+
+def kill_all():
+    return 'ok'
+
+
+def _get_new_cluster_size(hosts):
+    return predictor.predict(hosts)
+
+
+def _get_scaling_data(controller_url, app_id, worker_instances):
     start_scaling_dict = {
         'expected_time': 1000,
         'instances': worker_instances
@@ -60,46 +188,25 @@ def application_started(app_id, data):
     start_scaling_body = json.dumps(start_scaling_dict)
     start_scaling_url = controller_url + '/start_scaling/' + app_id
 
-    completed = failed = False
-    start_time = datetime.now()
-    while not (completed or failed):
-        job_status = connector.get_job_status(sahara, app_id)
-        LOG.log("%s | Sahara current job status: %s" % (time.strftime(
-            "%H:%M:%S"), job_status))
-        if job_status == 'RUNNING' and not is_monitoring:
-            is_monitoring = True
-
-            # monitoring
+    return start_scaling_url, start_scaling_body
 
 
-            # controller
-            requests.post(start_scaling_url, data=start_scaling_body)
+def _get_monitor_data(monitor_url, app_id, worker_instances):
+    start_monitor_dict = {
+        'expected_time': 1000,
+        'instances': worker_instances
+    }
+    start_monitor_body = json.dumps(start_monitor_dict)
+    start_monitor_url = monitor_url + '/start/' + app_id
 
-        time.sleep(10)
-        current_time = datetime.now()
-        current_job_time = (current_time - start_time).total_seconds()
-        if current_job_time > 3600:
-            LOG.log("Job execution killed due to inactivity")
-            job_status = 'TIMEOUT'
-
-        completed = connector.is_job_completed(job_status)
-        failed = connector.is_job_failed(job_status)
-
-    end_time = datetime.now()
-    total_time = end_time - start_time
-    LOG.log("%s | Sahara job took %s seconds to execute" %
-            (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
-    return job_status, total_time.total_seconds()
+    return start_monitor_url, start_monitor_body
 
 
-def application_stopped(app_id, **kwargs):
-    # stop monitoring
-    stop_monitor_url = monitor_url + '/stop_monitor/' + app_id
+def _stop_monitoring(monitor_url, app_id):
+    stop_monitor_url = monitor_url + '/stop/' + app_id
     requests.post(stop_monitor_url)
-    # stop scaling
+
+def _stop_scaling(controller_url, app_id):
     stop_scaling_url = controller_url + '/stop_scaling/' + app_id
     requests.post(stop_scaling_url)
 
-
-def _get_new_cluster_size(hosts):
-    return predictor.predict(hosts)
