@@ -14,16 +14,20 @@
 # limitations under the License.
 
 import requests
+import time
 
-def get_running_app(self, submission_url):
-    try:
-        all_app = requests.get(self.submission_url +
-                               ':8080/api/v1/applications?status=running')
-        for app in all_app.json():
-            if app['attempts'][0]['completed'] == False:
-                return app['id'], app['name']
-        return None
-    except:
-        self.logger.log("No application found")
-        return None
+def get_running_app(submission_url):
+    app_id = None
+    while app_id is None:
+        try:
+            all_app = requests.get('http://' + submission_url +
+                                   ':4040/api/v1/applications?status=running')
+            for app in all_app.json():
+                if app['attempts'][0]['completed'] == False:
+                    print app['id']
+                    return app['id']#, app['name']
+        except:
+            # self.logger.log("No application found")
+            pass
+            # return None
 
