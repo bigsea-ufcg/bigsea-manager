@@ -62,6 +62,11 @@ def execute(data):
     input_ds_id = data['input_datasource_id']
     output_ds_id = data['output_datasource_id']
 
+
+    monitor_body_request =  {}
+    monitor_body_request['plugin']
+    args = [input_ds_id, output_ds_id]
+
     connector = os_connector.OpenStackConnector(LOG)
 
     sahara = connector.get_sahara_client(user, password, project_id, auth_ip,
@@ -136,6 +141,8 @@ def execute(data):
 
         LOG.log("%s | Sahara job status: %s" %
                 (time.strftime("%H:%M:%S"), job_status))
+
+
 
         #start_scaling_url, start_scaling_body = _get_scaling_data(
         #    controller_url, app_id, worker_instances)

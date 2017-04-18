@@ -15,7 +15,6 @@
 
 import requests
 
-
 def get_running_app(self, submission_url):
     try:
         all_app = requests.get(self.submission_url +
