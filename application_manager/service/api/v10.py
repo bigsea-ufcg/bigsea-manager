@@ -34,6 +34,7 @@ predictor = r_predictor.RPredictor()
 
 
 def execute(data):
+    import pdb; pdb.set_trace()
     project_id = api.project_id
     auth_ip = api.auth_ip
     user = api.user
@@ -49,10 +50,12 @@ def execute(data):
     slave_ng = api.slave_ng
 
     plugin = data['plugin']
+    job_type = data['job_type']
     version = data['version']
     cluster_id = data['cluster_id']
     opportunistic = data['opportunistic']
     req_cluster_size = data['cluster_size']
+    args = data['args']
     main_class = data['main_class']
     job_template_name = data['job_template_name']
     job_binary_name = data['job_binary_name']
@@ -60,7 +63,6 @@ def execute(data):
     input_ds_id = data['input_datasource_id']
     output_ds_id = data['output_datasource_id']
 
-    args = [input_ds_id, output_ds_id]
     connector = os_connector.OpenStackConnector(LOG)
 
     sahara = connector.get_sahara_client(user, password, project_id, auth_ip,
@@ -120,10 +122,13 @@ def execute(data):
                                                         job_binary_url, extra)
 
         mains = [job_binary_id]
+
+        job_template_id = connector.get_job_template(sahara, mains)
         # add check if job_template exists
-        job_template_id = connector.create_job_template(sahara,
-                                                        job_template_name,
-                                                        plugin, mains)
+        if not job_template_id:
+            job_template_id = connector.create_job_template(sahara,
+                                                            job_template_name,
+                                                            job_type, mains)
 
         job = connector.create_job_execution(sahara, job_template_id,
                                              cluster_id, configs=configs)
@@ -178,8 +183,8 @@ def execute(data):
     else:
         raise ex.ClusterNotCreatedException()
 
-    if cluster_delete:
-        print "Deleting cluster"
+    #if cluster_delete:
+        #print "Deleting cluster"
         # delete_cluster(saharaclient, cluster_id)
         # decrease_project_quota(novaclient, project_id, increase_dict)
 

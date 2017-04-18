@@ -138,7 +138,8 @@ class OpenStackConnector(object):
     def create_cluster(self, sahara, cluster_size, public_key, net_id,
                        image_id, plugin, version, master, slave):
         #size = max(3, cluster_size - 1)
-        size = 2
+        import pdb; pdb.set_trace()
+        size = 3
         cluster_template = self.get_cluster_template(sahara, size, plugin)
         cluster_template_id = cluster_template.id
         if cluster_template:
@@ -209,6 +210,7 @@ class OpenStackConnector(object):
     def _create_sahara_cluster(self, sahara, cluster_template_id, cluster_name,
                                public_key_name, net_id, image_id, plugin,
                                version):
+        import pdb; pdb.set_trace()
         self.logger.log(cluster_name)
         self.logger.log(cluster_template_id)
         self.logger.log(image_id)
@@ -241,9 +243,9 @@ class OpenStackConnector(object):
     def get_cluster_template(self, sahara, size, plugin):
         cluster_templates = sahara.cluster_templates.list()
         for template in cluster_templates:
-            if template.plugin_name == plugin:
+            if template.plugin_name.lower() == plugin.lower():
                 for node_group in template.node_groups:
-                    if 'slave' in node_group['name']:
+                    if 'slave' in node_group['name'].lower():
                         if node_group['count'] == size:
                             return template
         return None
@@ -280,7 +282,7 @@ class OpenStackConnector(object):
     def get_node_group(self, sahara, plugin, node_group):
         node_groups = sahara.node_group_templates.list()
         for ng in node_groups:
-            if ng.plugin_name == plugin:
+            if ng.plugin_name.lower() == plugin.lower():
                 if node_group in ng.name:
                     return ng
 
@@ -293,4 +295,13 @@ class OpenStackConnector(object):
                 return job_binary.id
         return None
 
+    def get_job_template(self, sahara, mains):
+        import pdb; pdb.set_trace()
+        for job_template in sahara.jobs.list():
+            for main in job_template.mains:
+                if main['id'] in mains:
+                    mains.remove(main['id'])
+                    if not mains:
+                        return job_template.id
+        return None
 
