@@ -5,3 +5,4 @@ dist/
 build/
 *.pyc
 manager.cfg
+*.un~
