@@ -20,7 +20,7 @@ from werkzeug import datastructures
 
 from application_manager import exceptions as ex
 from logger import *
-from application_manager.utils import *
+from application_manager.utils import serializer
 
 LOG = Log("UtilsAPI", "utilsapi.log")
 
@@ -129,14 +129,14 @@ def render(res=None, resp_type=None, status=None, **kwargs):
     if not resp_type:
         resp_type = RT_JSON
 
-    serializer = None
+    serializer1 = None
     if "application/json" in resp_type:
         resp_type = RT_JSON
-        serializer = JSONDictSerializer()
+        serializer1 = serializer.JSONDictSerializer()
     else:
         abort_and_log(400, "Content type '%s' isn't supported" % resp_type)
 
-    body = serializer.serialize(res)
+    body = serializer1.serialize(res)
     resp_type = str(resp_type)
 
     return flask.Response(response=body, status=status_code,
@@ -157,7 +157,7 @@ def request_data():
     deserializer = None
     content_type = flask.request.mimetype
     if not content_type or content_type in RT_JSON:
-        deserializer = JSONDeserializer()
+        deserializer = serializer.JSONDeserializer()
     else:
         abort_and_log(400,
                       "Content type '%s' isn't supported" % content_type)
@@ -198,7 +198,7 @@ def render_error_message(error_code, error_message, error_name):
 
 def internal_error(status_code, descr, exc=None):
     LOG.log("Request aborted with status code %s and "
-            "message '%s'" % status_code, descr)
+            "message '%s'" % (status_code, descr))
 
     if exc is not None:
         LOG.log(traceback.format_exc())

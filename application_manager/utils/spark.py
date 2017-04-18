@@ -14,21 +14,20 @@
 # limitations under the License.
 
 import requests
+import time
 
-class Spark:
-
-    def __init__(self):
-        pass
-
-    def get_running_app(self, submission_url):
+def get_running_app(submission_url):
+    app_id = None
+    while app_id is None:
         try:
-            all_app = requests.get(submission_url +
-                                   ':8080/api/v1/applications?status=running')
+            all_app = requests.get('http://' + submission_url +
+                                   ':4040/api/v1/applications?status=running')
             for app in all_app.json():
                 if app['attempts'][0]['completed'] == False:
-                    return app['id'], app['name']
-            return None
+                    print app['id']
+                    return app['id']#, app['name']
         except:
-            self.logger.log("No application found")
-            return None
+            # self.logger.log("No application found")
+            pass
+            # return None
 
