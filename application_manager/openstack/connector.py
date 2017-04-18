@@ -137,9 +137,7 @@ class OpenStackConnector(object):
 
     def create_cluster(self, sahara, cluster_size, public_key, net_id,
                        image_id, plugin, version, master, slave):
-        #size = max(3, cluster_size - 1)
-        import pdb; pdb.set_trace()
-        size = 3
+        size = cluster_size
         cluster_template = self.get_cluster_template(sahara, size, plugin)
         cluster_template_id = cluster_template.id
         if cluster_template:
@@ -210,7 +208,6 @@ class OpenStackConnector(object):
     def _create_sahara_cluster(self, sahara, cluster_template_id, cluster_name,
                                public_key_name, net_id, image_id, plugin,
                                version):
-        import pdb; pdb.set_trace()
         self.logger.log(cluster_name)
         self.logger.log(cluster_template_id)
         self.logger.log(image_id)
@@ -296,7 +293,6 @@ class OpenStackConnector(object):
         return None
 
     def get_job_template(self, sahara, mains):
-        import pdb; pdb.set_trace()
         for job_template in sahara.jobs.list():
             for main in job_template.mains:
                 if main['id'] in mains:

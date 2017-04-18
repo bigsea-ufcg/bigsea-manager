@@ -15,20 +15,16 @@
 
 import requests
 
-class Spark():
 
-    def __init__(self, spark_submisson_url):
-        self.submission_url = spark_submisson_url
-
-    def get_running_app(self, submission_url):
-        try:
-            all_app = requests.get(self.submission_url +
-                                   ':8080/api/v1/applications?status=running')
-            for app in all_app.json():
-                if app['attempts'][0]['completed'] == False:
-                    return app['id'], app['name']
-            return None
-        except:
-            self.logger.log("No application found")
-            return None
+def get_running_app(self, submission_url):
+    try:
+        all_app = requests.get(self.submission_url +
+                               ':8080/api/v1/applications?status=running')
+        for app in all_app.json():
+            if app['attempts'][0]['completed'] == False:
+                return app['id'], app['name']
+        return None
+    except:
+        self.logger.log("No application found")
+        return None
 

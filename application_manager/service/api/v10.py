@@ -34,7 +34,6 @@ predictor = r_predictor.RPredictor()
 
 
 def execute(data):
-    import pdb; pdb.set_trace()
     project_id = api.project_id
     auth_ip = api.auth_ip
     user = api.user
@@ -114,7 +113,6 @@ def execute(data):
             host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
 
         extra = dict(user=user, password=password)
-        import pdb; pdb.set_trace()
         job_binary_id = connector.get_job_binary(sahara, job_binary_url)
 
         if not job_binary_id:
@@ -133,7 +131,7 @@ def execute(data):
         job = connector.create_job_execution(sahara, job_template_id,
                                              cluster_id, configs=configs)
 
-        spark_c = spark.Spark(master)
+        spark_app_id = spark.get_running_app(master)
         job_exec_id = job.id
         job_status = connector.get_job_status(sahara, job_exec_id)
 
@@ -146,7 +144,6 @@ def execute(data):
         #    monitor_url, app_id, worker_instances)
 
         is_monitoring = False
-        import pdb; pdb.set_trace()
         completed = failed = False
         start_time = datetime.now()
         while not (completed or failed):
