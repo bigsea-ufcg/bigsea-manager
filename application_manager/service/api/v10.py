@@ -122,7 +122,6 @@ def execute(data):
         mains = [job_binary_id]
 
         job_template_id = connector.get_job_template(sahara, mains)
-        # add check if job_template exists
         if not job_template_id:
             job_template_id = connector.create_job_template(sahara,
                                                             job_template_name,

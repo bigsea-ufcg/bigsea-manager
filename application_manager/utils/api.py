@@ -19,8 +19,9 @@ import flask
 from werkzeug import datastructures
 
 from application_manager import exceptions as ex
-from logger import *
-from utils import *
+from application_manager.logger import *
+from application_manager.utils import serializer as u_serializer
+
 
 LOG = Log("UtilsAPI", "utilsapi.log")
 
@@ -132,7 +133,7 @@ def render(res=None, resp_type=None, status=None, **kwargs):
     serializer = None
     if "application/json" in resp_type:
         resp_type = RT_JSON
-        serializer = JSONDictSerializer()
+        serializer = u_serializer.JSONDictSerializer()
     else:
         abort_and_log(400, "Content type '%s' isn't supported" % resp_type)
 
@@ -157,7 +158,7 @@ def request_data():
     deserializer = None
     content_type = flask.request.mimetype
     if not content_type or content_type in RT_JSON:
-        deserializer = JSONDeserializer()
+        deserializer = u_serializer.JSONDeserializer()
     else:
         abort_and_log(400,
                       "Content type '%s' isn't supported" % content_type)
