@@ -15,6 +15,8 @@
 
 import datetime
 import time
+import six
+import base64
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
@@ -53,11 +55,10 @@ class OpenStackConnector(object):
     def get_existing_cluster_by_size(self, sahara, size):
         clusters = sahara.clusters.list()
         for cluster in clusters:
-            cluster_node_groups = cluster['node_groups']
-            for cluster_node_group in cluster_node_groups:
-                if node_group['name'] == 'slave':
+            for node_group in cluster.node_groups:
+                if 'slave' in node_group['name']:
                     if node_group['count'] == size:
-                        return cluster
+                        return cluster.id
         return None
 
     def get_timestamp_raw(self):
@@ -96,8 +97,7 @@ class OpenStackConnector(object):
     def get_worker_instances(self, sahara, cluster_id):
         instances = []
         cluster = sahara.clusters.get(cluster_id)
-        node_groups = cluster.node_groups
-        for node_group in node_groups:
+        for node_group in cluster.node_groups:
             if 'datanode' in node_group['node_processes']:
                 for instance in node_group['instances']:
                     instance_name = instance
@@ -106,16 +106,14 @@ class OpenStackConnector(object):
 
     def get_master_instance(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
-        node_groups = cluster.node_groups
-        for node_group in node_groups:
+        for node_group in cluster.node_groups:
             if 'namenode' in node_group['node_processes']:
                 for instance in node_group['instances']:
                     return instance
-
         return None
 
     def get_job_configs(self, plugin, cluster_size=None, username=None,
-                         password=None, args=[], main_class=None):
+                        password=None, args=[], main_class=None):
         if plugin == 'hadoop':
             reducers = int(cluster_size) * 2
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
@@ -123,28 +121,47 @@ class OpenStackConnector(object):
             configs = {'configs': {
                             'edp.java.main_class': main_class,
                             'edp.spark.adapt_for_swift': 'True',
+                            'fs.swift.service.sahara.password': password,
+                            'fs.swift.service.sahara.username': username
                             },
                        'args': args
                        }
 
         return configs
 
-    def create_job_execution(self, sahara, job_id, cluster_id, input_ds_id,
-                             output_ds_id, configs):
+    def create_job_execution(self, sahara, job_id, cluster_id,
+                             input_ds_id=None, output_ds_id=None,
+                             configs=None):
         return sahara.job_executions.create(job_id, cluster_id, input_ds_id,
                                             output_ds_id, configs=configs)
 
     def create_cluster(self, sahara, cluster_size, public_key, net_id,
-                       image_id, plugin, version):
-        size = max(3, cluster_size - 1)
+                       image_id, plugin, version, master, slave):
+        #size = max(3, cluster_size - 1)
+        size = 2
         cluster_template = self.get_cluster_template(sahara, size, plugin)
+        cluster_template_id = cluster_template.id
         if cluster_template:
-            cluster = self._create_cluster(saharaclient, cluster_template,
+            cluster = self._create_cluster(sahara, cluster_template_id,
                                            public_key, net_id, image_id,
                                            plugin, version)
+        else:
+            cluster_temp_name = "cluster-osahara-" + self.get_timestamp_raw()
+            node_groups = []
+            node_groups.append(result_mng)
+            node_groups.append(result_sng)
+            cluster_template = self.create_cluster_template(sahara,
+                                                            cluster_temp_name,
+                                                            plugin, version,
+                                                            node_groups)
+
+            cluster = self._create_cluster(saharaclient, cluster_template_id,
+                                           public_key, net_id, image_id,
+                                           plugin, version)
+
         return cluster.id
 
-    def _create_cluster(self, sahara, cluster_template, public_key_name, 
+    def _create_cluster(self, sahara, cluster_template, public_key_name,
                         net_id, image_id, plugin, version, max_tries=5):
         cluster_is_ready = False
         cluster_tries = 0
@@ -201,7 +218,7 @@ class OpenStackConnector(object):
 
             return sahara.clusters.create(cluster_name, plugin, version,
                                           cluster_template_id,
-                                          image_id, net_id=(net_id),
+                                          image_id, net_id=net_id,
                                           user_keypair_id=public_key_name)
 
         except SaharaAPIException as e:
@@ -224,18 +241,18 @@ class OpenStackConnector(object):
     def get_cluster_template(self, sahara, size, plugin):
         cluster_templates = sahara.cluster_templates.list()
         for template in cluster_templates:
-            for node_group in template['node_groups']:
-                if node_group['name'] == 'slave':
-                    if node_group['count'] == size:
-                        return template
+            if template.plugin_name == plugin:
+                for node_group in template.node_groups:
+                    if 'slave' in node_group['name']:
+                        if node_group['count'] == size:
+                            return template
         return None
 
     def create_cluster_template(self, sahara, name, plugin_name,
                                 plugin_version, node_groups):
 
-        cluster_template = sahara.cluster_templates.create(name, plugin_name,
-                                                           plugin_version,
-                                                           node_groups)
+        cluster_template = sahara.cluster_templates.create(
+            name, plugin_name, plugin_version, node_groups=node_groups)
         return cluster_template['id']
 
     def create_job_template(self, sahara, name, job_type, mains=None,
@@ -243,7 +260,7 @@ class OpenStackConnector(object):
 
         job_template = sahara.jobs.create(name, job_type, mains, libs)
 
-        return job_template['id']
+        return job_template.id
 
     def delete_cluster(self, sahara, cluster_id, cluster_name=None):
         if not cluster_id:
@@ -253,5 +270,27 @@ class OpenStackConnector(object):
         if cluster_id:
             sahara.clusters.delete(cluster_id)
 
+    def create_job_binary(self, sahara, name, url, extra):
+        job_binary = sahara.job_binaries.create(name, url, extra=extra)
+        return job_binary.id
+
     def upload_job_binary(self, binary):
         return None
+
+    def get_node_group(self, sahara, plugin, node_group):
+        node_groups = sahara.node_group_templates.list()
+        for ng in node_groups:
+            if ng.plugin_name == plugin:
+                if node_group in ng.name:
+                    return ng
+
+    def is_cluster_in_api_error(self, cluster):
+        return cluster == 'api_exception'
+
+    def get_job_binary(self, sahara, job_binary_url):
+        for job_binary in sahara.job_binaries.list():
+            if job_binary.url == job_binary_url:
+                return job_binary.id
+        return None
+
+

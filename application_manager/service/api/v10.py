@@ -39,12 +39,14 @@ def execute(data):
     user = api.user
     password = api.password
     domain = api.domain
-    public_key = api.plubic_key
+    public_key = api.public_key
     net_id = api.net_id
     image_id = api.image_id
     hosts = api.hosts
     monitor_url = api.monitor_url
     controller_url = api.controller_url
+    master_ng = api.master_ng
+    slave_ng = api.slave_ng
 
     plugin = data['plugin']
     version = data['version']
@@ -52,11 +54,13 @@ def execute(data):
     opportunistic = data['opportunistic']
     req_cluster_size = data['cluster_size']
     main_class = data['main_class']
-    args = data['args']
-    job_id = data['job_id']
-    input_ds_id = data['input_ds_id']
-    output_ds_id = data['output_ds_id']
+    job_template_name = data['job_template_name']
+    job_binary_name = data['job_binary_name']
+    job_binary_url = data['job_binary_url']
+    input_ds_id = data['input_datasource_id']
+    output_ds_id = data['output_datasource_id']
 
+    args = [input_ds_id, output_ds_id]
     connector = os_connector.OpenStackConnector(LOG)
 
     sahara = connector.get_sahara_client(user, password, project_id, auth_ip,
@@ -65,20 +69,22 @@ def execute(data):
     # monitor.get_host_cpu_utilization()
 
     cluster_size = int(req_cluster_size)
-    cluster_size = _get_new_cluster_size(hosts)
+    #cluster_size = _get_new_cluster_size(hosts)
 
     cluster_id = connector.get_existing_cluster_by_size(sahara, cluster_size)
+
 
     if not cluster_id:
         if opportunistic:
             LOG.log('Runnning job with opportunistic cluster')
             cluster_delete = True
-            cluster_size = connector.get_new_cluster_size(hosts)
+            #cluster_size = connector.get_new_cluster_size(hosts)
             try:
                 cluster_id = connector.create_cluster(sahara, cluster_size,
-                                                      public_key, net_id, 
-                                                      image_id, plugin, 
-                                                      version)
+                                                      public_key, net_id,
+                                                      image_id, plugin,
+                                                      version, master_ng,
+                                                      slave_ng)
             except SaharaAPIException as e:
                 raise SaharaAPIException('Could not create clusters')
 
@@ -86,11 +92,11 @@ def execute(data):
             LOG.log('Runnning job with non opportunistic cluster')
             cluster_id = connector.create_cluster(sahara, cluster_size,
                                                   public_key, net_id, image_id,
-                                                  plugin, version)
+                                                  plugin, version, master_ng,
+                                                  slave_ng)
     if cluster_id:
-
-        master = connector.get_master_instance(sahara, cluster_id,
-                                               plugin)['internal_ip']
+        master = connector.get_master_instance(sahara,
+                                               cluster_id)['internal_ip']
         LOG.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"), master))
 
         is_monitoring = False
@@ -105,9 +111,22 @@ def execute(data):
             worker_id = worker['instance_id']
             host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
 
-        job = connector.create_job_execution(sahara, job_id, cluster_id,
-                                             input_ds_id, output_ds_id,
-                                             configs=configs)
+        extra = dict(user=user, password=password)
+        import pdb; pdb.set_trace()
+        job_binary_id = connector.get_job_binary(sahara, job_binary_url)
+
+        if not job_binary_id:
+            job_binary_id = connector.create_job_binary(sahara, job_binary_name,
+                                                        job_binary_url, extra)
+
+        mains = [job_binary_id]
+        # add check if job_template exists
+        job_template_id = connector.create_job_template(sahara,
+                                                        job_template_name,
+                                                        plugin, mains)
+
+        job = connector.create_job_execution(sahara, job_template_id,
+                                             cluster_id, configs=configs)
 
         spark_c = spark.Spark(master)
         job_exec_id = job.id
@@ -116,12 +135,13 @@ def execute(data):
         LOG.log("%s | Sahara job status: %s" %
                 (time.strftime("%H:%M:%S"), job_status))
 
-        start_scaling_url, start_scaling_body = _get_scaling_data(
-            controller_url, app_id, worker_instances)
-        start_monitor_url, start_monitor_body = _get_monitor_data(
-            monitor_url, app_id, worker_instances)
+        #start_scaling_url, start_scaling_body = _get_scaling_data(
+        #    controller_url, app_id, worker_instances)
+        #start_monitor_url, start_monitor_body = _get_monitor_data(
+        #    monitor_url, app_id, worker_instances)
 
         is_monitoring = False
+        import pdb; pdb.set_trace()
         completed = failed = False
         start_time = datetime.now()
         while not (completed or failed):
@@ -132,10 +152,10 @@ def execute(data):
                 is_monitoring = True
 
                 # monitoring
-                requests.post(start_monitor_url, data=start_monitor_body)
+                #requests.post(start_monitor_url, data=start_monitor_body)
 
                 # controller
-                requests.post(start_scaling_url, data=start_scaling_body)
+                #requests.post(start_scaling_url, data=start_scaling_body)
 
                 time.sleep(10)
 
@@ -153,8 +173,8 @@ def execute(data):
         LOG.log("%s | Sahara job took %s seconds to execute" %
                 (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
 
-        _stop_monitoring(monitor_url, spark_app_id)
-        _stop_scaling(controller_url, spark_app_id)
+        #_stop_monitoring(monitor_url, spark_app_id)
+        #_stop_scaling(controller_url, spark_app_id)
     else:
         raise ex.ClusterNotCreatedException()
 

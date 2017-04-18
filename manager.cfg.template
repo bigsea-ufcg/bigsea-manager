@@ -1,0 +1,47 @@
+[services]
+
+monitor_url =
+controller_url =
+
+[monasca]
+
+monasca_endpoint =
+username =
+password =
+project_name =
+auth_url =
+list_measurements_url =
+api_version =
+
+[openstack]
+
+hosts =
+net_id =
+cluster_id =
+slave_ng =
+master_ng =
+
+plugin =
+version =
+
+[credentials]
+
+public_key =
+user =
+password =
+auth_ip =
+project_id =
+#project_id =
+user_domain_name =
+
+[scaling]
+
+scaledown =
+scaleup =
+actuation_size =
+scaling_period =
+starting_cap =
+
+[spark]
+
+image_id =

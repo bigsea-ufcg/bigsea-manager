@@ -4,3 +4,4 @@ Application_Manager.egg-info/
 dist/
 build/
 *.pyc
+manager.cfg

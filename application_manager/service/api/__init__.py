@@ -21,10 +21,18 @@ config.read('./manager.cfg')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
-hosts = config.get('openstack', 'hosts').split(' ')
 
+hosts = config.get('openstack', 'hosts').split(' ')
+net_id = config.get('openstack', 'net_id')
+master_ng = config.get('openstack', 'master_ng')
+slave_ng = config.get('openstack', 'slave_ng')
+
+public_key = config.get('credentials', 'public_key')
+user_domain_name = config.get('credentials', 'user_domain_name')
 project_id = config.get('credentials', 'project_id')
 auth_ip = config.get('credentials', 'auth_ip')
 user = config.get('credentials', 'user')
 password = config.get('credentials', 'password')
 domain = config.get('credentials', 'user_domain_name')
+
+image_id = config.get('spark', 'image_id')
