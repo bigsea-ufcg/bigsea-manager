@@ -174,8 +174,8 @@ def get_request_args():
 
 
 def abort_and_log(status_code, descr, exc=None):
-    LOG.log("Request aborted with status code %s and "
-            "message '%s'" % status_code, message=descr)
+    LOG.log("Request aborted with status code code} and "
+            "message '{message}'".format(code=status_code, message=descr))
 
     if exc is not None:
         LOG.log(traceback.format_exc())
@@ -197,8 +197,8 @@ def render_error_message(error_code, error_message, error_name):
 
 
 def internal_error(status_code, descr, exc=None):
-    LOG.log("Request aborted with status code %s and "
-            "message '%s'" % status_code, descr)
+    LOG.log("Request aborted with status code {code} and "
+            "message '{message}'".format(code=status_code, message=descr))
 
     if exc is not None:
         LOG.log(traceback.format_exc())
@@ -215,9 +215,9 @@ def bad_request(error):
 
     LOG.log("Validation Error occurred: "
             "error_code={code}, error_message={message}, "
-            "error_name={name}").format(code=error_code,
-                                        message=error.message,
-                                        name=error.code)
+            "error_name={name}".format(code=error_code,
+                                       message=error.message,
+                                       name=error.code))
 
     return render_error_message(error_code, error.message, error.code)
 
@@ -227,9 +227,9 @@ def access_denied(error):
 
     LOG.log("Access Denied: "
             "error_code={code}, error_message={message}, "
-            "error_name={name}").format(code=error_code,
-                                        message=error.message,
-                                        name=error.code)
+            "error_name={name}".format(code=error_code,
+                                       message=error.message,
+                                       name=error.code))
 
     return render_error_message(error_code, error.message, error.code)
 
@@ -239,8 +239,8 @@ def not_found(error):
 
     LOG.log("Not Found exception occurred: "
             "error_code={code}, error_message={message}, "
-            "error_name={name}").format(code=error_code,
-                                        message=error.message,
-                                        name=error.code)
+            "error_name={name}".format(code=error_code,
+                                       message=error.message,
+                                       name=error.code))
 
     return render_error_message(error_code, error.message, error.code)

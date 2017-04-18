@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
+import json
+import six
+
+from application_manager import exceptions
+
 
 class ActionDispatcher(object):
     """Maps method name to local methods through action name."""
@@ -66,7 +72,7 @@ class JSONDeserializer(TextDeserializer):
             return json.loads(datastring)
         except ValueError:
             msg = ("cannot understand JSON")
-            raise MalformedRequestBody(msg)
+            raise exceptions.MalformedRequestBody(msg)
 
     def default(self, datastring):
         return {'body': self._from_json(datastring)}
