@@ -15,14 +15,14 @@
 
 import requests
 
-class Spark():
+class Spark:
 
-    def __init__(self, spark_submisson_url):
-        self.submission_url = spark_submisson_url
+    def __init__(self):
+        pass
 
     def get_running_app(self, submission_url):
         try:
-            all_app = requests.get(self.submission_url +
+            all_app = requests.get(submission_url +
                                    ':8080/api/v1/applications?status=running')
             for app in all_app.json():
                 if app['attempts'][0]['completed'] == False:

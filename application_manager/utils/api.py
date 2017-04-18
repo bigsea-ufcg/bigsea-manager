@@ -20,7 +20,7 @@ from werkzeug import datastructures
 
 from application_manager import exceptions as ex
 from logger import *
-from utils import *
+from application_manager.utils import *
 
 LOG = Log("UtilsAPI", "utilsapi.log")
 
