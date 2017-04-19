@@ -118,6 +118,8 @@ class OpenStackConnector(object):
             reducers = int(cluster_size) * 2
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
         else:
+            args[2] = args[2] + '-' + self.get_timestamp_raw()
+
             configs = {'configs': {
                             'edp.java.main_class': main_class,
                             'edp.spark.adapt_for_swift': 'True',

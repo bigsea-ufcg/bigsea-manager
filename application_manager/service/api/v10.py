@@ -61,6 +61,12 @@ def execute(data):
     job_binary_url = data['job_binary_url']
     input_ds_id = data['input_datasource_id']
     output_ds_id = data['output_datasource_id']
+    plugin_app = data['plugin_app']
+    expected_time = data['expected_time']
+    collect_period = data['collect_period']
+
+    monitor_body_request = {}
+
 
     connector = os_connector.OpenStackConnector(LOG)
 
@@ -105,12 +111,12 @@ def execute(data):
         configs = os_utils.get_job_config(connector, plugin, cluster_size,
                                           user, password, args, main_class)
 
-        workers = connector.get_worker_instances(sahara, cluster_id)
-        host_ips = {}
-
-        for worker in workers:
-            worker_id = worker['instance_id']
-            host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
+        # workers = connector.get_worker_instances(sahara, cluster_id)
+        # host_ips = {}
+        #
+        # for worker in workers:
+        #     worker_id = worker['instance_id']
+        #     host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
 
         extra = dict(user=user, password=password)
         job_binary_id = connector.get_job_binary(sahara, job_binary_url)
@@ -137,6 +143,13 @@ def execute(data):
         LOG.log("%s | Sahara job status: %s" %
                 (time.strftime("%H:%M:%S"), job_status))
 
+        info_plugin = {"spark_submisson_url": "http://" + master, "expected_time": expected_time}
+        print "PASSOU POOOOOORA"
+
+        try:
+            _start_monitor(spark_app_id, plugin_app, info_plugin, collect_period)
+        except Exception as e:
+            print e.message
         #start_scaling_url, start_scaling_body = _get_scaling_data(
         #    controller_url, app_id, worker_instances)
         #start_monitor_url, start_monitor_body = _get_monitor_data(
@@ -212,20 +225,28 @@ def _get_scaling_data(controller_url, app_id, worker_instances):
     return start_scaling_url, start_scaling_body
 
 
-def _get_monitor_data(monitor_url, app_id, worker_instances):
+def _get_monitor_data(plugin, info_plugin, collect_period):
     start_monitor_dict = {
-        'expected_time': 1000,
-        'instances': worker_instances
+        'plugin': plugin,
+        'info_plugin': info_plugin,
+        'collect_period': collect_period
     }
     start_monitor_body = json.dumps(start_monitor_dict)
-    start_monitor_url = monitor_url + '/start/' + app_id
 
-    return start_monitor_url, start_monitor_body
+    return start_monitor_body
 
 
-def _stop_monitoring(monitor_url, app_id):
-    stop_monitor_url = monitor_url + '/stop/' + app_id
-    requests.post(stop_monitor_url)
+def _start_monitor(app_id, plugin, info_plugin, collect_period):
+    request_url = api.monitor_url + '/start/' + app_id
+    headers = {'Content-type': 'application/json'}
+    requests.post(request_url, data=_get_monitor_data(plugin, info_plugin, collect_period), headers=headers)
+
+
+def _stop_monitoring(app_id):
+    request_url = api.monitor_url + '/start/' + app_id
+    headers = {'Content-type': 'application/json'}
+    requests.post(request_url, headers=headers)
+
 
 def _stop_scaling(controller_url, app_id):
     stop_scaling_url = controller_url + '/stop_scaling/' + app_id
