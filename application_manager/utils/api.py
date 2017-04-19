@@ -132,7 +132,7 @@ def render(res=None, resp_type=None, status=None, **kwargs):
     serializer1 = None
     if "application/json" in resp_type:
         resp_type = RT_JSON
-        serializer = u_serializer.JSONDictSerializer()
+        serializer1 = u_serializer.JSONDictSerializer()
     else:
         abort_and_log(400, "Content type '%s' isn't supported" % resp_type)
 

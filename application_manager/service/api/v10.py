@@ -65,13 +65,21 @@ def execute(data):
     expected_time = data['expected_time']
     collect_period = data['collect_period']
 
-    monitor_body_request = {}
+    ### SCALER PARAMETERS ###
+    scaler_plugin = data['scaler_plugin']
+    actuator = data['actuator']
+    print "Debug caliente"
+    metric_source = data['metric_source']
+    # workers = data['workers']
+    check_interval = data['check_interval']
+    trigger_down = data['trigger_down']
+    trigger_up = data['trigger_up']
+    min_cap = data['min_cap']
+    max_cap = data['max_cap']
+    actuation_size = data['actuation_size']
+    metric_rounding = data['metric_rounding']
 
-
-
-    monitor_body_request =  {}
-    monitor_body_request['plugin']
-    args = [input_ds_id, output_ds_id]
+    # args = [input_ds_id, output_ds_id]
 
     connector = os_connector.OpenStackConnector(LOG)
 
@@ -84,7 +92,6 @@ def execute(data):
     #cluster_size = _get_new_cluster_size(hosts)
 
     cluster_id = connector.get_existing_cluster_by_size(sahara, cluster_size)
-
 
     if not cluster_id:
         if opportunistic:
@@ -116,12 +123,12 @@ def execute(data):
         configs = os_utils.get_job_config(connector, plugin, cluster_size,
                                           user, password, args, main_class)
 
-        # workers = connector.get_worker_instances(sahara, cluster_id)
-        # host_ips = {}
+        workers = connector.get_worker_instances(sahara, cluster_id)
+        workers_id = []
         #
-        # for worker in workers:
-        #     worker_id = worker['instance_id']
-        #     host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
+        for worker in workers:
+            workers_id.append(worker['instance_id'])
+            # host_ips[worker_id] = connector.get_worker_host_ip(worker_id)
 
         extra = dict(user=user, password=password)
         job_binary_id = connector.get_job_binary(sahara, job_binary_url)
@@ -153,6 +160,8 @@ def execute(data):
 
         try:
             _start_monitor(spark_app_id, plugin_app, info_plugin, collect_period)
+            _start_scaler(spark_app_id, scaler_plugin, actuator, metric_source, workers_id, check_interval,
+                          trigger_down, trigger_up, min_cap, max_cap, actuation_size, metric_rounding)
         except Exception as e:
             print e.message
         #start_scaling_url, start_scaling_body = _get_scaling_data(
@@ -219,15 +228,24 @@ def _get_new_cluster_size(hosts):
     return predictor.predict(hosts)
 
 
-def _get_scaling_data(controller_url, app_id, worker_instances):
+def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, check_interval,
+                     trigger_down, trigger_up, min_cap, max_cap, actuation_size, metric_rounding):
     start_scaling_dict = {
-        'expected_time': 1000,
-        'instances': worker_instances
+        'plugin': scaler_plugin,
+        'actuator': actuator,
+        'metric_source': metric_source,
+        'instances': workers,
+        'check_interval': check_interval,
+        'trigger_down': trigger_down,
+        'trigger_up': trigger_up,
+        'min_cap': min_cap,
+        'max_cap': max_cap,
+        'actuation_size': actuation_size,
+        'metric_rounding': metric_rounding
     }
-    start_scaling_body = json.dumps(start_scaling_dict)
-    start_scaling_url = controller_url + '/start_scaling/' + app_id
+    start_scaler_body = json.dumps(start_scaling_dict)
 
-    return start_scaling_url, start_scaling_body
+    return start_scaler_body
 
 
 def _get_monitor_data(plugin, info_plugin, collect_period):
@@ -244,7 +262,8 @@ def _get_monitor_data(plugin, info_plugin, collect_period):
 def _start_monitor(app_id, plugin, info_plugin, collect_period):
     request_url = api.monitor_url + '/start/' + app_id
     headers = {'Content-type': 'application/json'}
-    requests.post(request_url, data=_get_monitor_data(plugin, info_plugin, collect_period), headers=headers)
+    data = _get_monitor_data(plugin, info_plugin, collect_period)
+    requests.post(request_url, data=data, headers=headers)
 
 
 def _stop_monitoring(app_id):
@@ -253,7 +272,15 @@ def _stop_monitoring(app_id):
     requests.post(request_url, headers=headers)
 
 
-def _stop_scaling(controller_url, app_id):
-    stop_scaling_url = controller_url + '/stop_scaling/' + app_id
+def _start_scaler(app_id, scaler_plugin, actuator, metric_source, workers, check_interval,
+                  trigger_down, trigger_up, min_cap, max_cap, actuation_size, metric_rounding):
+    request_url = api.controller_url + '/scaler/start_scaling/' + app_id
+    headers = {'Content-type': 'application/json'}
+    data = _get_scaler_data(scaler_plugin, actuator, metric_source, workers, check_interval,
+                            trigger_down, trigger_up, min_cap, max_cap, actuation_size, metric_rounding)
+    requests.post(request_url, data=data, headers=headers)
+
+def _stop_scaler(controller_url, app_id):
+    stop_scaling_url = controller_url + '/scaler/stop_scaling/' + app_id
     requests.post(stop_scaling_url)
 

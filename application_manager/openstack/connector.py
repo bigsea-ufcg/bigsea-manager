@@ -119,6 +119,8 @@ class OpenStackConnector(object):
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
         else:
             args[2] = args[2] + '-' + self.get_timestamp_raw()
+            print "igor1"
+
 
             configs = {'configs': {
                             'edp.java.main_class': main_class,
