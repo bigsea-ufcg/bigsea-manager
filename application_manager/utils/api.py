@@ -19,9 +19,8 @@ import flask
 from werkzeug import datastructures
 
 from application_manager import exceptions as ex
-from application_manager.logger import *
 from application_manager.utils import serializer as u_serializer
-
+from application_manager.utils.logger import *
 
 LOG = Log("UtilsAPI", "utilsapi.log")
 
