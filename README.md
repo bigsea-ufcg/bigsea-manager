@@ -11,6 +11,7 @@ cp manager.cfg.template manager.cfg
 
 Update manager.cfg with necessary credentials and environement information
 ```bash
+./setup.sh
 ./run.sh
 ```
 
