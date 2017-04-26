@@ -27,8 +27,8 @@ setup(
 
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.5',
-    ],
 
+    ],
     keywords='webservice sahara application management',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
@@ -38,6 +38,10 @@ setup(
     entry_points={
         'console_scripts': [
             'application_manager=application_manager.cli.main:main',
+        ],
+        'application_manager.execution.plugins': [
+            'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
+            'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
         ],
     },
 )

@@ -143,3 +143,8 @@ class ClusterNotCreatedException(SaharaException):
     code = "CLUSTER_NOT_CREATED"
     message = "Cluster could not be created"
 
+
+class ConfigurationError(SaharaException):
+    code = "CONFIGURATION_ERROR"
+    message = "The configuration has failed"
+

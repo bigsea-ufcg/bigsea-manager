@@ -118,10 +118,6 @@ class OpenStackConnector(object):
             reducers = int(cluster_size) * 2
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
         else:
-            args[2] = args[2] + '-' + self.get_timestamp_raw()
-            print "igor1"
-
-
             configs = {'configs': {
                             'edp.java.main_class': main_class,
                             'edp.spark.adapt_for_swift': 'True',
@@ -143,22 +139,21 @@ class OpenStackConnector(object):
                        image_id, plugin, version, master, slave):
         size = cluster_size
         cluster_template = self.get_cluster_template(sahara, size, plugin)
-        cluster_template_id = cluster_template.id
         if cluster_template:
-            cluster = self._create_cluster(sahara, cluster_template_id,
+            cluster = self._create_cluster(sahara, cluster_template.id,
                                            public_key, net_id, image_id,
                                            plugin, version)
         else:
             cluster_temp_name = "cluster-osahara-" + self.get_timestamp_raw()
             node_groups = []
-            node_groups.append(result_mng)
-            node_groups.append(result_sng)
+            node_groups.append(master)
+            node_groups.append(slave)
             cluster_template = self.create_cluster_template(sahara,
                                                             cluster_temp_name,
                                                             plugin, version,
                                                             node_groups)
 
-            cluster = self._create_cluster(saharaclient, cluster_template_id,
+            cluster = self._create_cluster(saharaclient, cluster_template,
                                            public_key, net_id, image_id,
                                            plugin, version)
 

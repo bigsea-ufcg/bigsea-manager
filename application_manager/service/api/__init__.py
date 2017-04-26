@@ -21,6 +21,7 @@ config.read('./manager.cfg')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
+plugins = config.get('services', 'plugins').split(',')
 
 hosts = config.get('openstack', 'hosts').split(' ')
 net_id = config.get('openstack', 'net_id')
@@ -35,4 +36,3 @@ user = config.get('credentials', 'user')
 password = config.get('credentials', 'password')
 domain = config.get('credentials', 'user_domain_name')
 
-image_id = config.get('spark', 'image_id')
