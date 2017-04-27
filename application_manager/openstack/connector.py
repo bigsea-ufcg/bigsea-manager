@@ -15,11 +15,13 @@
 
 import datetime
 import time
+import uuid
 import six
 import base64
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
+from novaclient import client as nova_client
 from saharaclient.api.client import Client as saharaclient
 from saharaclient.api.base import APIException as SaharaAPIException
 from subprocess import *
@@ -39,6 +41,16 @@ class OpenStackConnector(object):
         ses = session.Session(auth=auth)
 
         return saharaclient('1.1', session=ses)
+
+    def get_nova_client(self, username, password, project_id, auth_ip,
+                        domain):
+        auth = v3.Password(auth_url=auth_ip + ':5000/v3',
+                           username=username,
+                           password=password,
+                           project_id=project_id,
+                           user_domain_name=domain)
+        ses = session.Session(auth=auth)
+        return nova_client.Client('2', session=ses)
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
@@ -227,7 +239,7 @@ class OpenStackConnector(object):
 
     def get_worker_host_ip(self, worker_id):
         # FIXME hardcoded
-        hosts = ["c4-compute11", "c4-compute12"]
+        hosts = ["c4-compute11", "c4-compute12", "c4-compute22"]
         for host in hosts:
             if int(check_output("ssh root@%s test -e "
                                 "\"/var/lib/nova/instances/%s\" && echo "
@@ -299,4 +311,27 @@ class OpenStackConnector(object):
                     if not mains:
                         return job_template.id
         return None
+
+    def create_instance(self, nova, image_id, flavor_id, public_key):
+        instance_name = "os-"+str(uuid.uuid4())[:8]
+        server = nova.servers.create(instance_name,image=image_id,
+                                     flavor=flavor_id, keypair=public_key)
+        return server.id
+
+    def get_instance_status(self, nova, instance_id):
+        instance = nova.servers.get(instance_id)
+        if u'status' in instance._info.keys():
+            return instance._info[u'status']
+        else:
+            return "no status available"
+
+    def get_instance_networks(self, nova, instance_id):
+        instance = nova.servers.get(instance_id)
+        return instance.networks
+
+    def remove_instance(self, nova, instance_id):
+        instance = nova.servers.get(instance_id)
+        instance.delete()
+
+
 
