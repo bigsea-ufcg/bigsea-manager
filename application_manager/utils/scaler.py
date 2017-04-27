@@ -17,9 +17,9 @@ import json
 import requests
 
 
-def get_scaler_data(scaler_plugin, actuator, metric_source, workers,
-                    check_interval, trigger_down, trigger_up, min_cap, max_cap,
-                    actuation_size, metric_rounding):
+def _get_scaler_data(scaler_plugin, actuator, metric_source, workers,
+                     check_interval, trigger_down, trigger_up, min_cap, max_cap,
+                     actuation_size, metric_rounding):
     start_scaling_dict = {
         'plugin': scaler_plugin,
         'actuator': actuator,
@@ -45,9 +45,9 @@ def start_scaler(controller_url, app_id, scaler_plugin, actuator,
 
     request_url = controller_url + '/scaler/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = get_scaler_data(scaler_plugin, actuator, metric_source, workers,
-                           check_interval, trigger_down, trigger_up, min_cap,
-                           max_cap, actuation_size, metric_rounding)
+    data = _get_scaler_data(scaler_plugin, actuator, metric_source, workers,
+                            check_interval, trigger_down, trigger_up, min_cap,
+                            max_cap, actuation_size, metric_rounding)
     requests.post(request_url, data=data, headers=headers)
 
 

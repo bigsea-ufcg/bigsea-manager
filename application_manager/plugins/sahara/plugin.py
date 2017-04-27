@@ -144,11 +144,12 @@ class SaharaProvider(base.PluginInterface):
 
             try:
                 print 'monitoring'
-                monitor.start_monitor(spark_app_id, plugin_app, info_plugin,
-                                      collect_period)
-                scaler.start_scaler(spark_app_id, scaler_plugin, actuator,
-                                    metric_source, workers_id, check_interval,
-                                    trigger_down, trigger_up, min_cap, max_cap,
+                monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
+                                      info_plugin, collect_period)
+                scaler.start_scaler(api.controller_url, spark_app_id,
+                                    scaler_plugin, actuator, metric_source,
+                                    workers_id, check_interval, trigger_down,
+                                    trigger_up, min_cap, max_cap,
                                     actuation_size, metric_rounding)
             except Exception as e:
                 print e.message

@@ -18,7 +18,7 @@ import json
 import requests
 
 
-def get_monitor_data(plugin, info_plugin, collect_period):
+def _get_monitor_data(plugin, info_plugin, collect_period):
     start_monitor_dict = {
         'plugin': plugin,
         'info_plugin': info_plugin,
@@ -32,5 +32,5 @@ def get_monitor_data(plugin, info_plugin, collect_period):
 def start_monitor(monitor_url, app_id, plugin, info_plugin, collect_period):
     request_url = monitor_url + '/start/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = get_monitor_data(plugin, info_plugin, collect_period)
+    data = _get_monitor_data(plugin, info_plugin, collect_period)
     requests.post(request_url, data=data, headers=headers)
