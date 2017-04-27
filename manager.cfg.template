@@ -31,17 +31,4 @@ user =
 password =
 auth_ip =
 project_id =
-#project_id =
 user_domain_name =
-
-[scaling]
-
-scaledown =
-scaleup =
-actuation_size =
-scaling_period =
-starting_cap =
-
-[spark]
-
-image_id =
