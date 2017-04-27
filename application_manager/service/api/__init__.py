@@ -17,7 +17,7 @@ import ConfigParser
 
 # Conf reading
 config = ConfigParser.RawConfigParser()
-config.read('./manager.cfg')
+config.read('./manager.cfg.lsd')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')

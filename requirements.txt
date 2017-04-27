@@ -5,3 +5,4 @@ python-monascaclient
 python-saharaclient
 keystoneauth1
 python-novaclient
+paramiko

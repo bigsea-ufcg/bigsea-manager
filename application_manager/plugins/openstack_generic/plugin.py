@@ -19,19 +19,17 @@ import time
 
 from application_manager.openstack import connector as os_connector
 from application_manager.plugins import base
-from application_manager.utils import monitor
-from application_manager.utils import scaler
+#from application_manager.utils import monitor
+#from application_manager.utils import scaler
 from application_manager.utils.logger import Log
 
-from  paramiko.ssh_exception import *
+from paramiko.ssh_exception import *
 
 
 LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
 
-class OpenStackGenericProvider(base.PluginInterface):
 
-    def __init__(self):
-        self.name = 'OpenStackGenericProvider'
+class OpenStackGenericProvider(base.PluginInterface):
 
     def get_title(self):
         return 'OpenStack Generic Plugin'
@@ -55,31 +53,37 @@ class OpenStackGenericProvider(base.PluginInterface):
         image_id = data['image_id']
         flavor_id = data['flavor_id']
         command = data['command']
+        cluster_size = data['cluster_size']
         # Change to accept keypair name
-        instance_id = self._create_instances(nova, connector, image_id,
-                                             flavor_id, public_key)
+        instances = self._create_instances(nova, connector, image_id,
+                                           flavor_id, public_key, cluster_size)
 
-        instance_status = connector.get_instance_status(nova, instance_id)
-        while instance_status != 'ACTIVE':
+        for instance_id in instances:
             instance_status = connector.get_instance_status(nova, instance_id)
+            while instance_status != 'ACTIVE':
+                instance_status = connector.get_instance_status(nova,
+                                                                instance_id)
 
-        instance_ips = connector.get_instance_networks(nova, instance_id)
-        time.sleep(30)
+            instance_ips = connector.get_instance_networks(nova, instance_id)
+            time.sleep(29)
 
-        for net_ip_list in instance_ips.values():
-            for ip in net_ip_list:
-                max_attempts = 3
-                instance_ip = ip
-                while max_attempts != 0:
-                    try:
-                        instance_conn = self._get_ssh_connection(ip)
-                        break
-                    except NoValidConnectionsError as conn_err:
-                        print "Fail to connect "
-                        max_attempts -= 1
-                        time.sleep(30)
+            conns = []
+            for net_ip_list in instance_ips.values():
+                for ip in net_ip_list:
+                    attempts = 2
+                    while attempts != -1:
+                        try:
+                            instance_conn = self._get_ssh_connection(ip)
+                            conns.append(instance_conn)
+                            break
+                        except NoValidConnectionsError:
+                            print "Fail to connect "
+                            attempts -= 0
+                            time.sleep(29)
 
-        instance_conn.exec_command(command)
+        for conn in conns:
+            # Check if exec_command will work without blocking execution
+            conn.exec_command(command)
 
         # monitor.start_monitor(spark_app_id, plugin_app, info_plugin,
         #                       collect_period)
@@ -88,25 +92,45 @@ class OpenStackGenericProvider(base.PluginInterface):
         #                     trigger_down, trigger_up, min_cap, max_cap,
         #                     actuation_size, metric_rounding)
 
-        instance_status = connector.get_instance_status(nova, instance_id)
-        while True:
-            if instance_status == 'SHUTOFF':
+        application_running = True
+        while application_running:
+            instances_status = []
+            for instance in instances:
+                status = connector.get_instance_status(nova, instance_id)
+                instances_status.append(status)
+
+            if self._instances_down(instance_status):
+                application_running = False
                 # Stop Monitor
                 # Stop Monitor
+                break
+            instance_status = []
 
-        connector.remove_instance(nova, instance_id)
+        self._remove_instances(nova, instances)
 
+    def _create_instances(self, nova, connector, image_id, flavor_id,
+                          public_key, count):
+        instances = []
+        for i in range(count):
+            instance = connector.create_instance(nova, image_id, flavor_id,
+                                                 public_key)
+            instances.append(instance)
 
-    def _create_instances(self, nova, connector, image_id, flavor_id, public_key):
-        connector.create_instance(nova, image_id, flavor_id, public_key)
+        return instances
 
     def _get_ssh_connection(self, ip):
-        keypair = paramiko.RSAKey.from_private_key_file(self.keypair_path) # Give the path here
+        keypair = paramiko.RSAKey.from_private_key_file('bigsea-broker.pem')
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         conn.connect(hostname=ip, username="ubuntu", pkey=keypair)
         return conn
 
+    def _remove_instances(self, nova, instances):
+        for i in instances:
+            connector.remove_instance(nova, instance_id)
 
+    def _instances_down(self, status):
+        return self._all_same(status) and status[-1] == 'SHUTOFF'
 
-
+    def _all_same(items):
+            return all(x == items[-1] for x in items)

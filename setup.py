@@ -41,6 +41,7 @@ setup(
         ],
         'application_manager.execution.plugins': [
             'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
+            'test=application_manager.plugins.test_plugin.plugin:TestProvider',
             'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
         ],
     },
