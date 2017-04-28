@@ -315,7 +315,7 @@ class OpenStackConnector(object):
     def create_instance(self, nova, image_id, flavor_id, public_key):
         instance_name = "os-"+str(uuid.uuid4())[:8]
         server = nova.servers.create(instance_name,image=image_id,
-                                     flavor=flavor_id, keypair=public_key)
+                                     flavor=flavor_id, key_name=public_key)
         return server.id
 
     def get_instance_status(self, nova, instance_id):
@@ -332,6 +332,7 @@ class OpenStackConnector(object):
     def remove_instance(self, nova, instance_id):
         instance = nova.servers.get(instance_id)
         instance.delete()
+
 
 
 

@@ -58,6 +58,7 @@ class OpenStackGenericProvider(base.PluginInterface):
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
 
+        instances_nets = []
         for instance_id in instances:
             instance_status = connector.get_instance_status(nova, instance_id)
             while instance_status != 'ACTIVE':
@@ -65,48 +66,57 @@ class OpenStackGenericProvider(base.PluginInterface):
                                                                 instance_id)
 
             instance_ips = connector.get_instance_networks(nova, instance_id)
-            time.sleep(29)
+            instances_nets.append(instance_ips)
+            time.sleep(30)
 
-            conns = []
-            for net_ip_list in instance_ips.values():
+        conns = []
+        for instance_net in instances_nets:
+            for net_ip_list in instance_net.values():
                 for ip in net_ip_list:
+
                     attempts = 2
                     while attempts != -1:
                         try:
                             instance_conn = self._get_ssh_connection(ip)
                             conns.append(instance_conn)
-                            break
+                            attempts = -1
                         except NoValidConnectionsError:
                             print "Fail to connect "
-                            attempts -= 0
-                            time.sleep(29)
+                            attempts -= 1
+                            time.sleep(30)
+
 
         for conn in conns:
             # Check if exec_command will work without blocking execution
             conn.exec_command(command)
 
-        # monitor.start_monitor(spark_app_id, plugin_app, info_plugin,
-        #                       collect_period)
-        # scaler.start_scaler(spark_app_id, scaler_plugin, actuator,
-        #                     metric_source, workers_id, check_interval,
-        #                     trigger_down, trigger_up, min_cap, max_cap,
-        #                     actuation_size, metric_rounding)
+            # monitor.start_monitor(spark_app_id, plugin_app, info_plugin,
+            #                       collect_period)
+            # scaler.start_scaler(spark_app_id, scaler_plugin, actuator,
+            #                     metric_source, workers_id, check_interval,
+            #                     trigger_down, trigger_up, min_cap, max_cap,
+            #                     actuation_size, metric_rounding)
 
         application_running = True
         while application_running:
-            instances_status = []
-            for instance in instances:
+            status_instances = []
+            for instance_id in instances:
                 status = connector.get_instance_status(nova, instance_id)
-                instances_status.append(status)
+                status_instances.append(status)
 
-            if self._instances_down(instance_status):
+            print status_instances
+
+            if self._instances_down(status_instances):
                 application_running = False
-                # Stop Monitor
-                # Stop Monitor
-                break
-            instance_status = []
+            else:
+                instance_status = []
 
-        self._remove_instances(nova, instances)
+
+
+        print "Application Finished"
+        #self._remove_instances(nova, connector, instances)
+
+
 
     def _create_instances(self, nova, connector, image_id, flavor_id,
                           public_key, count):
@@ -119,18 +129,20 @@ class OpenStackGenericProvider(base.PluginInterface):
         return instances
 
     def _get_ssh_connection(self, ip):
-        keypair = paramiko.RSAKey.from_private_key_file('bigsea-broker.pem')
+        keypair = paramiko.RSAKey.from_private_key_file('/home/iurygregory/.ssh/cloud.key')
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         conn.connect(hostname=ip, username="ubuntu", pkey=keypair)
         return conn
 
-    def _remove_instances(self, nova, instances):
-        for i in instances:
+    def _remove_instances(self, nova, connector, instances):
+        for instance_id in instances:
             connector.remove_instance(nova, instance_id)
 
     def _instances_down(self, status):
+        print  self._all_same(status)
+        print status[-1] == 'SHUTOFF'
         return self._all_same(status) and status[-1] == 'SHUTOFF'
 
     def _all_same(items):
-            return all(x == items[-1] for x in items)
+        return all(x == items[-1] for x in items)
