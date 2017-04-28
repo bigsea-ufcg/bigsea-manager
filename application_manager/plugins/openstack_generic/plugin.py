@@ -12,15 +12,16 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import uuid
 
 import paramiko
 import time
 
 from application_manager.openstack import connector as os_connector
 from application_manager.plugins import base
-#from application_manager.utils import monitor
-#from application_manager.utils import scaler
+from application_manager.utils import monitor
+from application_manager.utils import scaler
+from application_manager.service import api
 from application_manager.utils.logger import Log
 
 from paramiko.ssh_exception import *
@@ -50,10 +51,15 @@ class OpenStackGenericProvider(base.PluginInterface):
         connector = os_connector.OpenStackConnector(LOG)
         nova = connector.get_nova_client(user, password, project_id, auth_ip,
                                          domain)
+
+        app_name_ref = data['plugin']
+        reference_value = data['reference_value']
+        log_path = data['log_path']
         image_id = data['image_id']
         flavor_id = data['flavor_id']
         command = data['command']
         cluster_size = data['cluster_size']
+
         # Change to accept keypair name
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
@@ -69,8 +75,10 @@ class OpenStackGenericProvider(base.PluginInterface):
             instances_nets.append(instance_ips)
             time.sleep(30)
 
-        time.sleep(120)
-        conns = []
+
+        time.sleep(60)
+        instances_ips = []
+
         for instance_net in instances_nets:
             for net_ip_list in instance_net.values():
                 for ip in net_ip_list:
@@ -78,8 +86,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                     attempts = 2
                     while attempts != -1:
                         try:
-                            instance_conn = self._get_ssh_connection(ip)
-                            conns.append(instance_conn)
+                            conn = self._get_ssh_connection(ip, api.key_path)
+                            instances_ips.append(ip)
                             attempts = -1
                         except NoValidConnectionsError:
                             print "Fail to connect "
@@ -87,12 +95,29 @@ class OpenStackGenericProvider(base.PluginInterface):
                             time.sleep(30)
 
 
-        for conn in conns:
+        applications = []
+
+        for ip in instances_ips:
             # Check if exec_command will work without blocking execution
+            conn = self._get_ssh_connection(ip, api.key_path)
             conn.exec_command(command)
 
-            # monitor.start_monitor(spark_app_id, plugin_app, info_plugin,
-            #                       collect_period)
+            print "executou comando na instancia"
+
+            app_id = "app-os-generic"+str(uuid.uuid4())[:8]
+            applications.append(app_id)
+
+            monitor_plugin = app_name_ref
+            info_plugin = {
+                "host_ip": ip,
+                "log_path": log_path,
+                "expected_time": reference_value
+            }
+            collect_period = 1
+
+            monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
+                                  info_plugin, collect_period)
+
             # scaler.start_scaler(spark_app_id, scaler_plugin, actuator,
             #                     metric_source, workers_id, check_interval,
             #                     trigger_down, trigger_up, min_cap, max_cap,
@@ -107,6 +132,10 @@ class OpenStackGenericProvider(base.PluginInterface):
 
             if self._instances_down(status_instances):
                 application_running = False
+                print "Stop application"
+                for app_id in applications:
+                    monitor.stop_monitor(api.monitor_url, app_id)
+
             else:
                 instance_status = []
 
@@ -125,8 +154,8 @@ class OpenStackGenericProvider(base.PluginInterface):
 
         return instances
 
-    def _get_ssh_connection(self, ip):
-        keypair = paramiko.RSAKey.from_private_key_file('/home/iurygregory/.ssh/cloud.key')
+    def _get_ssh_connection(self, ip, key_path):
+        keypair = paramiko.RSAKey.from_private_key_file(key_path)
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         conn.connect(hostname=ip, username="ubuntu", pkey=keypair)

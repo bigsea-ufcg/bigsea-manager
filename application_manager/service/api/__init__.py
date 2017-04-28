@@ -29,6 +29,7 @@ master_ng = config.get('openstack', 'master_ng')
 slave_ng = config.get('openstack', 'slave_ng')
 
 public_key = config.get('credentials', 'public_key')
+key_path = config.get('credentials', 'key_path')
 user_domain_name = config.get('credentials', 'user_domain_name')
 project_id = config.get('credentials', 'project_id')
 auth_ip = config.get('credentials', 'auth_ip')

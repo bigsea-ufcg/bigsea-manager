@@ -28,6 +28,7 @@ version =
 [credentials]
 
 public_key =
+key_path =
 user =
 password =
 auth_ip =
