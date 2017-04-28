@@ -2,6 +2,7 @@
 
 monitor_url =
 controller_url =
+plugins =
 
 [monasca]
 
