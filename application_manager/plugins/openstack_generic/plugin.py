@@ -126,10 +126,10 @@ class OpenStackGenericProvider(base.PluginInterface):
         return instances
 
     def _get_ssh_connection(self, ip):
-        keypair = paramiko.RSAKey.from_private_key_file('./bigsea-broker.pem')
+        keypair = paramiko.RSAKey.from_private_key_file('/home/iurygregory/.ssh/cloud.key')
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        conn.connect(hostname=ip, username="centos", pkey=keypair)
+        conn.connect(hostname=ip, username="ubuntu", pkey=keypair)
         return conn
 
     def _remove_instances(self, nova, connector, instances):
