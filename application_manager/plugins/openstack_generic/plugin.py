@@ -69,6 +69,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             instances_nets.append(instance_ips)
             time.sleep(30)
 
+        time.sleep(120)
         conns = []
         for instance_net in instances_nets:
             for net_ip_list in instance_net.values():
@@ -104,17 +105,13 @@ class OpenStackGenericProvider(base.PluginInterface):
                 status = connector.get_instance_status(nova, instance_id)
                 status_instances.append(status)
 
-            print status_instances
-
             if self._instances_down(status_instances):
                 application_running = False
             else:
                 instance_status = []
 
-
-
         print "Application Finished"
-        #self._remove_instances(nova, connector, instances)
+        self._remove_instances(nova, connector, instances)
 
 
 
@@ -129,10 +126,10 @@ class OpenStackGenericProvider(base.PluginInterface):
         return instances
 
     def _get_ssh_connection(self, ip):
-        keypair = paramiko.RSAKey.from_private_key_file('/home/iurygregory/.ssh/cloud.key')
+        keypair = paramiko.RSAKey.from_private_key_file('./bigsea-broker.pem')
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        conn.connect(hostname=ip, username="ubuntu", pkey=keypair)
+        conn.connect(hostname=ip, username="centos", pkey=keypair)
         return conn
 
     def _remove_instances(self, nova, connector, instances):
@@ -140,9 +137,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             connector.remove_instance(nova, instance_id)
 
     def _instances_down(self, status):
-        print  self._all_same(status)
-        print status[-1] == 'SHUTOFF'
         return self._all_same(status) and status[-1] == 'SHUTOFF'
 
-    def _all_same(items):
+    def _all_same(self, items):
         return all(x == items[-1] for x in items)

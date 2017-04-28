@@ -17,13 +17,13 @@
 from application_manager.plugins import base
 
 
-class TestProvider(base.PluginInterface):
+class FakeProvider(base.PluginInterface):
 
     def get_title(self):
-        return 'OpenStack Sahara'
+        return 'Fake Plugin '
 
     def get_description(self):
-        return 'Plugin that allows utilization of Sahara to run jobs'
+        return 'Fake Plugin'
 
     def to_dict(self):
         return {
