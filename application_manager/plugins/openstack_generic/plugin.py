@@ -47,11 +47,11 @@ class OpenStackGenericProvider(base.PluginInterface):
 
     def execute(self, data, user, password, project_id, auth_ip, domain,
                 public_key, net_id):
-
+	
         connector = os_connector.OpenStackConnector(LOG)
         nova = connector.get_nova_client(user, password, project_id, auth_ip,
                                          domain)
-
+	
         app_name_ref = data['plugin']
         reference_value = data['reference_value']
         log_path = data['log_path']
@@ -59,11 +59,24 @@ class OpenStackGenericProvider(base.PluginInterface):
         flavor_id = data['flavor_id']
         command = data['command']
         cluster_size = data['cluster_size']
-
-        # Change to accept keypair name
+		
+	scaler_plugin = data["scaler_plugin"]
+	actuator = data["actuator"]
+	metric_source = data["metric_source"]
+	application_type = data["application_type"]
+	
+	check_interval = data["check_interval"]
+	trigger_down = data["trigger_down"]
+	trigger_up = data["trigger_up"]
+	min_cap = data["min_cap"]
+	max_cap = data["max_cap"]
+	actuation_size = data["actuation_size"]
+	metric_rounding = data["metric_rounding"]
+	# Change to accept keypair name
+	print "olar1"
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
-
+        print "olar"
         instances_nets = []
         for instance_id in instances:
             instance_status = connector.get_instance_status(nova, instance_id)
@@ -102,7 +115,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             conn = self._get_ssh_connection(ip, api.key_path)
             conn.exec_command(command)
 
-            print "executou comando na instancia"
+            print "Executing commands into the instance"
 
             app_id = "app-os-generic"+str(uuid.uuid4())[:8]
             applications.append(app_id)
@@ -118,10 +131,10 @@ class OpenStackGenericProvider(base.PluginInterface):
             monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
                                   info_plugin, collect_period)
 
-            # scaler.start_scaler(spark_app_id, scaler_plugin, actuator,
-            #                     metric_source, workers_id, check_interval,
-            #                     trigger_down, trigger_up, min_cap, max_cap,
-            #                     actuation_size, metric_rounding)
+            scaler.start_scaler(app_id, scaler_plugin, actuator, application_type,
+                                metric_source, instances, check_interval,
+                                trigger_down, trigger_up, min_cap, max_cap,
+                                actuation_size, metric_rounding)
 
         application_running = True
         while application_running:
@@ -147,9 +160,12 @@ class OpenStackGenericProvider(base.PluginInterface):
     def _create_instances(self, nova, connector, image_id, flavor_id,
                           public_key, count):
         instances = []
+	print instances
         for i in range(count):
+	    print "oi1"
             instance = connector.create_instance(nova, image_id, flavor_id,
                                                  public_key)
+	    print "oi2"
             instances.append(instance)
 
         return instances
