@@ -46,8 +46,14 @@ class SaharaProvider(base.PluginInterface):
             'description': self.get_description(),
         }
 
-    def execute(self, data, user, password, project_id, auth_ip, domain,
-                public_key, net_id):
+    def execute(self, data):
+        user = api.user
+        password = api.password
+        project_id = api.project_id
+        auth_ip = api.project_id
+        domain = api.domain
+        public_key = api.public_key
+        net_id = api.net_id
         master_ng = api.master_ng
         slave_ng = api.slave_ng
 

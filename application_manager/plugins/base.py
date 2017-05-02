@@ -67,8 +67,7 @@ class PluginInterface(object):
         }
 
     @required
-    def execute(self, data, user, password, project_id, auth_ip, domain,
-                public_key, net_id):
+    def execute(self, data):
         """Method that executes creation and job runs
 
         """

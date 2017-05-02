@@ -45,13 +45,18 @@ class OpenStackGenericProvider(base.PluginInterface):
             'description': self.get_description(),
         }
 
-    def execute(self, data, user, password, project_id, auth_ip, domain,
-                public_key, net_id):
-	
+    def execute(self, data):
+        user = api.user
+        password = api.password
+        project_id = api.project_id
+        auth_ip = api.project_id
+        domain = api.domain
+        public_key = api.public_key
+
         connector = os_connector.OpenStackConnector(LOG)
         nova = connector.get_nova_client(user, password, project_id, auth_ip,
                                          domain)
-	
+
         app_name_ref = data['plugin']
         reference_value = data['reference_value']
         log_path = data['log_path']
@@ -59,24 +64,22 @@ class OpenStackGenericProvider(base.PluginInterface):
         flavor_id = data['flavor_id']
         command = data['command']
         cluster_size = data['cluster_size']
-		
-	scaler_plugin = data["scaler_plugin"]
-	actuator = data["actuator"]
-	metric_source = data["metric_source"]
-	application_type = data["application_type"]
-	
-	check_interval = data["check_interval"]
-	trigger_down = data["trigger_down"]
-	trigger_up = data["trigger_up"]
-	min_cap = data["min_cap"]
-	max_cap = data["max_cap"]
-	actuation_size = data["actuation_size"]
-	metric_rounding = data["metric_rounding"]
-	# Change to accept keypair name
-	print "olar1"
+
+        scaler_plugin = data["scaler_plugin"]
+        actuator = data["actuator"]
+        metric_source = data["metric_source"]
+        application_type = data["application_type"]
+        check_interval = data["check_interval"]
+        trigger_down = data["trigger_down"]
+        trigger_up = data["trigger_up"]
+        min_cap = data["min_cap"]
+        max_cap = data["max_cap"]
+        actuation_size = data["actuation_size"]
+        metric_rounding = data["metric_rounding"]
+        # Change to accept keypair name
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
-        print "olar"
+
         instances_nets = []
         for instance_id in instances:
             instance_status = connector.get_instance_status(nova, instance_id)
@@ -87,7 +90,6 @@ class OpenStackGenericProvider(base.PluginInterface):
             instance_ips = connector.get_instance_networks(nova, instance_id)
             instances_nets.append(instance_ips)
             time.sleep(30)
-
 
         time.sleep(60)
         instances_ips = []
@@ -106,7 +108,6 @@ class OpenStackGenericProvider(base.PluginInterface):
                             print "Fail to connect "
                             attempts -= 1
                             time.sleep(30)
-
 
         applications = []
 
@@ -131,10 +132,11 @@ class OpenStackGenericProvider(base.PluginInterface):
             monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
                                   info_plugin, collect_period)
 
-            scaler.start_scaler(app_id, scaler_plugin, actuator, application_type,
-                                metric_source, instances, check_interval,
-                                trigger_down, trigger_up, min_cap, max_cap,
-                                actuation_size, metric_rounding)
+            scaler.start_scaler(app_id, scaler_plugin, actuator,
+                                application_type, metric_source, instances,
+                                check_interval, trigger_down, trigger_up,
+                                min_cap, max_cap, actuation_size,
+                                metric_rounding)
 
         application_running = True
         while application_running:
@@ -155,17 +157,12 @@ class OpenStackGenericProvider(base.PluginInterface):
         print "Application Finished"
         self._remove_instances(nova, connector, instances)
 
-
-
     def _create_instances(self, nova, connector, image_id, flavor_id,
                           public_key, count):
         instances = []
-	print instances
         for i in range(count):
-	    print "oi1"
             instance = connector.create_instance(nova, image_id, flavor_id,
                                                  public_key)
-	    print "oi2"
             instances.append(instance)
 
         return instances
