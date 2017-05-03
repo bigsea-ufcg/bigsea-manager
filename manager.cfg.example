@@ -1,0 +1,15 @@
+[services]
+
+monitor_url = http://10.11.4.117:5675
+controller_url = http://10.11.4.49:5112
+plugins = os_generic,sahara
+
+[credentials]
+
+public_key = bigsea-ufcg
+key_path = /home/ubuntu/bigsea-ufcg.pem
+user = igornsa
+password = password
+auth_ip = https://cloud.lsd.ufcg.edu.br
+project_id = 0022cedasdab5324407beea319878e95904
+user_domain_name = LSD

@@ -49,14 +49,13 @@ class OpenStackGenericProvider(base.PluginInterface):
         user = api.user
         password = api.password
         project_id = api.project_id
-        auth_ip = api.project_id
+        auth_ip = api.auth_ip
         domain = api.domain
         public_key = api.public_key
-
+	
         connector = os_connector.OpenStackConnector(LOG)
         nova = connector.get_nova_client(user, password, project_id, auth_ip,
                                          domain)
-
         app_name_ref = data['plugin']
         reference_value = data['reference_value']
         log_path = data['log_path']
@@ -64,22 +63,22 @@ class OpenStackGenericProvider(base.PluginInterface):
         flavor_id = data['flavor_id']
         command = data['command']
         cluster_size = data['cluster_size']
-
-        scaler_plugin = data["scaler_plugin"]
-        actuator = data["actuator"]
-        metric_source = data["metric_source"]
-        application_type = data["application_type"]
-        check_interval = data["check_interval"]
-        trigger_down = data["trigger_down"]
-        trigger_up = data["trigger_up"]
-        min_cap = data["min_cap"]
-        max_cap = data["max_cap"]
-        actuation_size = data["actuation_size"]
-        metric_rounding = data["metric_rounding"]
-        # Change to accept keypair name
+	scaler_plugin = data["scaler_plugin"]
+	actuator = data["actuator"]
+	metric_source = data["metric_source"]
+	application_type = data["application_type"]
+	
+	check_interval = data["check_interval"]
+	trigger_down = data["trigger_down"]
+	trigger_up = data["trigger_up"]
+	min_cap = data["min_cap"]
+	max_cap = data["max_cap"]
+	actuation_size = data["actuation_size"]
+	metric_rounding = data["metric_rounding"]
+	# Change to accept keypair name
+	print "Creating instance(s)..."
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
-
         instances_nets = []
         for instance_id in instances:
             instance_status = connector.get_instance_status(nova, instance_id)
@@ -89,9 +88,9 @@ class OpenStackGenericProvider(base.PluginInterface):
 
             instance_ips = connector.get_instance_networks(nova, instance_id)
             instances_nets.append(instance_ips)
-            time.sleep(30)
+            time.sleep(5)
 
-        time.sleep(60)
+        time.sleep(30)
         instances_ips = []
 
         for instance_net in instances_nets:
@@ -129,14 +128,15 @@ class OpenStackGenericProvider(base.PluginInterface):
             }
             collect_period = 1
 
-            monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
+	    try:
+		monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
                                   info_plugin, collect_period)
-
-            scaler.start_scaler(app_id, scaler_plugin, actuator,
-                                application_type, metric_source, instances,
-                                check_interval, trigger_down, trigger_up,
-                                min_cap, max_cap, actuation_size,
-                                metric_rounding)
+		scaler.start_scaler(api.controller_url, app_id, scaler_plugin, actuator, application_type,
+                                metric_source, instances, check_interval,
+                                trigger_down, trigger_up, min_cap, max_cap,
+                                actuation_size, metric_rounding)
+	    except Exception as e:
+		print e.message
 
         application_running = True
         while application_running:
@@ -155,6 +155,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                 instance_status = []
 
         print "Application Finished"
+	scaler.stop_scaler(api.controller_url, app_id)
+	monitor.stop_monitor(api.monitor_url, app_id)
         self._remove_instances(nova, connector, instances)
 
     def _create_instances(self, nova, connector, image_id, flavor_id,
