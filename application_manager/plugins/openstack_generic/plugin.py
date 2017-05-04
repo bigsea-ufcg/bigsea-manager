@@ -76,12 +76,12 @@ class OpenStackGenericProvider(base.PluginInterface):
         metric_rounding = data["metric_rounding"]
 
         print "Creating instance(s)..."
-        # 1- Create a number of instances to run the application based on
+        # Create a number of instances to run the application based on
         # cluster_size, image_id, flavor_id and public_key
         instances = self._create_instances(nova, connector, image_id,
                                            flavor_id, public_key, cluster_size)
 
-        # 2- Retrive network information from all instances when they
+        # Retrive network information from all instances when they
         # reach ACTIVE state
         instances_nets = []
         for instance_id in instances:
@@ -96,7 +96,7 @@ class OpenStackGenericProvider(base.PluginInterface):
 
         time.sleep(30)
 
-        # 3- Verify if ssh is available for any ip address for each instance
+        # Verify if ssh is available for any ip address for each instance
         instances_ips = []
         for instance_net in instances_nets:
             for net_ip_list in instance_net.values():
@@ -113,10 +113,10 @@ class OpenStackGenericProvider(base.PluginInterface):
                             attempts -= 1
                             time.sleep(30)
 
-        # 4- Execute application and start monitor and scaler service.
+        # Execute application and start monitor and scaler service.
         applications = []
         for ip in instances_ips:
-            # Check if exec_command will work without blocking execution
+            # TODO Check if exec_command will work without blocking execution
             conn = self._get_ssh_connection(ip, api.key_path)
             conn.exec_command(command)
 
@@ -143,7 +143,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             except Exception as e:
                 print e.message
 
-        # 5- Stop monitor and scaler when each application stops
+        # Stop monitor and scaler when each application stops
         application_running = True
         while application_running:
             status_instances = []
@@ -163,7 +163,7 @@ class OpenStackGenericProvider(base.PluginInterface):
 
         print "Application Finished"
 
-        # 6- Remove instances after the end of all applications
+        # Remove instances after the end of all applications
         self._remove_instances(nova, connector, instances)
 
     def _create_instances(self, nova, connector, image_id, flavor_id,
