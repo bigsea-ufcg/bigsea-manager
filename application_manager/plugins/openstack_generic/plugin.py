@@ -22,13 +22,10 @@ from application_manager.plugins import base
 from application_manager.utils import monitor
 from application_manager.utils import scaler
 from application_manager.service import api
-from application_manager.utils.logger import Log
-
-from paramiko.ssh_exception import *
-
+from application_manager.utils.logger import *
 
 LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
-
+configure_logging()
 
 class OpenStackGenericProvider(base.PluginInterface):
 
@@ -46,125 +43,164 @@ class OpenStackGenericProvider(base.PluginInterface):
         }
 
     def execute(self, data):
-        user = api.user
-        password = api.password
-        project_id = api.project_id
-        auth_ip = api.auth_ip
-        domain = api.domain
-        public_key = api.public_key
-
-        connector = os_connector.OpenStackConnector(LOG)
-        nova = connector.get_nova_client(user, password, project_id, auth_ip,
-                                         domain)
-        app_name_ref = data['plugin']
-        reference_value = data['reference_value']
-        log_path = data['log_path']
-        image_id = data['image_id']
-        flavor_id = data['flavor_id']
-        command = data['command']
-        cluster_size = data['cluster_size']
-        scaler_plugin = data["scaler_plugin"]
-        actuator = data["actuator"]
-        metric_source = data["metric_source"]
-        application_type = data["application_type"]
-        check_interval = data["check_interval"]
-        trigger_down = data["trigger_down"]
-        trigger_up = data["trigger_up"]
-        min_cap = data["min_cap"]
-        max_cap = data["max_cap"]
-        actuation_size = data["actuation_size"]
-        metric_rounding = data["metric_rounding"]
-
-        print "Creating instance(s)..."
-        # Create a number of instances to run the application based on
-        # cluster_size, image_id, flavor_id and public_key
-        instances = self._create_instances(nova, connector, image_id,
-                                           flavor_id, public_key, cluster_size)
-
-        # Retrive network information from all instances when they
-        # reach ACTIVE state
-        instances_nets = []
-        for instance_id in instances:
-            instance_status = connector.get_instance_status(nova, instance_id)
-            while instance_status != 'ACTIVE':
-                instance_status = connector.get_instance_status(nova,
-                                                                instance_id)
-
-            instance_ips = connector.get_instance_networks(nova, instance_id)
-            instances_nets.append(instance_ips)
-            time.sleep(5)
-
-        time.sleep(30)
-
-        # Verify if ssh is available for any ip address for each instance
-        instances_ips = []
-        for instance_net in instances_nets:
-            for net_ip_list in instance_net.values():
-                for ip in net_ip_list:
-
-                    attempts = 2
-                    while attempts != -1:
-                        try:
-                            conn = self._get_ssh_connection(ip, api.key_path)
-                            instances_ips.append(ip)
-                            attempts = -1
-                        except NoValidConnectionsError:
-                            print "Fail to connect "
-                            attempts -= 1
-                            time.sleep(30)
-
-        # Execute application and start monitor and scaler service.
-        applications = []
-        for ip in instances_ips:
-            # TODO Check if exec_command will work without blocking execution
-            conn = self._get_ssh_connection(ip, api.key_path)
-            conn.exec_command(command)
-
-            print "Executing commands into the instance"
-
-            app_id = "app-os-generic"+str(uuid.uuid4())[:8]
-            applications.append(app_id)
-
-            monitor_plugin = app_name_ref
-            info_plugin = {
-                "host_ip": ip,
-                "log_path": log_path,
-                "expected_time": reference_value
-            }
-            collect_period = 1
-            try:
-                monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
-                                      info_plugin, collect_period)
-                scaler.start_scaler(api.controller_url, app_id, scaler_plugin,
-                                    actuator, application_type,
-                                    metric_source, instances, check_interval,
-                                    trigger_down, trigger_up, min_cap, max_cap,
-                                    actuation_size, metric_rounding)
-            except Exception as e:
-                print e.message
-
-        # Stop monitor and scaler when each application stops
-        application_running = True
-        while application_running:
-            status_instances = []
+        try:
+            user = api.user
+            password = api.password
+            project_id = api.project_id
+            auth_ip = api.auth_ip
+            domain = api.domain
+            public_key = api.public_key
+    
+            connector = os_connector.OpenStackConnector(LOG)
+            nova = connector.get_nova_client(user, password, project_id, auth_ip,
+                                             domain)
+            app_name_ref = data['plugin']
+            reference_value = data['reference_value']
+            log_path = data['log_path']
+            image_id = data['image_id']
+            flavor_id = data['flavor_id']
+            command = data['command']
+            cluster_size = data['cluster_size']
+            scaler_plugin = data["scaler_plugin"]
+            actuator = data["actuator"]
+            metric_source = data["metric_source"]
+            application_type = data["application_type"]
+            check_interval = data["check_interval"]
+            trigger_down = data["trigger_down"]
+            trigger_up = data["trigger_up"]
+            min_cap = data["min_cap"]
+            max_cap = data["max_cap"]
+            actuation_size = data["actuation_size"]
+            metric_rounding = data["metric_rounding"]
+    
+            LOG.log("Creating instance(s)")
+            print "Creating instance(s)..."
+            
+            # Create a number of instances to run the application based on
+            # cluster_size, image_id, flavor_id and public_key
+            instances = self._create_instances(nova, connector, image_id,
+                                               flavor_id, public_key, cluster_size)
+    
+            LOG.log("Waiting until instance become active...")
+            print "Waiting until instance become active..."
+    
+            # Retrive network information from all instances when they
+            # reach ACTIVE state
+            instances_nets = []
             for instance_id in instances:
-                status = connector.get_instance_status(nova, instance_id)
-                status_instances.append(status)
-
-            if self._instances_down(status_instances):
-                application_running = False
-                print "Stop application"
-                for app_id in applications:
-                    monitor.stop_monitor(api.monitor_url, app_id)
-                    scaler.stop_scaler(api.controller_url, app_id)
-
-            else:
-                instance_status = []
-
-        print "Application Finished"
-
-        # Remove instances after the end of all applications
-        self._remove_instances(nova, connector, instances)
+                instance_status = connector.get_instance_status(nova, instance_id)
+                while instance_status != 'ACTIVE':
+                    instance_status = connector.get_instance_status(nova,
+                                                                    instance_id)
+    
+                instance_ips = connector.get_instance_networks(nova, instance_id)
+                instances_nets.append(instance_ips)
+                time.sleep(5)
+    
+            time.sleep(30)
+    
+            LOG.log("Checking if ssh is available")
+            print "Checking if ssh is available"
+    
+            # Verify if ssh is available for any ip address for each instance
+            instances_ips = []
+            for instance_net in instances_nets:
+                for net_ip_list in instance_net.values():
+                    for ip in net_ip_list:
+    
+                        attempts = 2
+                        while attempts != -1:
+                            try:
+                                conn = self._get_ssh_connection(ip, api.key_path)
+                                instances_ips.append(ip)
+                                attempts = -1
+                            except Exception as e:
+                                LOG.log("Fail to connect")
+                                LOG.log(e.message)
+                                
+                                print "Fail to connect"
+                                print e.message
+                                
+                                attempts -= 1
+                                time.sleep(30)
+    
+            # Execute application and start monitor and scaler service.
+            applications = []
+            for ip in instances_ips:
+                
+                LOG.log("Executing commands into the instance")
+                print "Executing commands into the instance"
+                # TODO Check if exec_command will work without blocking execution
+                conn = self._get_ssh_connection(ip, api.key_path)
+                conn.exec_command(command)
+    
+                app_id = "app-os-generic"+str(uuid.uuid4())[:8]
+                applications.append(app_id)
+    
+                monitor_plugin = app_name_ref
+                info_plugin = {
+                    "host_ip": ip,
+                    "log_path": log_path,
+                    "expected_time": reference_value
+                }
+                collect_period = 1
+                try:
+                    LOG.log("Starting monitoring")
+                    print "Starting monitoring"
+                    
+                    monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
+                                          info_plugin, collect_period)
+                    
+                    LOG.log("Starting scaling")
+                    print "Starting scaling"
+                    
+                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin,
+                                        actuator, application_type,
+                                        metric_source, instances, check_interval,
+                                        trigger_down, trigger_up, min_cap, max_cap,
+                                        actuation_size, metric_rounding)
+                except Exception as e:
+                    LOG.log(e.message)
+                    print e.message
+    
+            # Stop monitor and scaler when each application stops
+            application_running = True
+            while application_running:
+                status_instances = []
+                for instance_id in instances:
+                    status = connector.get_instance_status(nova, instance_id)
+                    status_instances.append(status)
+    
+                if self._instances_down(status_instances):
+                    application_running = False
+                    
+                    LOG.log("Application finished")
+                    print "Application finished"
+                    
+                    for app_id in applications:
+                        LOG.log("Stopping monitoring")
+                        print "Stopping monitoring"    
+                        
+                        monitor.stop_monitor(api.monitor_url, app_id)
+                        
+                        LOG.log("Stopping scaling")
+                        print "Stopping scaling"
+                        
+                        scaler.stop_scaler(api.controller_url, app_id)
+    
+                else:
+                    instance_status = []
+                    
+                time.sleep(2)
+    
+            LOG.log("Removing instances...")
+            print "Removing instances..."    
+    
+            # Remove instances after the end of all applications
+            self._remove_instances(nova, connector, instances)
+        except Exception as e:
+            LOG.log(e.message)
+            print e.message
 
     def _create_instances(self, nova, connector, image_id, flavor_id,
                           public_key, count):
