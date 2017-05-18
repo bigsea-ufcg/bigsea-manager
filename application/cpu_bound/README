@@ -1,0 +1,14 @@
+This program starts a given amount of threads to execute factorial operations, waiting some time between them. 
+The input value for these operations and the amount of time waited them is randomized.
+
+How to use
+
+run.sh n_threads sleep_min sleep_max factorial_n_min factorial_n_max n_executions stress_trigger n_stress output_file
+
+n_threads: number of threads started to execute factorial operations. Each thread executes n_executions factorial operations.
+sleep_min: the minimum wait time between executions, in seconds.
+sleep_max: the maximum wait time between executions, in seconds.
+factorial_n_min: the lowest value used as argument to the factorial function.
+factorial_n_max: the highest value used as argument to the factorial function.
+n_executions: number of executions of factorial performed by each thread.
+stress_trigger: If the random function used to decide the next input for the factorial function returns a value greater than strigger_trigger, the thread will use n_stress as input for the factorial function.
