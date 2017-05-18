@@ -73,6 +73,9 @@ class OpenStackGenericProvider(base.PluginInterface):
             actuation_size = data["actuation_size"]
             metric_rounding = data["metric_rounding"]
     
+            app_start_time = 0
+            app_end_time = 0
+            
             LOG.log("Creating instance(s)")
             print "Creating instance(s)..."
             
@@ -132,6 +135,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                 print "Executing commands into the instance"
                 # TODO Check if exec_command will work without blocking execution
                 conn = self._get_ssh_connection(ip, api.key_path)
+                
+                app_start_time = time.time()
                 conn.exec_command(command)
     
                 app_id = "app-os-generic"+str(uuid.uuid4())[:8]
@@ -171,6 +176,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                     status = connector.get_instance_status(nova, instance_id)
                     status_instances.append(status)
     
+                app_end_time = time.time()
+                
                 if self._instances_down(status_instances):
                     application_running = False
                     
@@ -198,6 +205,8 @@ class OpenStackGenericProvider(base.PluginInterface):
     
             # Remove instances after the end of all applications
             self._remove_instances(nova, connector, instances)
+            
+            return app_end_time - app_start_time  
         except Exception as e:
             LOG.log(e.message)
             print e.message

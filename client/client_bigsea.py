@@ -50,3 +50,4 @@ body_log = body.copy()
 print "Passing arguments as", body_log
 r = requests.post(url, headers=headers, data=json.dumps(body))
 print r.content
+print r.text
