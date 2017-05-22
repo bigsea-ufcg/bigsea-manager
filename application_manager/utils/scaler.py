@@ -12,44 +12,24 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import json
 import requests
 
-
-def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, 
-                     check_interval, trigger_down, trigger_up, min_cap, max_cap,
-                     actuation_size, metric_rounding):
+def _get_scaler_data(scaler_plugin, workers, scaling_parameters):
+    scaling_parameters["instances"] = workers
     start_scaling_dict = {
         'plugin': scaler_plugin,
-        'actuator': actuator,
-        'metric_source': metric_source,
-        'instances': workers,
-        'check_interval': check_interval,
-        'trigger_down': trigger_down,
-        'trigger_up': trigger_up,
-        'min_cap': min_cap,
-        'max_cap': max_cap,
-        'actuation_size': actuation_size,
-        'metric_rounding': metric_rounding
+        'scaling_parameters': scaling_parameters
     }
     start_scaler_body = json.dumps(start_scaling_dict)
 
-    return start_scaler_body
+    return start_scaler_body    
 
-
-def start_scaler(controller_url, app_id, scaler_plugin, actuator, 
-                 metric_source, workers, check_interval, trigger_down,
-                 trigger_up, min_cap, max_cap, actuation_size,
-                 metric_rounding):
-
+def start_scaler(controller_url, app_id, scaler_plugin, workers, scaling_parameters):
     request_url = controller_url + '/scaler/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_scaler_data(scaler_plugin, actuator, metric_source, workers,
-                            check_interval, trigger_down, trigger_up, min_cap,
-                            max_cap, actuation_size, metric_rounding)
+    data = _get_scaler_data(scaler_plugin, workers, scaling_parameters)
     requests.post(request_url, data=data, headers=headers)
-
 
 def stop_scaler(controller_url, app_id):
     stop_scaling_url = controller_url + '/scaler/stop_scaling/' + app_id

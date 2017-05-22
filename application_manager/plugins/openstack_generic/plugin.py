@@ -62,15 +62,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             command = data['command']
             cluster_size = data['cluster_size']
             scaler_plugin = data["scaler_plugin"]
-            actuator = data["actuator"]
-            metric_source = data["metric_source"]
-            check_interval = data["check_interval"]
-            trigger_down = data["trigger_down"]
-            trigger_up = data["trigger_up"]
-            min_cap = data["min_cap"]
-            max_cap = data["max_cap"]
-            actuation_size = data["actuation_size"]
-            metric_rounding = data["metric_rounding"]
+            scaling_parameters = data["scaling_parameters"]
     
             app_start_time = 0
             app_end_time = 0
@@ -158,10 +150,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                     LOG.log("Starting scaling")
                     print "Starting scaling"
                     
-                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin, actuator, 
-                                        metric_source, instances, check_interval,
-                                        trigger_down, trigger_up, min_cap, max_cap,
-                                        actuation_size, metric_rounding)
+                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin, instances, 
+                                        scaling_parameters)
                 except Exception as e:
                     LOG.log(e.message)
                     print e.message
