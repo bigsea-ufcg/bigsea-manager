@@ -23,7 +23,6 @@ log_path = config.get('plugin', 'log_path')
 scaler_plugin = config.get('scaler', 'scaler_plugin')
 actuator = config.get('scaler', 'actuator')
 metric_source = config.get('scaler', 'metric_source')
-application_type = config.get('scaler', 'application_type')
 check_interval = config.getint('scaler', 'check_interval')
 trigger_down = config.getint('scaler', 'trigger_down')
 trigger_up = config.getint('scaler', 'trigger_up')
@@ -35,8 +34,7 @@ metric_rounding = config.getint('scaler', 'metric_rounding')
 
 headers = {'Content-Type': 'application/json'}
 body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
-	actuator=actuator, metric_source=metric_source,
-	application_type=application_type, check_interval=check_interval,
+	actuator=actuator, metric_source=metric_source, check_interval=check_interval,
 	trigger_down=trigger_down, trigger_up=trigger_up,
 	min_cap=min_cap, max_cap=max_cap, actuation_size=actuation_size,
         metric_rounding=metric_rounding, cluster_size=cluster_size,

@@ -64,7 +64,6 @@ class OpenStackGenericProvider(base.PluginInterface):
             scaler_plugin = data["scaler_plugin"]
             actuator = data["actuator"]
             metric_source = data["metric_source"]
-            application_type = data["application_type"]
             check_interval = data["check_interval"]
             trigger_down = data["trigger_down"]
             trigger_up = data["trigger_up"]
@@ -159,8 +158,7 @@ class OpenStackGenericProvider(base.PluginInterface):
                     LOG.log("Starting scaling")
                     print "Starting scaling"
                     
-                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin,
-                                        actuator, application_type,
+                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin, actuator, 
                                         metric_source, instances, check_interval,
                                         trigger_down, trigger_up, min_cap, max_cap,
                                         actuation_size, metric_rounding)

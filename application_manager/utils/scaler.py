@@ -17,13 +17,12 @@ import json
 import requests
 
 
-def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, application_type,
+def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, 
                      check_interval, trigger_down, trigger_up, min_cap, max_cap,
                      actuation_size, metric_rounding):
     start_scaling_dict = {
         'plugin': scaler_plugin,
         'actuator': actuator,
-	'application_type': application_type,
         'metric_source': metric_source,
         'instances': workers,
         'check_interval': check_interval,
@@ -39,14 +38,14 @@ def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, applicatio
     return start_scaler_body
 
 
-def start_scaler(controller_url, app_id, scaler_plugin, actuator, application_type,
+def start_scaler(controller_url, app_id, scaler_plugin, actuator, 
                  metric_source, workers, check_interval, trigger_down,
                  trigger_up, min_cap, max_cap, actuation_size,
                  metric_rounding):
 
     request_url = controller_url + '/scaler/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_scaler_data(scaler_plugin, actuator, metric_source, workers, application_type,
+    data = _get_scaler_data(scaler_plugin, actuator, metric_source, workers,
                             check_interval, trigger_down, trigger_up, min_cap,
                             max_cap, actuation_size, metric_rounding)
     requests.post(request_url, data=data, headers=headers)
