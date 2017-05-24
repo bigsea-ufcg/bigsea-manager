@@ -51,13 +51,13 @@ elif scaler_plugin == 'proportional':
 	min_cap = config.getint('scaler', 'min_cap')
 	max_cap = config.getint('scaler', 'max_cap')
 	metric_rounding = config.getint('scaler', 'metric_rounding')
-	heuristic_name = config.get('scaler', 'heuristic-name')
+	heuristic_name = config.get('scaler', 'heuristic_name')
 	
 	heuristic_options = {}
-	heuristic_options['heuristic-name'] = heuristic_name
+	heuristic_options['heuristic_name'] = heuristic_name
 	
-	if heuristic_name == "error-proportional":
-		conservative_factor = config.getint('scaler', 'conservative-factor')
+	if heuristic_name == "error_proportional":
+		conservative_factor = config.getint('scaler', 'conservative_factor')
 		heuristic_options['conservative_factor'] = conservative_factor
 
 	scaling_parameters = {'check_interval':check_interval,
