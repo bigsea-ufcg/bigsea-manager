@@ -22,6 +22,7 @@ from application_manager.openstack import utils as os_utils
 from application_manager.plugins import base
 from application_manager.service import api
 from application_manager.utils import monitor
+from application_manager.utils import optimizer
 from application_manager.utils import scaler
 from application_manager.utils import spark
 from application_manager.utils.logger import Log
@@ -94,11 +95,15 @@ class SaharaProvider(base.PluginInterface):
                                              auth_ip, domain)
 
         # Cluster Creation
-
+        tmp_flavor = 'large.m1'
         # monitor.get_host_cpu_utilization()
+        cluster_size = optimizer.get_initial_size(api.optimizer_url,
+                                                  plugin_app,
+                                                  tmp_flavor,
+                                                  req_cluster_size)
+        #cluster_size = int(req_cluster_size)
+        #cluster_size = _get_new_cluster_size(hosts)ah
 
-        cluster_size = int(req_cluster_size)
-        #cluster_size = _get_new_cluster_size(hosts)
 
         cluster_id = connector.get_existing_cluster_by_size(sahara,
                                                             cluster_size)

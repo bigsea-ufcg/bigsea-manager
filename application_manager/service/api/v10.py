@@ -17,6 +17,7 @@ from application_manager.plugins import base as plugin_base
 from application_manager.service import api
 from application_manager.service.horizontal_scale import r_predictor
 from application_manager.utils.logger import Log
+from application_manager.utils import authorizer
 
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
@@ -24,6 +25,10 @@ predictor = r_predictor.RPredictor()
 
 
 def execute(data):
+    authorization = authorizer.get_authorization(api.authorization_url, data)
+    if authorization.status_code == 401:
+        return 'Not authorized'
+
     project_id = api.project_id
     auth_ip = api.auth_ip
     user = api.user
