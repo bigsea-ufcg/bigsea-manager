@@ -50,7 +50,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             auth_ip = api.auth_ip
             domain = api.domain
             public_key = api.public_key
-    
+
             connector = os_connector.OpenStackConnector(LOG)
             nova = connector.get_nova_client(user, password, project_id, auth_ip,
                                              domain)
@@ -72,45 +72,47 @@ class OpenStackGenericProvider(base.PluginInterface):
             max_cap = data["max_cap"]
             actuation_size = data["actuation_size"]
             metric_rounding = data["metric_rounding"]
-    
+
             app_start_time = 0
             app_end_time = 0
-            
+
             LOG.log("Creating instance(s)")
             print "Creating instance(s)..."
-            
+
             # Create a number of instances to run the application based on
             # cluster_size, image_id, flavor_id and public_key
             instances = self._create_instances(nova, connector, image_id,
                                                flavor_id, public_key, cluster_size)
-    
+
             LOG.log("Waiting until instance become active...")
             print "Waiting until instance become active..."
-    
+
             # Retrive network information from all instances when they
             # reach ACTIVE state
             instances_nets = []
             for instance_id in instances:
-                instance_status = connector.get_instance_status(nova, instance_id)
+                instance_status = connector.get_instance_status(nova,
+                                                                instance_id)
                 while instance_status != 'ACTIVE':
                     instance_status = connector.get_instance_status(nova,
                                                                     instance_id)
-    
-                instance_ips = connector.get_instance_networks(nova, instance_id)
+
+                instance_ips = connector.get_instance_networks(nova,
+                                                               instance_id)
                 instances_nets.append(instance_ips)
                 time.sleep(5)
-    
+
             time.sleep(30)
-    
+
             LOG.log("Checking if ssh is available")
             print "Checking if ssh is available"
-    
+
             # Verify if ssh is available for any ip address for each instance
             instances_ips = []
             for instance_net in instances_nets:
                 for net_ip_list in instance_net.values():
                     for ip in net_ip_list:
-    
+
                         attempts = 2
                         while attempts != -1:
                             try:
@@ -120,28 +122,27 @@ class OpenStackGenericProvider(base.PluginInterface):
                             except Exception as e:
                                 LOG.log("Fail to connect")
                                 LOG.log(e.message)
-                                
+
                                 print "Fail to connect"
                                 print e.message
-                                
+
                                 attempts -= 1
                                 time.sleep(30)
-    
+
             # Execute application and start monitor and scaler service.
             applications = []
             for ip in instances_ips:
-                
                 LOG.log("Executing commands into the instance")
                 print "Executing commands into the instance"
                 # TODO Check if exec_command will work without blocking execution
                 conn = self._get_ssh_connection(ip, api.key_path)
-                
+
                 app_start_time = time.time()
                 conn.exec_command(command)
-    
+
                 app_id = "app-os-generic"+str(uuid.uuid4())[:8]
                 applications.append(app_id)
-    
+
                 monitor_plugin = app_name_ref
                 info_plugin = {
                     "host_ip": ip,
@@ -152,22 +153,25 @@ class OpenStackGenericProvider(base.PluginInterface):
                 try:
                     LOG.log("Starting monitoring")
                     print "Starting monitoring"
-                    
-                    monitor.start_monitor(api.monitor_url, app_id, monitor_plugin,
-                                          info_plugin, collect_period)
-                    
+
+                    monitor.start_monitor(api.monitor_url, app_id,
+                                          monitor_plugin, info_plugin,
+                                          collect_period)
+
                     LOG.log("Starting scaling")
                     print "Starting scaling"
-                    
-                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin,
-                                        actuator, application_type,
-                                        metric_source, instances, check_interval,
-                                        trigger_down, trigger_up, min_cap, max_cap,
-                                        actuation_size, metric_rounding)
+
+                    scaler.start_scaler(api.controller_url, app_id,
+                                        scaler_plugin, actuator,
+                                        application_type, metric_source,
+                                        instances, check_interval,
+                                        trigger_down, trigger_up, min_cap,
+                                        max_cap, actuation_size,
+                                        metric_rounding)
                 except Exception as e:
                     LOG.log(e.message)
                     print e.message
-    
+
             # Stop monitor and scaler when each application stops
             application_running = True
             while application_running:
@@ -175,37 +179,33 @@ class OpenStackGenericProvider(base.PluginInterface):
                 for instance_id in instances:
                     status = connector.get_instance_status(nova, instance_id)
                     status_instances.append(status)
-    
+
                 app_end_time = time.time()
-                
+
                 if self._instances_down(status_instances):
                     application_running = False
-                    
                     LOG.log("Application finished")
                     print "Application finished"
-                    
+
                     for app_id in applications:
                         LOG.log("Stopping monitoring")
                         print "Stopping monitoring"    
-                        
+
                         monitor.stop_monitor(api.monitor_url, app_id)
-                        
                         LOG.log("Stopping scaling")
                         print "Stopping scaling"
-                        
                         scaler.stop_scaler(api.controller_url, app_id)
-    
                 else:
                     instance_status = []
-                    
+
                 time.sleep(2)
-    
+
             LOG.log("Removing instances...")
-            print "Removing instances..."    
-    
+            print "Removing instances..."
+
             # Remove instances after the end of all applications
             self._remove_instances(nova, connector, instances)
-            
+
             return app_end_time - app_start_time  
         except Exception as e:
             LOG.log(e.message)
