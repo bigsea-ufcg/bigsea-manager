@@ -62,6 +62,7 @@ class OpenStackGenericProvider(base.PluginInterface):
             command = data['command']
             cluster_size = data['cluster_size']
             scaler_plugin = data["scaler_plugin"]
+<<<<<<< HEAD
             actuator = data["actuator"]
             metric_source = data["metric_source"]
             application_type = data["application_type"]
@@ -73,6 +74,10 @@ class OpenStackGenericProvider(base.PluginInterface):
             actuation_size = data["actuation_size"]
             metric_rounding = data["metric_rounding"]
 
+=======
+            scaling_parameters = data["scaling_parameters"]
+    
+>>>>>>> 8d01aa4b0d2fe802406dc9fac8a1a7d7ca43f2f6
             app_start_time = 0
             app_end_time = 0
 
@@ -160,6 +165,7 @@ class OpenStackGenericProvider(base.PluginInterface):
 
                     LOG.log("Starting scaling")
                     print "Starting scaling"
+<<<<<<< HEAD
 
                     scaler.start_scaler(api.controller_url, app_id,
                                         scaler_plugin, actuator,
@@ -168,6 +174,11 @@ class OpenStackGenericProvider(base.PluginInterface):
                                         trigger_down, trigger_up, min_cap,
                                         max_cap, actuation_size,
                                         metric_rounding)
+=======
+                    
+                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin, instances, 
+                                        scaling_parameters)
+>>>>>>> 8d01aa4b0d2fe802406dc9fac8a1a7d7ca43f2f6
                 except Exception as e:
                     LOG.log(e.message)
                     print e.message
