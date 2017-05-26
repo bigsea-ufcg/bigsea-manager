@@ -25,6 +25,7 @@ from application_manager.service import api
 from application_manager.utils.logger import *
 
 LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
+application_time_log = Log("Application_time", "application_time.log")
 configure_logging()
 
 class OpenStackGenericProvider(base.PluginInterface):
@@ -127,8 +128,8 @@ class OpenStackGenericProvider(base.PluginInterface):
                 # TODO Check if exec_command will work without blocking execution
                 conn = self._get_ssh_connection(ip, api.key_path)
                 
-                app_start_time = time.time()
                 conn.exec_command(command)
+                app_start_time = time.time()
     
                 app_id = "app-os-generic"+str(uuid.uuid4())[:8]
                 applications.append(app_id)
@@ -164,10 +165,10 @@ class OpenStackGenericProvider(base.PluginInterface):
                     status = connector.get_instance_status(nova, instance_id)
                     status_instances.append(status)
     
-                app_end_time = time.time()
                 
                 if self._instances_down(status_instances):
                     application_running = False
+                    app_end_time = time.time()
                     
                     LOG.log("Application finished")
                     print "Application finished"
@@ -190,11 +191,14 @@ class OpenStackGenericProvider(base.PluginInterface):
     
             LOG.log("Removing instances...")
             print "Removing instances..."    
-    
+            
             # Remove instances after the end of all applications
             self._remove_instances(nova, connector, instances)
             
-            return app_end_time - app_start_time  
+            application_time = app_end_time - app_start_time 
+            application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time, application_time))
+            return str(application_time)
+        
         except Exception as e:
             LOG.log(e.message)
             print e.message
