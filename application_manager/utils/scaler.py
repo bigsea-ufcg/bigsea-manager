@@ -36,3 +36,19 @@ def stop_scaler(controller_url, app_id):
     stop_scaling_url = controller_url + '/scaler/stop_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     requests.post(stop_scaling_url, headers=headers)
+
+def _get_setup_environment_data(instances, cap, actuator):
+    data = {}
+    
+    for instance in instances:
+        data[instance] = cap    
+    data['plugin'] = actuator
+    
+    return json.dumps(data)
+    
+def setup_environment(controller_url, instances, cap, actuator):
+    setup_enviroment_url = controller_url + '/scaler/setup_env'
+    headers = {'Content-type': 'application/json'}
+    data = _get_setup_environment_data(instances, cap, actuator)
+    requests.post(setup_enviroment_url, data=data, headers=headers)
+    

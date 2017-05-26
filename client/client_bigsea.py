@@ -27,6 +27,7 @@ scaling_parameters = {}
 
 if scaler_plugin == 'progress-error':	
 	actuator = config.get('scaler', 'actuator')
+	starting_cap = config.get('scaler', 'starting_cap')
 	metric_source = config.get('scaler', 'metric_source')
 	check_interval = config.getint('scaler', 'check_interval')
 	trigger_down = config.getint('scaler', 'trigger_down')
@@ -67,8 +68,8 @@ elif scaler_plugin == 'proportional':
 
 headers = {'Content-Type': 'application/json'}
 body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
-	scaling_parameters=scaling_parameters, cluster_size=cluster_size,
-	flavor_id=flavor_id, image_id=image_id, command=command,
+	scaling_parameters=scaling_parameters, actuator=actuator, cluster_size=cluster_size,
+	starting_cap=starting_cap, flavor_id=flavor_id, image_id=image_id, command=command,
 	reference_value=reference_value, log_path=log_path)
 
 url = "http://%s:%s/manager/execute" % (manager_ip, manager_port)

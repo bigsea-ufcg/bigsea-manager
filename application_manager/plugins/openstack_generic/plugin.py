@@ -64,6 +64,8 @@ class OpenStackGenericProvider(base.PluginInterface):
             cluster_size = data['cluster_size']
             scaler_plugin = data["scaler_plugin"]
             scaling_parameters = data["scaling_parameters"]
+            actuator = data["actuator"]
+            starting_cap = data["starting_cap"]
     
             app_start_time = 0
             app_end_time = 0
@@ -120,6 +122,11 @@ class OpenStackGenericProvider(base.PluginInterface):
 
                                 attempts -= 1
                                 time.sleep(30)
+            
+            LOG.log("Setting up environment")
+            print "Setting up environment"
+            # Set CPU cap in all instances
+            scaler.setup_environment(api.controller_url, instances, starting_cap, actuator)
 
             # Execute application and start monitor and scaler service.
             applications = []
