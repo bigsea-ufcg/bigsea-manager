@@ -18,7 +18,7 @@ from application_manager.utils import shell
 class RPredictor():
     def __init__(self):
         self.sh_handler = shell.Shell()
-        self.pred_file = 'preditor.R'
+        self.pred_file = 'predictor.R'
         self.pred_unit = 2  # 2 horizons of 15 minutes = 30 minutes prediction
 
     def get_title(self):

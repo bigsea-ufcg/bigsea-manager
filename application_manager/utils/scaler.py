@@ -25,7 +25,8 @@ def _get_scaler_data(scaler_plugin, workers, scaling_parameters):
 
     return start_scaler_body    
 
-def start_scaler(controller_url, app_id, scaler_plugin, workers, scaling_parameters):
+def start_scaler(controller_url, app_id, scaler_plugin, workers,
+                 scaling_parameters):
     request_url = controller_url + '/scaler/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     data = _get_scaler_data(scaler_plugin, workers, scaling_parameters)
