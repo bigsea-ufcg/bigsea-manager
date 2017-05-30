@@ -207,6 +207,9 @@ class OpenStackGenericProvider(base.PluginInterface):
             # Remove instances after the end of all applications
             self._remove_instances(nova, connector, instances)
             
+            LOG.log("Finished application execution")
+            print "Finished application execution"
+            
             application_time = app_end_time - app_start_time 
             application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time, application_time))
             return str(application_time)
