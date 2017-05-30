@@ -23,6 +23,7 @@ from application_manager.utils import monitor
 from application_manager.utils import scaler
 from application_manager.service import api
 from application_manager.utils.logger import *
+import threading
 
 LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
 application_time_log = Log("Application_time", "application_time.log")
@@ -44,6 +45,10 @@ class OpenStackGenericProvider(base.PluginInterface):
         }
 
     def execute(self, data):
+        handling_thread = threading.Thread(target=self.start_application, args=(data,))
+        handling_thread.start()
+
+    def start_application(self, data):
         try:
             user = api.user
             password = api.password
