@@ -78,17 +78,8 @@ class SaharaProvider(base.PluginInterface):
         image_id = data['image_id']
 
         #### SCALER PARAMETERS ###
-        scaler_plugin = data['scaler_plugin']
-        actuator = data['actuator']
-        metric_source = data['metric_source']
-        # workers = data['workers']
-        check_interval = data['check_interval']
-        trigger_down = data['trigger_down']
-        trigger_up = data['trigger_up']
-        min_cap = data['min_cap']
-        max_cap = data['max_cap']
-        actuation_size = data['actuation_size']
-        metric_rounding = data['metric_rounding']
+        scaling_parameters = data["scaling_parameters"]
+        scaler_plugin = data["scaler_plugin"]
 
         connector = os_connector.OpenStackConnector(LOG)
 
@@ -154,16 +145,21 @@ class SaharaProvider(base.PluginInterface):
             info_plugin = {"spark_submisson_url": "http://" + master,
                            "expected_time": expected_time}
 
+            LOG.log("Starting monitor")
             monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
                                   info_plugin, collect_period)
-            # scaler.start_scaler(api.controller_url, spark_app_id,
-            #                     scaler_plugin, actuator, metric_source,
-            #                     workers_id, check_interval, trigger_down,
-            #                     trigger_up, min_cap, max_cap,
-            #                     actuation_size, metric_rounding)
+            LOG.log("Stopping monitoring")
+            scaler.start_scaler(api.controller_url, spark_app_id,
+                                scaler_plugin, workers_id, scaling_parameters)
 
             job_status = self._wait_on_job_finish(sahara, connector,
                                                   job_exec_id)
+
+            LOG.log("Stopping monitor")
+            monitor.stop_monitor(api.monitor_url, spark_app_id)
+            LOG.log("Stopping scaler")
+            scaler.stop_scaler(api.controller_url, spark_app_id)
+
         else:
             raise ex.ClusterNotCreatedException()
 
