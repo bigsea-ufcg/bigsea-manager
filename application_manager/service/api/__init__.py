@@ -25,10 +25,6 @@ authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').split(',')
 
-hosts = config.get('openstack', 'hosts').split(' ')
-net_id = config.get('openstack', 'net_id')
-master_ng = config.get('openstack', 'master_ng')
-slave_ng = config.get('openstack', 'slave_ng')
 
 public_key = config.get('credentials', 'public_key')
 key_path = config.get('credentials', 'key_path')

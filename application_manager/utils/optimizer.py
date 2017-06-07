@@ -33,4 +33,8 @@ def get_initial_size(optimizer_url, application_type, flavor, cluster_size):
     request_url = optimizer_url + '/initial_cluster_size/'
     headers = {'Content-type': 'application/json'}
     data = _get_optimizer_data(application_type, flavor, cluster_size)
-    requests.post(request_url, data=data, headers=headers)
+    request = requests.post(request_url, data=data, headers=headers)
+    data = request.json()
+
+    return data['initial_size']
+

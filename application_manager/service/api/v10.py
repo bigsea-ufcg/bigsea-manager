@@ -29,21 +29,21 @@ def execute(data):
     if authorization.status_code == 401:
         return 'Not authorized'
 
-    project_id = api.project_id
-    auth_ip = api.auth_ip
-    user = api.user
-    password = api.password
-    domain = api.domain
-    public_key = api.public_key
-    #TODO it must be optional. These informations are necessary only when
+    # project_id = api.project_id
+    # auth_ip = api.auth_ip
+    # user = api.user
+    # password = api.password
+    # domain = api.domain
+    # public_key = api.public_key
+    # TODO it must be optional. These informations are necessary only when
     # sahara plugin is loaded. Maybe the informations below also are necessary
     # only for specific plugins and this should be considered too.
 
-    net_id = api.net_id
-    hosts = api.hosts
-    master_ng = api.master_ng
-    slave_ng = api.slave_ng
-    
+    # net_id = api.net_id
+    # hosts = api.hosts
+    # master_ng = api.master_ng
+    # slave_ng = api.slave_ng
+
     plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
     plugin.execute(data)
 

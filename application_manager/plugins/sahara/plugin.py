@@ -51,17 +51,18 @@ class SaharaProvider(base.PluginInterface):
         user = api.user
         password = api.password
         project_id = api.project_id
-        auth_ip = api.project_id
+        auth_ip = api.auth_ip
         domain = api.domain
         public_key = api.public_key
-        net_id = api.net_id
-        master_ng = api.master_ng
-        slave_ng = api.slave_ng
+
+        net_id = data['net_id']
+        master_ng = data['master_ng']
+        slave_ng = data['slave_ng']
 
         plugin = data['openstack_plugin']
         job_type = data['job_type']
         version = data['version']
-        cluster_id = data['cluster_id']
+        # cluster_id = data['cluster_id']
         opportunistic = data['opportunistic']
         req_cluster_size = data['cluster_size']
         args = data['args']
@@ -69,8 +70,8 @@ class SaharaProvider(base.PluginInterface):
         job_template_name = data['job_template_name']
         job_binary_name = data['job_binary_name']
         job_binary_url = data['job_binary_url']
-        input_ds_id = data['input_datasource_id']
-        output_ds_id = data['output_datasource_id']
+        # input_ds_id = data['input_datasource_id']
+        # output_ds_id = data['output_datasource_id']
         plugin_app = data['plugin']
         expected_time = data['expected_time']
         collect_period = data['collect_period']
@@ -101,14 +102,14 @@ class SaharaProvider(base.PluginInterface):
                                                   plugin_app,
                                                   tmp_flavor,
                                                   req_cluster_size)
-        #cluster_size = int(req_cluster_size)
-        #cluster_size = _get_new_cluster_size(hosts)ah
 
-
+        # cluster_size = int(req_cluster_size)
+        # cluster_size = _get_new_cluster_size(hosts)ah
         cluster_id = connector.get_existing_cluster_by_size(sahara,
                                                             cluster_size)
 
         if not cluster_id:
+
             cluster_id = self._create_cluster(sahara, connector,  opportunistic,
                                               cluster_size, public_key, net_id,
                                               image_id, plugin, version,
@@ -127,7 +128,7 @@ class SaharaProvider(base.PluginInterface):
             for worker in workers:
                 workers_id.append(worker['instance_id'])
 
-            # Preping job
+            # Preparing job
             job_binary_id = self._get_job_binary_id(sahara, connector,
                                                     job_binary_name,
                                                     job_binary_url, user,
@@ -153,17 +154,13 @@ class SaharaProvider(base.PluginInterface):
             info_plugin = {"spark_submisson_url": "http://" + master,
                            "expected_time": expected_time}
 
-            try:
-                print 'monitoring'
-                monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
-                                      info_plugin, collect_period)
-                scaler.start_scaler(api.controller_url, spark_app_id,
-                                    scaler_plugin, actuator, metric_source,
-                                    workers_id, check_interval, trigger_down,
-                                    trigger_up, min_cap, max_cap,
-                                    actuation_size, metric_rounding)
-            except Exception as e:
-                print e.message
+            monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
+                                  info_plugin, collect_period)
+            # scaler.start_scaler(api.controller_url, spark_app_id,
+            #                     scaler_plugin, actuator, metric_source,
+            #                     workers_id, check_interval, trigger_down,
+            #                     trigger_up, min_cap, max_cap,
+            #                     actuation_size, metric_rounding)
 
             job_status = self._wait_on_job_finish(sahara, connector,
                                                   job_exec_id)
@@ -194,7 +191,7 @@ class SaharaProvider(base.PluginInterface):
 
     def _wait_on_job_finish(self, sahara, connector, job_exec_id):
         completed = failed = False
-        start_time = datetime.now()
+        start_time = datetime.datetime.now()
         while not (completed or failed):
             job_status = connector.get_job_status(sahara, job_exec_id)
             LOG.log("%s | Sahara current job status: %s" %
@@ -202,7 +199,7 @@ class SaharaProvider(base.PluginInterface):
             if job_status == 'RUNNING':
                 time.sleep(10)
 
-            current_time = datetime.now()
+            current_time = datetime.datetime.now()
             current_job_time = (current_time - start_time).total_seconds()
             if current_job_time > 3600:
                 LOG.log("Job execution killed due to inactivity")
@@ -211,7 +208,7 @@ class SaharaProvider(base.PluginInterface):
             completed = connector.is_job_completed(job_status)
             failed = connector.is_job_failed(job_status)
 
-        end_time = datetime.now()
+        end_time = datetime.datetime.now()
         total_time = end_time - start_time
         LOG.log("%s | Sahara job took %s seconds to execute" %
                 (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
@@ -234,10 +231,15 @@ class SaharaProvider(base.PluginInterface):
                 raise SaharaAPIException('Could not create clusters')
 
         else:
-            LOG.log('Runnning job with non opportunistic cluster')
-            cluster_id = connector.create_cluster(sahara, cluster_size,
-                                                  public_key, net_id, image_id,
-                                                  plugin, version, master_ng,
-                                                  slave_ng)
+            try:
+
+                LOG.log('Runnning job with non opportunistic cluster')
+                cluster_id = connector.create_cluster(sahara, cluster_size,
+                                                      public_key, net_id, image_id,
+                                                      plugin, version, master_ng,
+                                                      slave_ng)
+            except Exception as e:
+                print e.message
+
         return cluster_id
 

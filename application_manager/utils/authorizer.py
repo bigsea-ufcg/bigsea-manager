@@ -24,7 +24,7 @@ def _get_authorization_data(data):
 
 
 def get_authorization(optimizer_url, data):
-    request_url = optimizer_url + '/initial_cluster_size/'
+    request_url = optimizer_url + '/run_application/'
     headers = {'Content-type': 'application/json'}
     data = _get_authorization_data(data)
-    requests.post(request_url, data=data, headers=headers)
+    return requests.post(request_url, data=data, headers=headers)

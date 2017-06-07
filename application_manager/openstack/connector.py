@@ -39,7 +39,10 @@ class OpenStackConnector(object):
                            project_id=project_id,
                            user_domain_name=domain)
         ses = session.Session(auth=auth)
-
+        print auth_ip + ':5000/v3'
+        print username
+        print password
+        print project_id
         return saharaclient('1.1', session=ses)
 
     def get_nova_client(self, username, password, project_id, auth_ip,
@@ -148,24 +151,42 @@ class OpenStackConnector(object):
                                             output_ds_id, configs=configs)
 
     def create_cluster(self, sahara, cluster_size, public_key, net_id,
-                       image_id, plugin, version, master, slave):
+                       image_id, plugin, version, master_ng_id, slave_ng_id):
         size = cluster_size
         cluster_template = self.get_cluster_template(sahara, size, plugin)
-        if cluster_template:
+
+        if cluster_template is not None:
             cluster = self._create_cluster(sahara, cluster_template.id,
                                            public_key, net_id, image_id,
                                            plugin, version)
         else:
             cluster_temp_name = "cluster-osahara-" + self.get_timestamp_raw()
             node_groups = []
-            node_groups.append(master)
-            node_groups.append(slave)
+
+            # Extracting node_group_template name using id
+            master_ng_name = sahara.node_group_templates.list(
+                search_opts={'id': master_ng_id})[0].name
+            # This scheme is needed as parameter to create a new cluster
+            master_ng_scheme = {"count": 1,
+                                "node_group_template_id": master_ng_id,
+                                "name": master_ng_name}
+
+            # Extracting node_group_template name using id
+            slave_ng_name = sahara.node_group_templates.list(
+                search_opts={'id': master_ng_id})[0].name
+            # This scheme is needed as parameter to create a new cluster
+            slave_ng_scheme = {"count": cluster_size,
+                               "node_group_template_id": master_ng_id,
+                               "name": slave_ng_name}
+
+            node_groups.append(master_ng_scheme)
+            node_groups.append(slave_ng_scheme)
             cluster_template = self.create_cluster_template(sahara,
                                                             cluster_temp_name,
                                                             plugin, version,
                                                             node_groups)
 
-            cluster = self._create_cluster(saharaclient, cluster_template,
+            cluster = self._create_cluster(sahara, cluster_template,
                                            public_key, net_id, image_id,
                                            plugin, version)
 
@@ -263,6 +284,7 @@ class OpenStackConnector(object):
 
         cluster_template = sahara.cluster_templates.create(
             name, plugin_name, plugin_version, node_groups=node_groups)
+        print '>>>>>>>>>>>>> %s' % cluster_template.__dict__
         return cluster_template['id']
 
     def create_job_template(self, sahara, name, job_type, mains=None,

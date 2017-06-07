@@ -23,7 +23,7 @@ def _get_scaler_data(scaler_plugin, actuator, metric_source, workers, applicatio
     start_scaling_dict = {
         'plugin': scaler_plugin,
         'actuator': actuator,
-	'application_type': application_type,
+        'application_type': application_type,
         'metric_source': metric_source,
         'instances': workers,
         'check_interval': check_interval,
