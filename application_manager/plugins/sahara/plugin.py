@@ -30,7 +30,7 @@ from application_manager.utils.logger import Log
 from saharaclient.api.base import APIException as SaharaAPIException
 
 LOG = Log("SaharaPlugin", "sahara_plugin.log")
-
+application_time_log = Log("Application_time", "application_time.log")
 
 class SaharaProvider(base.PluginInterface):
 
@@ -94,6 +94,8 @@ class SaharaProvider(base.PluginInterface):
                                                   tmp_flavor,
                                                   req_cluster_size)
 
+        LOG.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"), str(cluster_size)))
+
         # cluster_size = int(req_cluster_size)
         # cluster_size = _get_new_cluster_size(hosts)ah
         cluster_id = connector.get_existing_cluster_by_size(sahara,
@@ -101,10 +103,14 @@ class SaharaProvider(base.PluginInterface):
 
         if not cluster_id:
 
+            LOG.log("%s | Cluster does not exist. Creating cluster...", (time.strftime("%H:%M:%S")))
+
             cluster_id = self._create_cluster(sahara, connector,  opportunistic,
                                               cluster_size, public_key, net_id,
                                               image_id, plugin, version,
                                               master_ng, slave_ng)
+
+        LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"), cluster_id))
 
         if cluster_id:
             master = connector.get_master_instance(sahara,
@@ -131,11 +137,18 @@ class SaharaProvider(base.PluginInterface):
                                                         job_template_name,
                                                         job_type)
 
+            LOG.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
+
             # Running job
             job = connector.create_job_execution(sahara, job_template_id,
                                                  cluster_id, configs=configs)
 
+            LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
+
             spark_app_id = spark.get_running_app(master)
+            
+            LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
+            
             job_exec_id = job.id
             job_status = connector.get_job_status(sahara, job_exec_id)
 
@@ -145,22 +158,23 @@ class SaharaProvider(base.PluginInterface):
             info_plugin = {"spark_submisson_url": "http://" + master,
                            "expected_time": expected_time}
 
-            LOG.log("Starting monitor")
+            LOG.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
             monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
                                   info_plugin, collect_period)
-            LOG.log("Stopping monitoring")
+            LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
             scaler.start_scaler(api.controller_url, spark_app_id,
                                 scaler_plugin, workers_id, scaling_parameters)
 
             job_status = self._wait_on_job_finish(sahara, connector,
-                                                  job_exec_id)
+                                                  job_exec_id, spark_app_id)
 
-            LOG.log("Stopping monitor")
+            LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
             monitor.stop_monitor(api.monitor_url, spark_app_id)
-            LOG.log("Stopping scaler")
+            LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
             scaler.stop_scaler(api.controller_url, spark_app_id)
 
         else:
+            #FIXME: exception type
             raise ex.ClusterNotCreatedException()
 
         return job_status
@@ -185,7 +199,7 @@ class SaharaProvider(base.PluginInterface):
                                                             job_type, mains)
         return job_template_id
 
-    def _wait_on_job_finish(self, sahara, connector, job_exec_id):
+    def _wait_on_job_finish(self, sahara, connector, job_exec_id, spark_app_id):
         completed = failed = False
         start_time = datetime.datetime.now()
         while not (completed or failed):
@@ -193,7 +207,7 @@ class SaharaProvider(base.PluginInterface):
             LOG.log("%s | Sahara current job status: %s" %
                     (time.strftime("%H:%M:%S"), job_status))
             if job_status == 'RUNNING':
-                time.sleep(10)
+                time.sleep(2)
 
             current_time = datetime.datetime.now()
             current_job_time = (current_time - start_time).total_seconds()
@@ -206,6 +220,7 @@ class SaharaProvider(base.PluginInterface):
 
         end_time = datetime.datetime.now()
         total_time = end_time - start_time
+        application_time_log.log("%s|%.0f|%.0f" % (spark_app_id, float(start_time), float(total_time)))
         LOG.log("%s | Sahara job took %s seconds to execute" %
                 (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
 
