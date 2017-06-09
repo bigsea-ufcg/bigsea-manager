@@ -48,136 +48,140 @@ class SaharaProvider(base.PluginInterface):
         }
 
     def execute(self, data):
-        user = api.user
-        password = api.password
-        project_id = api.project_id
-        auth_ip = api.auth_ip
-        domain = api.domain
-        public_key = api.public_key
-
-        net_id = data['net_id']
-        master_ng = data['master_ng']
-        slave_ng = data['slave_ng']
-
-        plugin = data['openstack_plugin']
-        job_type = data['job_type']
-        version = data['version']
-        # cluster_id = data['cluster_id']
-        opportunistic = data['opportunistic']
-        req_cluster_size = data['cluster_size']
-        args = data['args']
-        main_class = data['main_class']
-        job_template_name = data['job_template_name']
-        job_binary_name = data['job_binary_name']
-        job_binary_url = data['job_binary_url']
-        # input_ds_id = data['input_datasource_id']
-        # output_ds_id = data['output_datasource_id']
-        plugin_app = data['plugin']
-        expected_time = data['expected_time']
-        collect_period = data['collect_period']
-        image_id = data['image_id']
-
-        #### SCALER PARAMETERS ###
-        scaling_parameters = data["scaling_parameters"]
-        scaler_plugin = data["scaler_plugin"]
-
-        connector = os_connector.OpenStackConnector(LOG)
-
-        sahara = connector.get_sahara_client(user, password, project_id,
-                                             auth_ip, domain)
-
-        # Cluster Creation
-        tmp_flavor = 'large.m1'
-        # monitor.get_host_cpu_utilization()
-        cluster_size = optimizer.get_initial_size(api.optimizer_url,
-                                                  plugin_app,
-                                                  tmp_flavor,
-                                                  req_cluster_size)
-
-        LOG.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"), str(cluster_size)))
-
-        # cluster_size = int(req_cluster_size)
-        # cluster_size = _get_new_cluster_size(hosts)ah
-        cluster_id = connector.get_existing_cluster_by_size(sahara,
-                                                            cluster_size)
-
-        if not cluster_id:
-
-            LOG.log("%s | Cluster does not exist. Creating cluster...", (time.strftime("%H:%M:%S")))
-
-            cluster_id = self._create_cluster(sahara, connector,  opportunistic,
-                                              cluster_size, public_key, net_id,
-                                              image_id, plugin, version,
-                                              master_ng, slave_ng)
-
-        LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"), cluster_id))
-
-        if cluster_id:
-            master = connector.get_master_instance(sahara,
-                                                   cluster_id)['internal_ip']
-            LOG.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"), master))
-
-            configs = os_utils.get_job_config(connector, plugin, cluster_size,
-                                              user, password, args, main_class)
-
-            workers = connector.get_worker_instances(sahara, cluster_id)
-            workers_id = []
-            for worker in workers:
-                workers_id.append(worker['instance_id'])
-
-            # Preparing job
-            job_binary_id = self._get_job_binary_id(sahara, connector,
-                                                    job_binary_name,
-                                                    job_binary_url, user,
-                                                    password)
-
-            mains = [job_binary_id]
-            job_template_id = self._get_job_template_id(sahara, connector,
-                                                        mains,
-                                                        job_template_name,
-                                                        job_type)
-
-            LOG.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
-
-            # Running job
-            job = connector.create_job_execution(sahara, job_template_id,
-                                                 cluster_id, configs=configs)
-
-            LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
-
-            spark_app_id = spark.get_running_app(master)
-            
-            LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
-            
-            job_exec_id = job.id
-            job_status = connector.get_job_status(sahara, job_exec_id)
-
-            LOG.log("%s | Sahara job status: %s" %
-                    (time.strftime("%H:%M:%S"), job_status))
-
-            info_plugin = {"spark_submisson_url": "http://" + master,
-                           "expected_time": expected_time}
-
-            LOG.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
-            monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
-                                  info_plugin, collect_period)
-            LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-            scaler.start_scaler(api.controller_url, spark_app_id,
-                                scaler_plugin, workers_id, scaling_parameters)
-
-            job_status = self._wait_on_job_finish(sahara, connector,
-                                                  job_exec_id, spark_app_id)
-
-            LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
-            monitor.stop_monitor(api.monitor_url, spark_app_id)
-            LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
-            scaler.stop_scaler(api.controller_url, spark_app_id)
-
-        else:
-            #FIXME: exception type
-            raise ex.ClusterNotCreatedException()
-
-        return job_status
+        try:
+            user = api.user
+            password = api.password
+            project_id = api.project_id
+            auth_ip = api.auth_ip
+            domain = api.domain
+            public_key = api.public_key
+    
+            net_id = data['net_id']
+            master_ng = data['master_ng']
+            slave_ng = data['slave_ng']
+    
+            plugin = data['openstack_plugin']
+            job_type = data['job_type']
+            version = data['version']
+            # cluster_id = data['cluster_id']
+            opportunistic = data['opportunistic']
+            req_cluster_size = data['cluster_size']
+            args = data['args']
+            main_class = data['main_class']
+            job_template_name = data['job_template_name']
+            job_binary_name = data['job_binary_name']
+            job_binary_url = data['job_binary_url']
+            # input_ds_id = data['input_datasource_id']
+            # output_ds_id = data['output_datasource_id']
+            plugin_app = data['plugin']
+            expected_time = data['expected_time']
+            collect_period = data['collect_period']
+            image_id = data['image_id']
+    
+            #### SCALER PARAMETERS ###
+            scaling_parameters = data["scaling_parameters"]
+            scaler_plugin = data["scaler_plugin"]
+    
+            connector = os_connector.OpenStackConnector(LOG)
+    
+            sahara = connector.get_sahara_client(user, password, project_id,
+                                                 auth_ip, domain)
+    
+            # Cluster Creation
+            tmp_flavor = 'large.m1'
+            # monitor.get_host_cpu_utilization()
+            cluster_size = optimizer.get_initial_size(api.optimizer_url,
+                                                      plugin_app,
+                                                      tmp_flavor,
+                                                      req_cluster_size)
+    
+            LOG.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"), str(cluster_size)))
+    
+            # cluster_size = int(req_cluster_size)
+            # cluster_size = _get_new_cluster_size(hosts)ah
+            cluster_id = connector.get_existing_cluster_by_size(sahara,
+                                                                cluster_size)
+    
+            if not cluster_id:
+    
+                LOG.log("%s | Cluster does not exist. Creating cluster...", (time.strftime("%H:%M:%S")))
+    
+                cluster_id = self._create_cluster(sahara, connector,  opportunistic,
+                                                  cluster_size, public_key, net_id,
+                                                  image_id, plugin, version,
+                                                  master_ng, slave_ng)
+    
+            LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"), cluster_id))
+    
+            if cluster_id:
+                master = connector.get_master_instance(sahara,
+                                                       cluster_id)['internal_ip']
+                LOG.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"), master))
+    
+                configs = os_utils.get_job_config(connector, plugin, cluster_size,
+                                                  user, password, args, main_class)
+    
+                workers = connector.get_worker_instances(sahara, cluster_id)
+                workers_id = []
+                for worker in workers:
+                    workers_id.append(worker['instance_id'])
+    
+                # Preparing job
+                job_binary_id = self._get_job_binary_id(sahara, connector,
+                                                        job_binary_name,
+                                                        job_binary_url, user,
+                                                        password)
+    
+                mains = [job_binary_id]
+                job_template_id = self._get_job_template_id(sahara, connector,
+                                                            mains,
+                                                            job_template_name,
+                                                            job_type)
+    
+                LOG.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
+    
+                # Running job
+                job = connector.create_job_execution(sahara, job_template_id,
+                                                     cluster_id, configs=configs)
+    
+                LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
+    
+                spark_app_id = spark.get_running_app(master)
+                
+                LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
+                
+                job_exec_id = job.id
+                job_status = connector.get_job_status(sahara, job_exec_id)
+    
+                LOG.log("%s | Sahara job status: %s" %
+                        (time.strftime("%H:%M:%S"), job_status))
+    
+                info_plugin = {"spark_submisson_url": "http://" + master,
+                               "expected_time": expected_time}
+    
+                LOG.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+                monitor.start_monitor(api.monitor_url, spark_app_id, plugin_app,
+                                      info_plugin, collect_period)
+                LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+                scaler.start_scaler(api.controller_url, spark_app_id,
+                                    scaler_plugin, workers_id, scaling_parameters)
+    
+                job_status = self._wait_on_job_finish(sahara, connector,
+                                                      job_exec_id, spark_app_id)
+    
+                LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
+                monitor.stop_monitor(api.monitor_url, spark_app_id)
+                LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
+                scaler.stop_scaler(api.controller_url, spark_app_id)
+    
+            else:
+                #FIXME: exception type
+                raise ex.ClusterNotCreatedException()
+    
+            return job_status
+        
+        except Exception as e:
+            LOG.log(str(e))
 
     def _get_job_binary_id(self, sahara, connector, job_binary_name,
                            job_binary_url, user, password):
@@ -220,7 +224,8 @@ class SaharaProvider(base.PluginInterface):
 
         end_time = datetime.datetime.now()
         total_time = end_time - start_time
-        application_time_log.log("%s|%.0f|%.0f" % (spark_app_id, float(start_time), float(total_time)))
+        application_time_log.log("%s|%.0f|%.0f" % (spark_app_id, float(time.mktime(start_time.timetuple())),
+                                                float(total_time.total_seconds())))
         LOG.log("%s | Sahara job took %s seconds to execute" %
                 (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
 
