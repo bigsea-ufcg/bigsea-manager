@@ -38,6 +38,8 @@ cluster_id = config.get('plugin', 'cluster_id')
 slave_ng = config.get('plugin', 'slave_ng')
 master_ng = config.get('plugin', 'master_ng')
 net_id = config.get('plugin', 'net_id')
+actuator = config.get('scaler', 'actuator')
+starting_cap = config.get('scaler', 'starting_cap')
 
 scaler_plugin = config.get('scaler', 'scaler_plugin')
 scaling_parameters = {}
@@ -57,6 +59,7 @@ scaling_parameters['metric_rounding'] = config.getint('scaler', 'metric_rounding
 headers = {'Content-Type': 'application/json'}
 body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
 	scaling_parameters=scaling_parameters, cluster_size=cluster_size,
+	starting_cap=starting_cap, actuator=actuator,
 	flavor_id=flavor_id, image_id=image_id, opportunistic=opportunistic,
 	args=args, main_class=main_class, job_template_name=job_template_name,
 	job_binary_name=job_binary_name, job_binary_url=job_binary_url,

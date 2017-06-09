@@ -77,6 +77,8 @@ class SaharaProvider(base.PluginInterface):
             expected_time = data['expected_time']
             collect_period = data['collect_period']
             image_id = data['image_id']
+            starting_cap = data['starting_cap']
+            actuator = data["actuator"]
     
             #### SCALER PARAMETERS ###
             scaling_parameters = data["scaling_parameters"]
@@ -125,6 +127,8 @@ class SaharaProvider(base.PluginInterface):
                 workers_id = []
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
+
+                scaler.setup_environment(api.controller_url, workers_id, starting_cap, actuator)
     
                 # Preparing job
                 job_binary_id = self._get_job_binary_id(sahara, connector,
