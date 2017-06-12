@@ -114,7 +114,7 @@ class SaharaProvider(base.PluginInterface):
     
             if not cluster_id:
     
-                LOG.log("%s | Cluster does not exist. Creating cluster...", (time.strftime("%H:%M:%S")))
+                LOG.log("%s | Cluster does not exist. Creating cluster..." % (time.strftime("%H:%M:%S")))
     
                 cluster_id = self._create_cluster(sahara, connector,  opportunistic,
                                                   cluster_size, public_key, net_id,
