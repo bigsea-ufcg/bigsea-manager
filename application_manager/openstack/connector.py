@@ -159,6 +159,7 @@ class OpenStackConnector(object):
             cluster = self._create_cluster(sahara, cluster_template.id,
                                            public_key, net_id, image_id,
                                            plugin, version)
+	
         else:
             cluster_temp_name = "cluster-osahara-" + self.get_timestamp_raw()
             node_groups = []
@@ -173,10 +174,10 @@ class OpenStackConnector(object):
 
             # Extracting node_group_template name using id
             slave_ng_name = sahara.node_group_templates.list(
-                search_opts={'id': master_ng_id})[0].name
+                search_opts={'id': slave_ng_id})[0].name
             # This scheme is needed as parameter to create a new cluster
             slave_ng_scheme = {"count": cluster_size,
-                               "node_group_template_id": master_ng_id,
+                               "node_group_template_id": slave_ng_id,
                                "name": slave_ng_name}
 
             node_groups.append(master_ng_scheme)
