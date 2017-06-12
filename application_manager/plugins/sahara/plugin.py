@@ -15,6 +15,7 @@
 
 import datetime
 import time
+import threading
 
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
@@ -48,6 +49,10 @@ class SaharaProvider(base.PluginInterface):
         }
 
     def execute(self, data):
+        handling_thread = threading.Thread(target=self.start_application, args=(data,))
+        handling_thread.start()
+
+    def start_application(self, data):
         try:
             user = api.user
             password = api.password
