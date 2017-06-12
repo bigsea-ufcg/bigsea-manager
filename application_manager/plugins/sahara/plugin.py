@@ -188,6 +188,10 @@ class SaharaProvider(base.PluginInterface):
                 scaler.stop_scaler(api.controller_url, spark_app_id)
     
                 self.spark_applications_ids.remove(spark_app_id)
+                
+                LOG.log("Finished application execution")
+                print "Finished application execution"
+                
             else:
                 #FIXME: exception type
                 raise ex.ClusterNotCreatedException()
