@@ -35,6 +35,9 @@ application_time_log = Log("Application_time", "application_time.log")
 
 class SaharaProvider(base.PluginInterface):
 
+    def __init__(self):
+        self.spark_applications_ids = []
+
     def get_title(self):
         return 'OpenStack Sahara'
 
@@ -155,7 +158,8 @@ class SaharaProvider(base.PluginInterface):
     
                 LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
     
-                spark_app_id = spark.get_running_app(master)
+                spark_app_id = spark.get_running_app(master, self.spark_applications_ids)
+                self.spark_applications_ids.append(spark_app_id)
                 
                 LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
                 
@@ -183,6 +187,7 @@ class SaharaProvider(base.PluginInterface):
                 LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
                 scaler.stop_scaler(api.controller_url, spark_app_id)
     
+                self.spark_applications_ids.remove(spark_app_id)
             else:
                 #FIXME: exception type
                 raise ex.ClusterNotCreatedException()

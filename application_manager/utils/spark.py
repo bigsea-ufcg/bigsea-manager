@@ -16,7 +16,7 @@
 import requests
 import time
 
-def get_running_app(submission_url):
+def get_running_app(submission_url, applications):
     app_id = None
     while app_id is None:
         try:
@@ -24,8 +24,9 @@ def get_running_app(submission_url):
                                    ':4040/api/v1/applications?status=running')
             for app in all_app.json():
                 if app['attempts'][0]['completed'] == False:
-                    print app['id']
-                    return app['id']#, app['name']
+                    if app['id'] not in applications:
+                        print app['id']
+                        return app['id']#, app['name']
         except:
             # self.logger.log("No application found")
             pass
