@@ -6,7 +6,7 @@ import sys
 
 
 config = ConfigParser.RawConfigParser()
-__file__ = os.path.join(sys.path[0], 'client_bigsea.cfg')
+__file__ = os.path.join(sys.path[0], 'os_generic.cfg')
 config.read(__file__)
 
 
