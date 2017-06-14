@@ -10,3 +10,5 @@ manager.cfg.lsd
 .*swp
 *.log
 *.pem
+.project
+.pydevproject
