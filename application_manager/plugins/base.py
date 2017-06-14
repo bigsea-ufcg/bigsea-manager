@@ -21,6 +21,7 @@ from stevedore import enabled
 from application_manager import exceptions as ex
 from application_manager.service import api
 from application_manager.utils.logger import Log
+import threading
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
@@ -118,3 +119,30 @@ def setup_plugins():
     global PLUGINS
     PLUGINS = PluginManager()
 
+
+
+@six.add_metaclass(abc.ABCMeta)
+class ApplicationExecutor(object):
+
+    @required    
+    def get_application_state(self):
+        pass
+    
+    @required
+    def update_application_state(self, state):
+        pass
+
+class GenericApplicationExecutor(ApplicationExecutor):
+    
+    def __init__(self):
+        self.application_state = "None"
+        self.state_lock = threading.RLock()
+    
+    def get_application_state(self):
+        with self.state_lock:
+            state = self.application_state
+        return state
+    
+    def update_application_state(self, state):
+        with self.state_lock:
+            self.application_state = state 

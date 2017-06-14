@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import uuid
-
 import paramiko
 import time
+import threading
 
 from application_manager.openstack import connector as os_connector
 from application_manager.plugins import base
@@ -23,33 +23,19 @@ from application_manager.utils import monitor
 from application_manager.utils import scaler
 from application_manager.service import api
 from application_manager.utils.logger import *
-import threading
+from application_manager.utils.ids import ID_Generator
+from application_manager.plugins.base import GenericApplicationExecutor
 
 LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
 application_time_log = Log("Application_time", "application_time.log")
 configure_logging()
 
-class OpenStackGenericProvider(base.PluginInterface):
-
-    def get_title(self):
-        return 'OpenStack Generic Plugin'
-
-    def get_description(self):
-        return 'Plugin that allows utilization of generic OpenStack to run jobs'
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'title': self.get_title(),
-            'description': self.get_description(),
-        }
-
-    def execute(self, data):
-        handling_thread = threading.Thread(target=self.start_application, args=(data,))
-        handling_thread.start()
+class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
     def start_application(self, data):
         try:
+            self.update_application_state("Running")
+            
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -212,11 +198,13 @@ class OpenStackGenericProvider(base.PluginInterface):
             
             application_time = app_end_time - app_start_time 
             application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time, application_time))
+            self.update_application_state("OK")
             return str(application_time)
 
         except Exception as e:
             LOG.log(e.message)
             print e.message
+            self.update_application_state("Error")
 
     def _create_instances(self, nova, connector, image_id, flavor_id,
                           public_key, count):
@@ -244,3 +232,29 @@ class OpenStackGenericProvider(base.PluginInterface):
 
     def _all_same(self, items):
         return all(x == items[-1] for x in items)
+
+
+class OpenStackGenericProvider(base.PluginInterface):
+
+    def __init__(self):
+        self.id_generator = ID_Generator()
+
+    def get_title(self):
+        return 'OpenStack Generic Plugin'
+
+    def get_description(self):
+        return 'Plugin that allows utilization of generic OpenStack to run jobs'
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'title': self.get_title(),
+            'description': self.get_description(),
+        }
+
+    def execute(self, data):
+        executor = OpenStackApplicationExecutor()
+        handling_thread = threading.Thread(target=executor.start_application, args=(data,))
+        handling_thread.start()
+        app_id = "os-generic-" + self.id_generator.get_ID()
+        return (app_id, executor)

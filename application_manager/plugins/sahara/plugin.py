@@ -26,37 +26,22 @@ from application_manager.utils import monitor
 from application_manager.utils import optimizer
 from application_manager.utils import scaler
 from application_manager.utils import spark
-from application_manager.utils.logger import Log
+from application_manager.utils.logger import Log, configure_logging
 
 from saharaclient.api.base import APIException as SaharaAPIException
+from application_manager.utils.ids import ID_Generator
+from application_manager.plugins.base import GenericApplicationExecutor
 
 LOG = Log("SaharaPlugin", "sahara_plugin.log")
 application_time_log = Log("Application_time", "application_time.log")
+configure_logging()
 
-class SaharaProvider(base.PluginInterface):
-
-    def __init__(self):
-        self.spark_applications_ids = []
-
-    def get_title(self):
-        return 'OpenStack Sahara'
-
-    def get_description(self):
-        return 'Plugin that allows utilization of Sahara to run jobs'
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'title': self.get_title(),
-            'description': self.get_description(),
-        }
-
-    def execute(self, data):
-        handling_thread = threading.Thread(target=self.start_application, args=(data,))
-        handling_thread.start()
-
-    def start_application(self, data):
+class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
+    
+    def start_application(self, data, spark_applications_ids):
         try:
+            self.update_application_state("Running")
+            
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -158,8 +143,8 @@ class SaharaProvider(base.PluginInterface):
     
                 LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
     
-                spark_app_id = spark.get_running_app(master, self.spark_applications_ids)
-                self.spark_applications_ids.append(spark_app_id)
+                spark_app_id = spark.get_running_app(master, spark_applications_ids)
+                spark_applications_ids.append(spark_app_id)
                 
                 LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
                 
@@ -187,18 +172,25 @@ class SaharaProvider(base.PluginInterface):
                 LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
                 scaler.stop_scaler(api.controller_url, spark_app_id)
     
-                self.spark_applications_ids.remove(spark_app_id)
+                spark_applications_ids.remove(spark_app_id)
                 
                 LOG.log("Finished application execution")
                 print "Finished application execution"
                 
+                if connector.is_job_completed(job_status):
+                    self.update_application_state("OK")
+                
+                if connector.is_job_failed(job_status):
+                    self.update_application_state("Error")
             else:
                 #FIXME: exception type
+                self.update_application_state("Error")
                 raise ex.ClusterNotCreatedException()
     
             return job_status
         
         except Exception as e:
+            self.update_application_state("Error")
             LOG.log(str(e))
 
     def _get_job_binary_id(self, sahara, connector, job_binary_name,
@@ -277,3 +269,28 @@ class SaharaProvider(base.PluginInterface):
 
         return cluster_id
 
+class SaharaProvider(base.PluginInterface):
+
+    def __init__(self):
+        self.spark_applications_ids = []
+        self.id_generator = ID_Generator()
+
+    def get_title(self):
+        return 'OpenStack Sahara'
+
+    def get_description(self):
+        return 'Plugin that allows utilization of Sahara to run jobs'
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'title': self.get_title(),
+            'description': self.get_description(),
+        }
+
+    def execute(self, data):
+        executor = OpenStackSparkApplicationExecutor()
+        handling_thread = threading.Thread(target=executor.start_application, args=(data, self.spark_applications_ids))
+        handling_thread.start()
+        app_id = "os-spark-" + self.id_generator.get_ID()
+        return (app_id, executor)

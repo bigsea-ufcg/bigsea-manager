@@ -23,6 +23,7 @@ from application_manager.utils import authorizer
 LOG = Log("Servicev10", "serviceAPIv10.log")
 predictor = r_predictor.RPredictor()
 
+applications = {}
 
 def execute(data):
     authorization = authorizer.get_authorization(api.authorization_url, data)
@@ -30,9 +31,10 @@ def execute(data):
         return 'Not authorized'
 
     plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
-    plugin.execute(data)
+    app_id, executor = plugin.execute(data)
+    applications[app_id] = executor
 
-    return 'ok'
+    return app_id
 
 def stop_app(app_id):
     # stop monitoring
@@ -42,6 +44,15 @@ def stop_app(app_id):
 
 def kill_all():
     return 'ok'
+
+def status():
+    application_status = {} 
+    
+    for app_id in applications.keys():
+        stat = applications[app_id].get_application_state()
+        application_status[app_id] = stat
+    
+    return application_status
 
 
 def _get_new_cluster_size(hosts):

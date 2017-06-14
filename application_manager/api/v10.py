@@ -34,3 +34,7 @@ def stop_app(app_id, data):
 def kill_all(data):
     api.kill_all()
     return u.render()
+
+@rest.post('/manager/status')
+def status(data):
+    return u.render(api.status())
