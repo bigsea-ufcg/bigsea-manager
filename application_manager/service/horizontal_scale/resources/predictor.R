@@ -13,11 +13,11 @@ file = args[1]
 predict_horizon = as.numeric(args[2])
 
 create_predict            <- function(ddf, mean, h) {
-  
+
     graph <- data.frame(cpu_value=double(),
                         mem_value=double(),
                         type=character())
-  
+
     cpu_predicts_df <- data.frame(meanf=double(),
                                   naive=double(),
                                   rwf=double(),
@@ -83,29 +83,29 @@ create_predict            <- function(ddf, mean, h) {
 }
 
 get_num_machines          <- function(cpu, mem, host_cpu, host_mem) {
-  
-  pred_cores       <- cpu
-  pred_mem         <- host_mem * mem
-  
+
+  free_cores       <- host_cpu * (1 - cpu) * 4
+  free_mem         <- host_mem * (1 - mem) * 1
+
   hadoop_cores     <- 2
   hadoop_mem       <- 4
-  
-  limit_cores      <- host_cpu - 4 #(1 / (VCPUS * host$cpu))
-  limit_mem        <- host_mem - (host_mem * 0.3)
-  
-  num_maq_cores    <- floor((limit_cores - pred_cores)/hadoop_cores)
-  num_maq_mem      <- floor((limit_mem - pred_mem)/hadoop_mem)
 
-  num_maq          <- max(0,min(min(num_maq_cores),min(num_maq_mem)))
-  
-  return(num_maq)  
+  limit_cores      <- (host_cpu * 4) - 2 #(1 / (VCPUS * host$cpu))
+  limit_mem        <- host_mem - (host_mem * 0.1)
+
+  num_maq_cores    <- floor(min(limit_cores, free_cores)/hadoop_cores)
+  num_maq_mem      <- floor(min(limit_mem, free_mem)/hadoop_mem)
+
+  num_maq          <- max(0,min(num_maq_cores,num_maq_mem))
+
+  return(num_maq)
 }
 
 create_num_maq_df         <- function(ddf, host_cpu, host_mem, h) {
-  
+
   num_maq <- data.frame(num_maq=integer(),
                         type=character())
-  
+
     cpu_meanf_value = ddf$cpu_value[1]
     cpu_naive_value = ddf$cpu_value[2]
     cpu_rwf_value   = ddf$cpu_value[3]
@@ -142,8 +142,6 @@ create_num_maq_df         <- function(ddf, host_cpu, host_mem, h) {
 instance                  <- read.csv(file, header=FALSE, sep=';',
                                       col.names=c("cpu_util","mem_util",
                                                   "cpu_tot","mem_tot","index"))
-
-
 host_cpu                  <- instance$cpu_tot[1]
 host_mem                  <- instance$mem_tot[1]
 
@@ -161,4 +159,3 @@ num_maq                   <- create_num_maq_df(predict, host_cpu, host_mem,
                                                predict_horizon)
 
 cat(min(num_maq$num_maq))
-cat('\n')
