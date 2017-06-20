@@ -34,6 +34,7 @@ from application_manager.plugins.base import GenericApplicationExecutor
 
 LOG = Log("SaharaPlugin", "sahara_plugin.log")
 application_time_log = Log("Application_time", "application_time.log")
+instances_log = Log("Instances", "instances.log")
 configure_logging()
 
 class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
@@ -149,6 +150,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
                 
                 job_exec_id = job.id
+                
+                for worker_id in workers_id:
+                    instances_log.log("%s|%s" % (job_exec_id, worker_id))
+                
                 job_status = connector.get_job_status(sahara, job_exec_id)
     
                 LOG.log("%s | Sahara job status: %s" %
