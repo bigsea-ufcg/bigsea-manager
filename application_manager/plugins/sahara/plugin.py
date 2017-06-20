@@ -152,7 +152,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 job_exec_id = job.id
                 
                 for worker_id in workers_id:
-                    instances_log.log("%s|%s" % (job_exec_id, worker_id))
+                    instances_log.log("%s|%s" % (spark_app_id, worker_id))
                 
                 job_status = connector.get_job_status(sahara, job_exec_id)
     
