@@ -170,7 +170,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                     scaler_plugin, workers_id, scaling_parameters)
     
                 job_status = self._wait_on_job_finish(sahara, connector,
-                                                      job_exec_id, spark_app_id)
+                                                      job_exec_id, app_id)
     
                 LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
                 monitor.stop_monitor(api.monitor_url, spark_app_id)
