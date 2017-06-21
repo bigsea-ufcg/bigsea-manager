@@ -18,13 +18,13 @@ import json
 import requests
 
 
-def _get_authorization_data(data):
-    authorization_body = json.dumps(data)
-    return authorization_body
+def _get_authorization_data(username, password):
+    authorization_data = "user=%s&pwd=%s" % (username, password)
+    return authorization_data
 
 
-def get_authorization(optimizer_url, data):
-    request_url = optimizer_url + '/run_application/'
-    headers = {'Content-type': 'application/json'}
-    data = _get_authorization_data(data)
-    return requests.post(request_url, data=data, headers=headers)
+def get_authorization(authorizer_url, username, password):
+    data = _get_authorization_data(username, password)
+    r = requests.post(authorizer_url, data=data)
+    content_dict = eval(r.content.replace("true", "True").replace("false", "False"))
+    return content_dict
