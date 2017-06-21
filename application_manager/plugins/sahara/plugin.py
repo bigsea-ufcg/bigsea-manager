@@ -39,7 +39,7 @@ configure_logging()
 
 class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     
-    def start_application(self, data, spark_applications_ids):
+    def start_application(self, data, spark_applications_ids, app_id):
         try:
             self.update_application_state("Running")
             
@@ -152,7 +152,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 job_exec_id = job.id
                 
                 for worker_id in workers_id:
-                    instances_log.log("%s|%s" % (spark_app_id, worker_id))
+                    instances_log.log("%s|%s" % (app_id, worker_id))
                 
                 job_status = connector.get_job_status(sahara, job_exec_id)
     
@@ -295,7 +295,7 @@ class SaharaProvider(base.PluginInterface):
 
     def execute(self, data):
         executor = OpenStackSparkApplicationExecutor()
-        handling_thread = threading.Thread(target=executor.start_application, args=(data, self.spark_applications_ids))
-        handling_thread.start()
         app_id = "os-spark-" + self.id_generator.get_ID()
+        handling_thread = threading.Thread(target=executor.start_application, args=(data, self.spark_applications_ids, app_id))
+        handling_thread.start()
         return (app_id, executor)
