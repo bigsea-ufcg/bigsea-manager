@@ -39,6 +39,29 @@ configure_logging()
 
 class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     
+    def __init__(self):
+        self.application_state = "None"
+        self.state_lock = threading.RLock()
+        self.application_time = -1
+        self.start_time = -1
+        #self.workers = []
+    
+    def get_application_state(self):
+        with self.state_lock:
+            state = self.application_state
+        return state
+    
+    def update_application_state(self, state):
+        print state
+        with self.state_lock:
+            self.application_state = state 
+            
+    def get_application_execution_time(self):
+        return self.application_time
+    
+    def get_application_start_time(self):
+        return self.start_time
+
     def start_application(self, data, spark_applications_ids, app_id):
         try:
             self.update_application_state("Running")
@@ -198,6 +221,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self.update_application_state("Error")
             LOG.log(str(e))
 
+    def get_application_time(self):
+        return self.application_time
+
     def _get_job_binary_id(self, sahara, connector, job_binary_name,
                            job_binary_url, user, password):
         extra = dict(user=user, password=password)
@@ -221,6 +247,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     def _wait_on_job_finish(self, sahara, connector, job_exec_id, spark_app_id):
         completed = failed = False
         start_time = datetime.datetime.now()
+        self.start_time = time.mktime(start_time.timetuple())
         while not (completed or failed):
             job_status = connector.get_job_status(sahara, job_exec_id)
             LOG.log("%s | Sahara current job status: %s" %
@@ -241,6 +268,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         total_time = end_time - start_time
         application_time_log.log("%s|%.0f|%.0f" % (spark_app_id, float(time.mktime(start_time.timetuple())),
                                                 float(total_time.total_seconds())))
+        self.application_time = total_time.total_seconds()
         LOG.log("%s | Sahara job took %s seconds to execute" %
                 (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
 
@@ -295,7 +323,7 @@ class SaharaProvider(base.PluginInterface):
 
     def execute(self, data):
         executor = OpenStackSparkApplicationExecutor()
-        app_id = "os-spark-" + self.id_generator.get_ID()
+        app_id = "osspark" + self.id_generator.get_ID()
         handling_thread = threading.Thread(target=executor.start_application, args=(data, self.spark_applications_ids, app_id))
         handling_thread.start()
         return (app_id, executor)

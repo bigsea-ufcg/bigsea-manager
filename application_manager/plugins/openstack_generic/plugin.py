@@ -32,6 +32,28 @@ configure_logging()
 
 class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
+    def __init__(self):
+        self.application_state = "None"
+        self.state_lock = threading.RLock()
+        self.application_time = -1
+        self.start_time = -1
+    
+    def get_application_state(self):
+        with self.state_lock:
+            state = self.application_state
+        return state
+    
+    def update_application_state(self, state):
+        print state
+        with self.state_lock:
+            self.application_state = state 
+            
+    def get_application_execution_time(self):
+        return self.application_time
+    
+    def get_application_start_time(self):
+        return self.start_time
+
     def start_application(self, data):
         try:
             self.update_application_state("Running")
@@ -198,6 +220,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             
             application_time = app_end_time - app_start_time 
             application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time, application_time))
+            self.application_time = application_time
+            self.start_time = app_start_time
             self.update_application_state("OK")
             return str(application_time)
 
@@ -256,5 +280,5 @@ class OpenStackGenericProvider(base.PluginInterface):
         executor = OpenStackApplicationExecutor()
         handling_thread = threading.Thread(target=executor.start_application, args=(data,))
         handling_thread.start()
-        app_id = "os-generic-" + self.id_generator.get_ID()
+        app_id = "osgeneric" + self.id_generator.get_ID()
         return (app_id, executor)

@@ -131,18 +131,28 @@ class ApplicationExecutor(object):
     @required
     def update_application_state(self, state):
         pass
+    
+    @required
+    def get_application_execution_time(self):
+        pass
+    
+    @required
+    def get_application_start_time(self):
+        pass
 
 class GenericApplicationExecutor(ApplicationExecutor):
     
     def __init__(self):
-        self.application_state = "None"
-        self.state_lock = threading.RLock()
+        pass
     
     def get_application_state(self):
-        with self.state_lock:
-            state = self.application_state
-        return state
+        pass
     
     def update_application_state(self, state):
-        with self.state_lock:
-            self.application_state = state 
+        pass
+            
+    def get_application_execution_time(self):
+        pass
+    
+    def get_application_start_time(self):
+        pass
