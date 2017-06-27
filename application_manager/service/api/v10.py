@@ -29,6 +29,7 @@ def execute(data):
     authorization = authorizer.get_authorization(api.authorization_url, 
 						 data['bigsea_username'], 
 						 data['bigsea_password'])
+    print authorization
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
     print ">>>>>>>>>>>>>>oi"

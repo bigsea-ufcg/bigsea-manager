@@ -18,14 +18,15 @@ import time
 import uuid
 import six
 import base64
+import os
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from novaclient import client as nova_client
 from saharaclient.api.client import Client as saharaclient
 from saharaclient.api.base import APIException as SaharaAPIException
+from swiftclient.client import Connection as swiftclient
 from subprocess import *
-
 
 class OpenStackConnector(object):
     def __init__(self, logger):
@@ -54,6 +55,26 @@ class OpenStackConnector(object):
                            user_domain_name=domain)
         ses = session.Session(auth=auth)
         return nova_client.Client('2', session=ses)
+
+    def get_swift_client(self, username, password, project_id, auth_ip, domain):
+        auth = v3.Password(auth_url=auth_ip + ':5000/v3',
+                           username=username,
+                           password=password,
+                           project_id=project_id,
+                           user_domain_name=domain)
+
+        ses = session.Session(auth=auth)
+
+        swift_connection = swiftclient(session=ses)
+ 
+        return swift_connection
+
+    def upload_files(self, swift, localdir, swiftdir, container):
+        for targetfile in os.listdir(localdir):
+            localfile = localdir + '/' + targetfile
+            swift_name = swiftdir + '/' + targetfile
+            with open(localfile, 'r') as swift_file:
+                swift.put_object(container, swift_name, contents=swift_file.read(), content_type='text/plain')
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)

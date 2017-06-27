@@ -16,6 +16,7 @@
 import datetime
 import time
 import threading
+import subprocess
 
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
@@ -82,7 +83,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     
             sahara = connector.get_sahara_client(user, password, project_id,
                                                  auth_ip, domain)
-    
+
+            swift = connector.get_swift_client(user, password, project_id,
+                                                 auth_ip, domain)
+
             # Cluster Creation
             tmp_flavor = 'large.m1'
             # monitor.get_host_cpu_utilization()
@@ -123,7 +127,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                     workers_id.append(worker['instance_id'])
 
                 scaler.setup_environment(api.controller_url, workers_id, starting_cap, actuator)
-    
+ 
+                # Enabling logs in master
+                # FIXME: hardcoded
+                key_path = '/home/ubuntu/.ssh/bigsea'
+                LOG.log("%s | Enabling log in %s" % (time.strftime("%H:%M:%S"), master))
+                self._enable_log(master, key_path)
+  
                 # Preparing job
                 job_binary_id = self._get_job_binary_id(sahara, connector,
                                                         job_binary_name,
@@ -178,7 +188,21 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 scaler.stop_scaler(api.controller_url, spark_app_id)
     
                 spark_applications_ids.remove(spark_app_id)
-                
+ 
+                # Copy log to manager
+                # FIXME: hardcoded
+                LOG.log("%s | Copying log to manager" % (time.strftime("%H:%M:%S")))
+                self._download_log(master, spark_app_id)
+ 
+                # Copy log to Swift
+                # FIXME: hardcoded
+                LOG.log("%s | Uploading application log to Swift" % (time.strftime("%H:%M:%S")))
+                connector.upload_files(swift, '/home/ubuntu/bigsea-manager/application_logs/%s' % spark_app_id, 'EMaaS/logs/%s' % spark_app_id, 'bigsea-ex')
+               
+                # Delete cluster
+                LOG.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"), cluster_id))
+                connector.delete_cluster(sahara, cluster_id)
+ 
                 LOG.log("Finished application execution")
                 print "Finished application execution"
                 
@@ -197,6 +221,21 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         except Exception as e:
             self.update_application_state("Error")
             LOG.log(str(e))
+
+    def _enable_log(self, master_ip, key_path):
+        path = "/opt/spark/conf/spark-defaults.conf"
+        spark_executor = "spark.executor.extraClassPath /usr/lib/hadoop-mapreduce/hadoop-openstack.jar"
+        spark_eventlog_enabled = "spark.eventLog.enabled true"
+        spark_eventlog_dir = "spark.eventLog.dir file:/opt/spark/logs"
+        spark_history_dir = "spark.history.fs.logDirectory file:/opt/spark/logs"
+        subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' > %s'" % (key_path,  master_ip, spark_executor, path), shell=True)
+        subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_eventlog_enabled, path), shell=True)
+        subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_eventlog_dir, path), shell=True)
+        subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_history_dir, path), shell=True)
+
+    def _download_log(self, master_ip, spark_app_id):
+        subprocess.call("mkdir /home/ubuntu/bigsea-manager/application_logs/%s" % spark_app_id, shell=True)
+        subprocess.call("scp -o 'StrictHostKeyChecking no' -i /home/ubuntu/.ssh/bigsea ubuntu@%s:/opt/spark/logs/%s /home/ubuntu/bigsea-manager/application_logs/%s" % (master_ip, spark_app_id, spark_app_id), shell=True) 
 
     def _get_job_binary_id(self, sahara, connector, job_binary_name,
                            job_binary_url, user, password):
@@ -246,7 +285,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         return job_status
 
-    def _create_cluster(self, sahara, connector,  opportunistic, cluster_size,
+    def _create_cluster(self, sahara, connector, opportunistic, cluster_size,
                         public_key, net_id, image_id, plugin, version,
                         master_ng, slave_ng):
 
