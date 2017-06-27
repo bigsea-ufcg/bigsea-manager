@@ -50,14 +50,16 @@ def kill_all():
     return 'ok'
 
 def status():
-    application_status = {} 
+    applications_status = {} 
     
     for app_id in applications.keys():
-        stat = applications[app_id].get_application_state()
-        application_status[app_id] = stat
+        application_stat = {}
+        applications_status[app_id] = application_stat
+        application_stat["status"] = applications[app_id].get_application_state() 
+        application_stat["time"] = applications[app_id].get_application_execution_time()
+        application_stat["start_time"] = applications[app_id].get_application_start_time()
     
-    return application_status
-
+    return applications_status
 
 def _get_new_cluster_size(hosts):
     return predictor.predict(hosts)
