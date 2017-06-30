@@ -18,23 +18,21 @@ import json
 import requests
 
 
-def _get_optimizer_data(application_type, flavor, cluster_size):
-    start_monitor_dict = {
-        'application_type': application_type,
-        'flavor': flavor,
-        'cluster_size': cluster_size
+def _get_optimizer_data(hosts):
+    optimizer_dict = {
+        'hosts': hosts,
     }
-    start_monitor_body = json.dumps(start_monitor_dict)
+    optimizer_body = json.dumps(optimizer_dict)
 
-    return start_monitor_body
+    return optimizer_body
 
 
-def get_initial_size(optimizer_url, application_type, flavor, cluster_size):
-    request_url = optimizer_url + '/initial_cluster_size/'
+def get_cluster_size(optimizer_url, hosts):
+    request_url = optimizer_url + '/get_cluster_size/'
     headers = {'Content-type': 'application/json'}
-    data = _get_optimizer_data(application_type, flavor, cluster_size)
+    data = _get_optimizer_data(hosts)
     request = requests.post(request_url, data=data, headers=headers)
     data = request.json()
 
-    return data['initial_size']
+    return data['cluster_size']
 
