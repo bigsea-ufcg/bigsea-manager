@@ -15,14 +15,12 @@
 
 from application_manager.plugins import base as plugin_base
 from application_manager.service import api
-from application_manager.service.horizontal_scale import r_predictor
 from application_manager.utils.logger import Log
 from application_manager.utils import authorizer
 from application_manager.utils import optimizer
 
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
-predictor = r_predictor.RPredictor()
 
 applications = {}
 
