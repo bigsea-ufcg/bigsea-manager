@@ -37,3 +37,4 @@ domain = config.get('credentials', 'user_domain_name')
 log_path = config.get('credentials', 'log_path')
 container = config.get('credentials', 'swift_container')
 
+hosts = config.get('infra', 'hosts').split(' ')

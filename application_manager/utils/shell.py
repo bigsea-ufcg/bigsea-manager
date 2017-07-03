@@ -15,23 +15,24 @@
 
 from subprocess import *
 
-import sys
-
 R_PREFIX = 'Rscript '
 PYTHON_PREFIX = 'python '
 
 
-class Shell(object):
+def execute_r_script(script, args):
+    command = R_PREFIX + script + " " + " ".join(args)
+    p_status = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
+    out, err = p_status.communicate()
+    try:
+        print(out, err)
+        value = float(out)
+        return value
+    except Exception as e:
+        print e
+        print("Error message captured:", err)
+        raise
 
-    def execute_r_script(self, script, args):
-        command = R_PREFIX + script + " " + " ".join(args)
-        p_status = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
-        out, err = p_status.communicate()
-        try:
-            print(out, err)
-            value = float(out)
-            return value
-        except Exception as e:
-            print e
-            print("Error message captured:", err)
-            raise
+
+def write_to_file(outfile, line):
+    with open(outfile, 'a') as f:
+        f.write(line)

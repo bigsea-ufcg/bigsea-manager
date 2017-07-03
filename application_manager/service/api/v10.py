@@ -15,24 +15,30 @@
 
 from application_manager.plugins import base as plugin_base
 from application_manager.service import api
-from application_manager.service.horizontal_scale import r_predictor
 from application_manager.utils.logger import Log
 from application_manager.utils import authorizer
+from application_manager.utils import optimizer
 
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
-predictor = r_predictor.RPredictor()
 
 applications = {}
 
+
 def execute(data):
-    authorization = authorizer.get_authorization(api.authorization_url, 
-						 data['bigsea_username'], 
-						 data['bigsea_password'])
+    authorization = authorizer.get_authorization(api.authorization_url,
+                                                 data['bigsea_username'],
+                                                 data['bigsea_password'])
     print authorization
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
-    print ">>>>>>>>>>>>>>oi"
+
+    hosts = api.hosts
+
+    pred_cluster_size = _get_new_cluster_size(hosts)
+
+    if pred_cluster_size > data['cluster_size']:
+        data['cluster_size'] = pred_cluster_size
 
     plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
     app_id, executor = plugin.execute(data)
@@ -40,27 +46,33 @@ def execute(data):
 
     return app_id
 
+
 def stop_app(app_id):
     # stop monitoring
     # stop scaling
-    return 'ok'
+    return 'App %{app_id}s stopped' % {'app_id': app_id}
 
 
 def kill_all():
-    return 'ok'
+        return 'Apps killed'
+
 
 def status():
-    applications_status = {} 
-    
+    applications_status = {}
+
     for app_id in applications.keys():
         application_stat = {}
         applications_status[app_id] = application_stat
-        application_stat["status"] = applications[app_id].get_application_state() 
+        application_stat["status"] = applications[app_id].get_application_state()
         application_stat["time"] = applications[app_id].get_application_execution_time()
         application_stat["start_time"] = applications[app_id].get_application_start_time()
-    
+
     return applications_status
 
 def _get_new_cluster_size(hosts):
-    return predictor.predict(hosts)
+    return optimizer.get_cluster_size(api.optimizer_url, hosts)
 
+
+if __name__ == "__main__":
+    data = {'cluster_size': 3}
+    execute(data)

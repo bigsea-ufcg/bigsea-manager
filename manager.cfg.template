@@ -6,16 +6,6 @@ authorization_url =
 optimizer_url =
 plugins =
 
-[monasca]
-
-monasca_endpoint =
-username =
-password =
-project_name =
-auth_url =
-list_measurements_url =
-api_version =
-
 [openstack]
 
 hosts =

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 This program starts a given amount of threads to execute factorial operations, waiting some time between them. 
 The input value for these operations and the amount of time waited them is randomized.
 

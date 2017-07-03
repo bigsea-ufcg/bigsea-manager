@@ -12,3 +12,4 @@ manager.cfg.lsd
 *.pem
 .project
 .pydevproject
+*.lsd.ufcg.edu.br.txt
