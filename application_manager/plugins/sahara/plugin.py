@@ -73,6 +73,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             auth_ip = api.auth_ip
             domain = api.domain
             public_key = api.public_key
+            key_path = api.key_path
+            log_path = api.log_path
+            container = api.container
     
             net_id = data['net_id']
             master_ng = data['master_ng']
@@ -152,8 +155,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 scaler.setup_environment(api.controller_url, workers_id, starting_cap, actuator)
  
                 # Enabling logs in master
-                # FIXME: hardcoded
-                key_path = '/home/ubuntu/.ssh/bigsea'
                 LOG.log("%s | Enabling log in %s" % (time.strftime("%H:%M:%S"), master))
                 self._enable_log(master, key_path)
   
@@ -213,14 +214,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 spark_applications_ids.remove(spark_app_id)
  
                 # Copy log to manager
-                # FIXME: hardcoded
                 LOG.log("%s | Copying log to manager" % (time.strftime("%H:%M:%S")))
-                self._download_log(master, spark_app_id)
+                local_dir = '%s/%s' % (log_path, spark_app_id)
+                self._download_log(master, key_path, spark_app_id, local_dir)
  
                 # Copy log to Swift
-                # FIXME: hardcoded
                 LOG.log("%s | Uploading application log to Swift" % (time.strftime("%H:%M:%S")))
-                connector.upload_files(swift, '/home/ubuntu/bigsea-manager/application_logs/%s' % spark_app_id, 'EMaaS/logs/%s' % spark_app_id, 'bigsea-ex')
+                swift_dir = '%s/logs/%s' % (job_binary_name, spark_app_id)
+                connector.upload_files(swift, local_dir, swift_dir, container)
                
                 # Delete cluster
                 LOG.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"), cluster_id))
@@ -256,9 +257,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_eventlog_dir, path), shell=True)
         subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_history_dir, path), shell=True)
 
-    def _download_log(self, master_ip, spark_app_id):
-        subprocess.call("mkdir /home/ubuntu/bigsea-manager/application_logs/%s" % spark_app_id, shell=True)
-        subprocess.call("scp -o 'StrictHostKeyChecking no' -i /home/ubuntu/.ssh/bigsea ubuntu@%s:/opt/spark/logs/%s /home/ubuntu/bigsea-manager/application_logs/%s" % (master_ip, spark_app_id, spark_app_id), shell=True) 
+    def _download_log(self, master_ip, key_path, spark_app_id, local_dir):
+        subprocess.call("mkdir %s" % local_dir, shell=True)
+        subprocess.call("scp -o 'StrictHostKeyChecking no' -i %s ubuntu@%s:/opt/spark/logs/%s %s" % (key_path, master_ip, spark_app_id, local_dir), shell=True) 
     
     def get_application_time(self):
         return self.application_time

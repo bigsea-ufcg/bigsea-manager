@@ -34,4 +34,6 @@ auth_ip = config.get('credentials', 'auth_ip')
 user = config.get('credentials', 'user')
 password = config.get('credentials', 'password')
 domain = config.get('credentials', 'user_domain_name')
+log_path = config.get('credentials', 'log_path')
+container = config.get('credentials', 'swift_container')
 
