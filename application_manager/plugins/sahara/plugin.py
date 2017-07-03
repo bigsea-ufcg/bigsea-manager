@@ -218,7 +218,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 # Copy log to manager
                 LOG.log("%s | Copying log to manager" % (time.strftime("%H:%M:%S")))
                 local_dir = '%s/%s' % (log_path, spark_app_id)
-                self._download_log(master, key_path, spark_app_id, local_dir)
+                self._download_log(master, key_path, spark_app_id, job_binary_name, job_exec_id, local_dir)
  
                 # Copy log to Swift
                 LOG.log("%s | Uploading application log to Swift" % (time.strftime("%H:%M:%S")))
@@ -259,9 +259,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_eventlog_dir, path), shell=True)
         subprocess.call("ssh -o 'StrictHostKeyChecking no' -i %s ubuntu@%s 'echo '%s' >> %s'" % (key_path, master_ip, spark_history_dir, path), shell=True)
 
-    def _download_log(self, master_ip, key_path, spark_app_id, local_dir):
+    def _download_log(self, master_ip, key_path, spark_app_id, job_name, job_id, local_dir):
         subprocess.call("mkdir %s" % local_dir, shell=True)
         subprocess.call("scp -o 'StrictHostKeyChecking no' -i %s ubuntu@%s:/opt/spark/logs/%s %s" % (key_path, master_ip, spark_app_id, local_dir), shell=True) 
+        subprocess.call("scp -o 'StrictHostKeyChecking no' -i %s ubuntu@%s:/tmp/spark-edp/%s/%s/stdout %s" % (key_path, master_ip, job_name, job_id, local_dir), shell=True) 
+        subprocess.call("scp -o 'StrictHostKeyChecking no' -i %s ubuntu@%s:/tmp/spark-edp/%s/%s/stderr %s" % (key_path, master_ip, job_name, job_id, local_dir), shell=True) 
     
     def get_application_time(self):
         return self.application_time
