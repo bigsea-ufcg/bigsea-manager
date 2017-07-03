@@ -116,11 +116,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             # Cluster Creation
             tmp_flavor = 'large.m1'
             # monitor.get_host_cpu_utilization()
-            cluster_size = optimizer.get_initial_size(api.optimizer_url,
-                                                      plugin_app,
-                                                      tmp_flavor,
-                                                      req_cluster_size)
-    
+#           cluster_size = optimizer.get_initial_size(api.optimizer_url,
+#                                                     plugin_app,
+#                                                     tmp_flavor,
+#                                                     req_cluster_size)
+
+            cluster_size = req_cluster_size
+
             LOG.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"), str(cluster_size)))
     
             # cluster_size = int(req_cluster_size)
