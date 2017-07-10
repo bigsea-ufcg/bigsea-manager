@@ -13,15 +13,14 @@ config.read(__file__)
 manager_ip = config.get('manager', 'ip')
 manager_port = config.get('manager', 'port')
 plugin = config.get('manager', 'plugin')
-cluster_size = config.getint('manager', 'cluster_size')
-flavor_id = config.get('manager', 'flavor_id')
-image_id = config.get('manager', 'image_id')
+scaler_plugin = config.get('manager', 'scaler_plugin')
 
+cluster_size = config.getint('plugin', 'cluster_size')
+flavor_id = config.get('plugin', 'flavor_id')
+image_id = config.get('plugin', 'image_id')
 command = config.get('plugin', 'command')
 reference_value = config.getfloat('plugin', 'reference_value')
 log_path = config.get('plugin', 'log_path')
-
-scaler_plugin = config.get('scaler', 'scaler_plugin')
 
 scaling_parameters = {}
 

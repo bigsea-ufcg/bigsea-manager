@@ -11,16 +11,18 @@ __file__ = os.path.join(sys.path[0], 'sahara.cfg')
 config.read(__file__)
 
 
-plugin = config.get('manager', 'plugin')
 ip = config.get('manager', 'ip')
 port = config.get('manager', 'port')
-cluster_size = config.getint('manager', 'cluster_size')
-flavor_id = config.get('manager', 'flavor_id')
-image_id = config.get('manager', 'image_id')
+scaler_plugin = config.get('manager', 'scaler_plugin')
+plugin = config.get('manager', 'plugin')
 bigsea_username = config.get('manager', 'bigsea_username')
 bigsea_password = config.get('manager', 'bigsea_password')
 
 
+
+cluster_size = config.getint('plugin', 'cluster_size')
+flavor_id = config.get('plugin', 'flavor_id')
+image_id = config.get('plugin', 'image_id')
 opportunistic = config.get('plugin', 'opportunistic')
 args = config.get('plugin', 'args').split()
 args[2] = args[2] + str(uuid.uuid4())[0:5]
@@ -43,7 +45,6 @@ net_id = config.get('plugin', 'net_id')
 actuator = config.get('scaler', 'actuator')
 starting_cap = config.get('scaler', 'starting_cap')
 
-scaler_plugin = config.get('scaler', 'scaler_plugin')
 scaling_parameters = {}
 scaling_parameters['actuator'] = config.get('scaler', 'actuator')
 scaling_parameters['metric_source'] = config.get('scaler', 'metric_source')
