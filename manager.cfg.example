@@ -10,8 +10,8 @@ plugins = os_generic,sahara
 
 public_key = bigsea
 key_path = /home/igornsa/bigsea/bigsea
-user = igornsa
-password = anakin2209
+user = username
+password = password
 auth_ip = https://cloud.lsd.ufcg.edu.br
-project_id = 0022cedasdab5324407beea319878e95904
+project_id = 0022cedasdaj3n4407beea319878e9590h
 user_domain_name = LSD
