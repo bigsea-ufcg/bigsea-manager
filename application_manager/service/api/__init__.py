@@ -38,3 +38,9 @@ log_path = config.get('credentials', 'log_path')
 container = config.get('credentials', 'swift_container')
 
 hosts = config.get('infra', 'hosts').split(' ')
+
+
+chronos_url = config.get('chronos', 'url')
+chronos_username = config.get('chronos', 'username')
+chronos_password = config.get('chronos', 'password')
+supervisor_ip = config.get('chronos', 'supervisor_ip')
