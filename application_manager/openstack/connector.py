@@ -14,19 +14,18 @@
 # limitations under the License.
 
 import datetime
+import os
 import time
 import uuid
-import six
-import base64
-import os
 
 from keystoneauth1.identity import v3
 from keystoneauth1 import session
 from novaclient import client as nova_client
-from saharaclient.api.client import Client as saharaclient
 from saharaclient.api.base import APIException as SaharaAPIException
+from saharaclient.api.client import Client as saharaclient
 from swiftclient.client import Connection as swiftclient
 from subprocess import *
+
 
 class OpenStackConnector(object):
     def __init__(self, logger):
@@ -42,7 +41,6 @@ class OpenStackConnector(object):
         ses = session.Session(auth=auth)
         print auth_ip + ':5000/v3'
         print username
-        print password
         print project_id
         return saharaclient('1.1', session=ses)
 
@@ -56,7 +54,8 @@ class OpenStackConnector(object):
         ses = session.Session(auth=auth)
         return nova_client.Client('2', session=ses)
 
-    def get_swift_client(self, username, password, project_id, auth_ip, domain):
+    def get_swift_client(self, username, password, project_id, auth_ip,
+                         domain):
         auth = v3.Password(auth_url=auth_ip + ':5000/v3',
                            username=username,
                            password=password,
@@ -66,7 +65,7 @@ class OpenStackConnector(object):
         ses = session.Session(auth=auth)
 
         swift_connection = swiftclient(session=ses)
- 
+
         return swift_connection
 
     def upload_files(self, swift, localdir, swiftdir, container):
@@ -74,7 +73,9 @@ class OpenStackConnector(object):
             localfile = localdir + '/' + targetfile
             swift_name = swiftdir + '/' + targetfile
             with open(localfile, 'r') as swift_file:
-                swift.put_object(container, swift_name, contents=swift_file.read(), content_type='text/plain')
+                swift.put_object(container, swift_name,
+                                 contents=swift_file.read(),
+                                 content_type='text/plain')
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
@@ -171,16 +172,20 @@ class OpenStackConnector(object):
         return sahara.job_executions.create(job_id, cluster_id, input_ds_id,
                                             output_ds_id, configs=configs)
 
-    def create_cluster(self, sahara, cluster_size, public_key, net_id,
-                       image_id, plugin, version, master_ng_id, slave_ng_id):
-        size = cluster_size
-        cluster_template = self.get_cluster_template(sahara, size, plugin)
+    def create_cluster(self, sahara, req_cluster_size, pred_cluster_size,
+                       public_key, net_id, image_id, plugin, version,
+                       master_ng_id, slave_ng_id, op_slave_ng_id):
+        if pred_cluster_size > req_cluster_size:
+            size = pred_cluster_size
+        else:
+            size = req_cluster_size
+        cluster_template = self.get_cluster_template(sahara, req_cluster_size,
+                                                     size, plugin)
 
         if cluster_template is not None:
             cluster = self._create_cluster(sahara, cluster_template.id,
                                            public_key, net_id, image_id,
                                            plugin, version)
-	
         else:
             cluster_temp_name = "cluster-osahara-" + self.get_timestamp_raw()
             node_groups = []
@@ -197,12 +202,21 @@ class OpenStackConnector(object):
             slave_ng_name = sahara.node_group_templates.list(
                 search_opts={'id': slave_ng_id})[0].name
             # This scheme is needed as parameter to create a new cluster
-            slave_ng_scheme = {"count": cluster_size,
+            slave_ng_scheme = {"count": req_cluster_size,
                                "node_group_template_id": slave_ng_id,
                                "name": slave_ng_name}
 
             node_groups.append(master_ng_scheme)
             node_groups.append(slave_ng_scheme)
+
+            # Extracting node_group_template name using id
+            if cluster_size > req_cluster_size:
+                op_slave_ng_name = sahara.node_group_templates.list(
+                    search_opts={'id': op_slave_ng_id})[0].name
+                op_slave_ng_scheme = {"count": cluster_size - req_cluster_size,
+                                      "node_group_template_id": op_slave_ng_id,
+                                      "name": op_slave_ng_name}
+                node_groups.append(op_slave_ng_scheme)
             cluster_template = self.create_cluster_template(sahara,
                                                             cluster_temp_name,
                                                             plugin, version,
@@ -218,14 +232,15 @@ class OpenStackConnector(object):
                         net_id, image_id, plugin, version, max_tries=5):
         cluster_is_ready = False
         cluster_tries = 0
-        cluster_name = "cluster-osahara-" + self.get_timestamp_raw()
+        cluster_name = "closahara-" + self.get_timestamp_raw()
         while not cluster_is_ready and cluster_tries < max_tries:
             cluster_tries += 1
             self.logger.log("Tyring to create cluster. Try " +
                             str(cluster_tries))
 
             cluster = self._create_sahara_cluster(sahara, cluster_template,
-                                                  cluster_name, public_key_name,
+                                                  cluster_name,
+                                                  public_key_name,
                                                   net_id, image_id, plugin,
                                                   version)
             time.sleep(30)
@@ -279,8 +294,8 @@ class OpenStackConnector(object):
             if "Quota exceeded" in str(e):
                 raise e
             return 'api_exception'
-
     def get_worker_host_ip(self, worker_id):
+
         # FIXME hardcoded
         hosts = ["c4-compute11", "c4-compute12", "c4-compute22"]
         for host in hosts:
@@ -291,14 +306,26 @@ class OpenStackConnector(object):
                 return host
         return None
 
-    def get_cluster_template(self, sahara, size, plugin):
+    def get_cluster_template(self, sahara, req_cluster_size, size, plugin):
+        templates = []
         cluster_templates = sahara.cluster_templates.list()
         for template in cluster_templates:
             if template.plugin_name.lower() == plugin.lower():
                 for node_group in template.node_groups:
-                    if 'slave' in node_group['name'].lower():
-                        if node_group['count'] == size:
-                            return template
+                    if ('slave' in node_group['name'].lower() and
+                            'opportunistic' not in node_group['name'].lower()):
+                        if req_cluster_size != size:
+                            if node_group['count'] == req_cluster_size:
+                                templates.append(template)
+                        else:
+                            if node_group['count'] == size:
+                                return template
+
+        for template in templates:
+            for node_group in template.node_groups:
+                if 'opportunistic' in node_group['name'].lower():
+                    if node_group['count'] == size - req_cluster_size:
+                        return template
         return None
 
     def create_cluster_template(self, sahara, name, plugin_name,
@@ -307,7 +334,7 @@ class OpenStackConnector(object):
         cluster_template = sahara.cluster_templates.create(
             name, plugin_name, plugin_version, node_groups=node_groups)
         print '>>>>>>>>>>>>> %s' % cluster_template.__dict__
-        return cluster_template['id']
+        return cluster_template.id
 
     def create_job_template(self, sahara, name, job_type, mains=None,
                             libs=None):
@@ -358,7 +385,7 @@ class OpenStackConnector(object):
 
     def create_instance(self, nova, image_id, flavor_id, public_key):
         instance_name = "os-"+str(uuid.uuid4())[:8]
-        server = nova.servers.create(instance_name,image=image_id,
+        server = nova.servers.create(instance_name, image=image_id,
                                      flavor=flavor_id, key_name=public_key)
         return server.id
 
