@@ -15,3 +15,13 @@ password = password
 auth_ip = https://cloud.lsd.ufcg.edu.br
 project_id = 0022cedasdaj3n4407beea319878e9590h
 user_domain_name = LSD
+
+[chronos]
+
+url = http://152.48.109.15:4004
+username = user
+password = secret
+supervisor_ip = http://152.48.115.19:20010
+
+[infra]
+hosts = 
