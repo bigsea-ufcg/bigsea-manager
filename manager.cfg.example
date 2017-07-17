@@ -6,15 +6,24 @@ authorization_url = http://0.0.0.0:5001/authorization
 optimizer_url = http://0.0.0.0:5001/optimizer
 plugins = os_generic,sahara
 
-[credentials]
-
+[os_generic]
 public_key = bigsea
 key_path = /home/igornsa/bigsea/bigsea
+log_path = /ubuntu/tpm/app-01.log
 user = username
 password = password
 auth_ip = https://cloud.lsd.ufcg.edu.br
 project_id = 0022cedasdaj3n4407beea319878e9590h
 user_domain_name = LSD
+
+[spark-sahara]
+user = username
+password = password
+auth_ip = https://cloud.lsd.ufcg.edu.br
+project_id = 0022cedasdaj3n4407beea319878e9590h
+user_domain_name = LSD
+swift_container =
+
 
 [chronos]
 
