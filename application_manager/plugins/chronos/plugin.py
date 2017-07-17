@@ -1,5 +1,3 @@
-# Copyright (c) 2017 UFCG-LSD and UPV-GRyCAP.
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,13 +17,17 @@ import json
 import requests
 
 from application_manager.utils.ManagerChronos import *
+from application_manager.plugins.base import GenericApplicationExecutor
 from application_manager.plugins import base
 from application_manager.utils.ids import ID_Generator
+from application_manager.utils.logger import Log
+from application_manager.service import api
+
+
 
 
 LOG = Log("ChronosPlugin", "chronos_plugin.log")
 application_time_log = Log("Application_time", "application_time.log")
-configure_logging()
 
 class ChronosApplicationExecutor(GenericApplicationExecutor):
 
@@ -42,7 +44,7 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
             password = api.chronos_password
             supervisor_ip = api.supervisor_ip
 
-            chronos = ManagerChronos(LOG, url, user, password)
+            chronos = ManagerChronos(url, user, password)
 
             # Obtain arguments 
             start_job = time.time()
@@ -63,25 +65,34 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
                 'iterations': int( job['schedule'].split('/')[0][1:] )
             }   
 
-            job = self.modify_job(supervisor_ip, jobname)
+            job = self.modify_job(supervisor_ip, jobname, job)
             if ( chronos.sendJob(job) ):
-                print('Launch completed with UUID: '+ self.id)
                 self.init_webhook(supervisor_ip, payload)
+                print('Launch completed with UUID: '+ self.id)
             else:
                 print('ERROR: Launch not completed')
+        except:
+            print "ERROR: run, forest, run!"
     
-    def modify_job(self, api_rest_ip, jobname):      
+    def modify_job(self, api_rest_ip, jobname, job):
         updateCommand_1 = "startedAt=$(date +%s); "
-        updateCommand_2 = "; /usr/bin/curl -H 'Content-type: application/json' -X POST " + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + "\", \"finished_at\": \"'$(date +%s)'\", \"started_at\": \"'$(echo $startedAt)'\", \"hostname\": \"'$(hostname)'\", \"uuid\": \"" + myUUID + "\"}'"
+        updateCommand_2 = "; /usr/bin/curl -H 'Content-type: application/json' -X POST " \
+                          + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + "\", \"finished_at\": \"'$(date +%s)'\", " \
+                                                                                     "\"started_at\": \"'$(echo $startedAt)'\", \"hostname\": " \
+                                                                                     "\"'$(hostname)'\", \"uuid\": \"" + self.id + "\"}'"
         job['command'] = updateCommand_1 + job['command'] + updateCommand_2
         job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
         return job
 
     def init_webhook(self, url_webhook, payload ):
         head = { 'Content-type':'application/json'}
+        print head
         url = url_webhook+'/initTask'
+	print url
         msg = json.dumps(payload)
-        response = requests.post( url, headers=head, data=msg )
+	print msg
+        response = requests.post( url, headers=head, data=msg)
+        print "Response " + str(response)
  
 
 
@@ -109,3 +120,4 @@ class ChronosGenericProvider(base.PluginInterface):
         executor.start_application(data)
         app_id = "chronosjob" + executor.id
         return (app_id, executor)
+
