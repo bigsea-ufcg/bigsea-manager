@@ -18,7 +18,7 @@ from application_manager.service import api
 from application_manager.utils.logger import Log
 from application_manager.utils import authorizer
 from application_manager.utils import optimizer
-
+import pdb
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
@@ -29,16 +29,15 @@ def execute(data):
     authorization = authorizer.get_authorization(api.authorization_url,
                                                  data['bigsea_username'],
                                                  data['bigsea_password'])
-    print authorization
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
 
-    hosts = api.hosts
+    if data['opportunistic']:
+        hosts = api.hosts
+        pred_cluster_size = _get_new_cluster_size(hosts)
 
-    pred_cluster_size = _get_new_cluster_size(hosts)
-
-    if pred_cluster_size > data['cluster_size']:
-        data['cluster_size'] = pred_cluster_size
+        if pred_cluster_size > data['cluster_size']:
+            data['cluster_size'] = pred_cluster_size
 
     plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
     app_id, executor = plugin.execute(data)
