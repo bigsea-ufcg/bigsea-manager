@@ -29,16 +29,8 @@ def execute(data):
     authorization = authorizer.get_authorization(api.authorization_url,
                                                  data['bigsea_username'],
                                                  data['bigsea_password'])
-    print authorization
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
-
-    hosts = api.hosts
-
-    pred_cluster_size = _get_new_cluster_size(hosts)
-
-    if pred_cluster_size > data['cluster_size']:
-        data['cluster_size'] = pred_cluster_size
 
     plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
     app_id, executor = plugin.execute(data)
@@ -50,11 +42,11 @@ def execute(data):
 def stop_app(app_id):
     # stop monitoring
     # stop scaling
-    return 'App %{app_id}s stopped' % {'app_id': app_id}
+    return 'App %(app_id)s stopped' % {'app_id': app_id}
 
 
 def kill_all():
-        return 'Apps killed'
+    return 'Apps killed'
 
 
 def status():
@@ -68,9 +60,6 @@ def status():
         application_stat["start_time"] = applications[app_id].get_application_start_time()
 
     return applications_status
-
-def _get_new_cluster_size(hosts):
-    return optimizer.get_cluster_size(api.optimizer_url, hosts)
 
 
 if __name__ == "__main__":

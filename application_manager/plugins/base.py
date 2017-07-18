@@ -124,35 +124,35 @@ def setup_plugins():
 @six.add_metaclass(abc.ABCMeta)
 class ApplicationExecutor(object):
 
-    @required    
+    @required
     def get_application_state(self):
         pass
-    
+
     @required
     def update_application_state(self, state):
         pass
-    
+
     @required
     def get_application_execution_time(self):
         pass
-    
+
     @required
     def get_application_start_time(self):
         pass
 
 class GenericApplicationExecutor(ApplicationExecutor):
-    
+
     def __init__(self):
         pass
-    
+
     def get_application_state(self):
         pass
-    
+
     def update_application_state(self, state):
         pass
-            
+
     def get_application_execution_time(self):
         pass
-    
+
     def get_application_start_time(self):
         pass
