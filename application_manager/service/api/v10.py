@@ -49,11 +49,11 @@ def execute(data):
 def stop_app(app_id):
     # stop monitoring
     # stop scaling
-    return 'App %{app_id}s stopped' % {'app_id': app_id}
+    return 'App %(app_id)s stopped' % {'app_id': app_id}
 
 
 def kill_all():
-        return 'Apps killed'
+    return 'Apps killed'
 
 
 def status():
@@ -67,9 +67,6 @@ def status():
         application_stat["start_time"] = applications[app_id].get_application_start_time()
 
     return applications_status
-
-def _get_new_cluster_size(hosts):
-    return optimizer.get_cluster_size(api.optimizer_url, hosts)
 
 
 if __name__ == "__main__":

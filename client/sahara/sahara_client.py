@@ -13,17 +13,12 @@ config.read(__file__)
 
 ip = config.get('manager', 'ip')
 port = config.get('manager', 'port')
-scaler_plugin = config.get('manager', 'scaler_plugin')
-plugin = config.get('manager', 'plugin')
-bigsea_username = config.get('manager', 'bigsea_username')
-bigsea_password = config.get('manager', 'bigsea_password')
-
-
-
 cluster_size = config.getint('plugin', 'cluster_size')
 flavor_id = config.get('plugin', 'flavor_id')
 image_id = config.get('plugin', 'image_id')
-opportunistic = config.get('plugin', 'opportunistic')
+bigsea_username = config.get('manager', 'bigsea_username')
+bigsea_password = config.get('manager', 'bigsea_password')
+
 args = config.get('plugin', 'args').split()
 args[2] = args[2] + str(uuid.uuid4())[0:5]
 main_class = config.get('plugin', 'main_class')
@@ -39,6 +34,7 @@ openstack_plugin = config.get('plugin', 'openstack_plugin')
 job_type = config.get('plugin', 'job_type')
 version = '1.6.0'
 cluster_id = config.get('plugin', 'cluster_id')
+opportunistic_slave_ng = config.get('plugin', 'opportunistic_slave_ng')
 slave_ng = config.get('plugin', 'slave_ng')
 master_ng = config.get('plugin', 'master_ng')
 net_id = config.get('plugin', 'net_id')
@@ -57,22 +53,22 @@ scaling_parameters['max_cap'] = config.getint('scaler', 'max_cap')
 scaling_parameters['actuation_size'] = config.getint('scaler', 'actuation_size')
 scaling_parameters['metric_rounding'] = config.getint('scaler', 'metric_rounding')
 
-
-
 headers = {'Content-Type': 'application/json'}
 body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
-	scaling_parameters=scaling_parameters, cluster_size=cluster_size,
-	starting_cap=starting_cap, actuator=actuator,
-	flavor_id=flavor_id, image_id=image_id, opportunistic=opportunistic,
-	args=args, main_class=main_class, job_template_name=job_template_name,
-	job_binary_name=job_binary_name, job_binary_url=job_binary_url,
-	input_ds_id=input_ds_id, output_ds_id=output_ds_id, 
-	plugin_app=plugin_app, expected_time=expected_time, 
-	collect_period=collect_period, bigsea_username=bigsea_username,
-	bigsea_password=bigsea_password, openstack_plugin=openstack_plugin,
-	job_type=job_type, version=version, slave_ng=slave_ng, 
-	master_ng=master_ng, net_id=net_id
-	)
+            scaling_parameters=scaling_parameters, cluster_size=cluster_size,
+            starting_cap=starting_cap, actuator=actuator,
+            flavor_id=flavor_id, image_id=image_id,
+            args=args, main_class=main_class,
+            job_template_name=job_template_name,
+            job_binary_name=job_binary_name, job_binary_url=job_binary_url,
+            input_ds_id=input_ds_id, output_ds_id=output_ds_id,
+            plugin_app=plugin_app, expected_time=expected_time,
+            collect_period=collect_period, bigsea_username=bigsea_username,
+            bigsea_password=bigsea_password, openstack_plugin=openstack_plugin,
+            job_type=job_type, version=version, slave_ng=slave_ng,
+            master_ng=master_ng, net_id=net_id,
+            opportunistic_slave_ng=opportunistic_slave_ng
+            )
 url = "http://%s:%s/manager/execute" % (ip, port)
 print "Making request to", url
 body_log = body.copy()

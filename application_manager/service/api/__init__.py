@@ -30,7 +30,10 @@ public_key = config.get('os-generic', 'public_key')
 key_path = config.get('os-generic', 'key_path')
 user_domain_name = config.get('os-generic', 'user_domain_name')
 project_id = config.get('os-generic', 'project_id')
-auth_ip = config.get('os-generic', 'auth_ip')
+auth_ip = config.get('os-generic', 'auth_ip')<<<<<<< chronos
+2
+ 
+
 user = config.get('os-generic', 'user')
 password = config.get('os-generic', 'password')
 domain = config.get('os-generic', 'user_domain_name')

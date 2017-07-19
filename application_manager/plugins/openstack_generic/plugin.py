@@ -37,27 +37,27 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
         self.state_lock = threading.RLock()
         self.application_time = -1
         self.start_time = -1
-    
+
     def get_application_state(self):
         with self.state_lock:
             state = self.application_state
         return state
-    
+
     def update_application_state(self, state):
         print state
         with self.state_lock:
-            self.application_state = state 
-            
+            self.application_state = state
+
     def get_application_execution_time(self):
         return self.application_time
-    
+
     def get_application_start_time(self):
         return self.start_time
 
     def start_application(self, data):
         try:
             self.update_application_state("Running")
-            
+
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -66,8 +66,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             public_key = api.public_key
 
             connector = os_connector.OpenStackConnector(LOG)
-            nova = connector.get_nova_client(user, password, project_id, auth_ip,
-                                             domain)
+            nova = connector.get_nova_client(user, password, project_id,
+                                             auth_ip, domain)
             app_name_ref = data['plugin']
             reference_value = data['reference_value']
             log_path = data['log_path']
@@ -79,7 +79,7 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             scaling_parameters = data["scaling_parameters"]
             actuator = data["actuator"]
             starting_cap = data["starting_cap"]
-    
+
             app_start_time = 0
             app_end_time = 0
 
@@ -89,7 +89,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             # Create a number of instances to run the application based on
             # cluster_size, image_id, flavor_id and public_key
             instances = self._create_instances(nova, connector, image_id,
-                                               flavor_id, public_key, cluster_size)
+                                               flavor_id, public_key,
+                                               cluster_size)
 
             LOG.log("Waiting until instance become active...")
             print "Waiting until instance become active..."
@@ -123,7 +124,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                         attempts = 2
                         while attempts != -1:
                             try:
-                                conn = self._get_ssh_connection(ip, api.key_path)
+                                conn = self._get_ssh_connection(ip,
+                                                                api.key_path)
                                 instances_ips.append(ip)
                                 attempts = -1
                             except Exception as e:
@@ -135,18 +137,19 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
                                 attempts -= 1
                                 time.sleep(30)
-            
+
             LOG.log("Setting up environment")
             print "Setting up environment"
             # Set CPU cap in all instances
-            scaler.setup_environment(api.controller_url, instances, starting_cap, actuator)
+            scaler.setup_environment(api.controller_url, instances,
+                                     starting_cap, actuator)
 
             # Execute application and start monitor and scaler service.
             applications = []
             for ip in instances_ips:
                 LOG.log("Executing commands into the instance")
                 print "Executing commands into the instance"
-                # TODO Check if exec_command will work without blocking execution
+                # TODO Check if exec_command will work without blocking exec
                 conn = self._get_ssh_connection(ip, api.key_path)
 
                 conn.exec_command(command)
@@ -173,7 +176,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                     LOG.log("Starting scaling")
                     print "Starting scaling"
 
-                    scaler.start_scaler(api.controller_url, app_id, scaler_plugin, instances, 
+                    scaler.start_scaler(api.controller_url, app_id,
+                                        scaler_plugin, instances,
                                         scaling_parameters)
 
                 except Exception as e:
@@ -211,15 +215,16 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             LOG.log("Removing instances...")
 
             print "Removing instances..."    
-            
+
             # Remove instances after the end of all applications
             self._remove_instances(nova, connector, instances)
-            
+
             LOG.log("Finished application execution")
             print "Finished application execution"
-            
-            application_time = app_end_time - app_start_time 
-            application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time, application_time))
+
+            application_time = app_end_time - app_start_time
+            application_time_log.log("%s|%.0f|%.0f" % (app_id, app_start_time,
+                                                       application_time))
             self.application_time = application_time
             self.start_time = app_start_time
             self.update_application_state("OK")
@@ -278,7 +283,8 @@ class OpenStackGenericProvider(base.PluginInterface):
 
     def execute(self, data):
         executor = OpenStackApplicationExecutor()
-        handling_thread = threading.Thread(target=executor.start_application, args=(data,))
+        handling_thread = threading.Thread(target=executor.start_application,
+                                           args=(data,))
         handling_thread.start()
         app_id = "osgeneric" + self.id_generator.get_ID()
         return (app_id, executor)
