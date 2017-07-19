@@ -18,7 +18,6 @@ from application_manager.service import api
 from application_manager.utils.logger import Log
 from application_manager.utils import authorizer
 from application_manager.utils import optimizer
-import pdb
 
 LOG = Log("Servicev10", "serviceAPIv10.log")
 
@@ -67,6 +66,9 @@ def status():
         application_stat["start_time"] = applications[app_id].get_application_start_time()
 
     return applications_status
+
+def _get_new_cluster_size(hosts):
+    return optimizer.get_cluster_size(api.optimizer_url, hosts)
 
 
 if __name__ == "__main__":

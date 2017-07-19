@@ -12,11 +12,10 @@
 # limitations under the License.
 
 import time
-import threading
 import json
 import requests
 
-from application_manager.utils.ManagerChronos import *
+from application_manager.utils.ManagerChronos import ManagerChronos
 from application_manager.plugins.base import GenericApplicationExecutor
 from application_manager.plugins import base
 from application_manager.utils.ids import ID_Generator
@@ -75,9 +74,10 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
     def modify_job(self, api_rest_ip, jobname, job):
         updateCommand_1 = "startedAt=$(date +%s); "
         updateCommand_2 = "; /usr/bin/curl -H 'Content-type: application/json' -X POST " \
-                          + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + "\", \"finished_at\": \"'$(date +%s)'\", " \
-                                                                                     "\"started_at\": \"'$(echo $startedAt)'\", \"hostname\": " \
-                                                                                     "\"'$(hostname)'\", \"uuid\": \"" + self.id + "\"}'"
+                          + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + \
+                          "\", \"finished_at\": \"'$(date +%s)'\", " \
+                          "\"started_at\": \"'$(echo $startedAt)'\", \"hostname\": " \
+                          "\"'$(hostname)'\", \"uuid\": \"" + self.id + "\"}'"
         job['command'] = updateCommand_1 + job['command'] + updateCommand_2
         job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
         return job

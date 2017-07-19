@@ -33,7 +33,8 @@ class ManagerChronos():
                 info = json.loads(str(response.text[1:-1] ))
                 return info
             else:        
-                print('ERROR: '+ str(response.status_code) + ' -> ' +jobName + ' does not exist') 
+                print('ERROR: '+ str(response.status_code) + ' -> '
+                      + jobName + ' does not exist')
         else:
             print('ERROR: Cannot connect to ' + url ) 
         return {}
@@ -47,8 +48,11 @@ class ManagerChronos():
         ok = False
         while ( (self.max_retries>retries) and (not ok) ):
             retries += 1
-            try: 
-                response = requests.post( url, headers=head, data=json.dumps(job),auth=self.auth  ) #auth=(self.user, self.passwd)
+            try:
+                # auth=(self.user, self.passwd)
+                response = requests.post( url, headers=head,
+                                          data=json.dumps(job),
+                                          auth=self.auth)
                 ok=True
             except requests.exceptions.ConnectionError:
                 print (url + ': Connection refused, waiting 5 seconds...') 
@@ -58,7 +62,8 @@ class ManagerChronos():
                 print('Successfully created job: ' + job['name'])
                 return True
             else:
-                print('ERROR: '+ str(response.status_code) + ' when we trying to create a Docker job: ' + job['name']) 
+                print('ERROR: '+ str(response.status_code) +
+                      ' when trying to create a Docker job: ' + job['name'])
         else:
             print('ERROR: Cannot connect to ' + url ) 
         return False
@@ -69,7 +74,7 @@ class ManagerChronos():
         response = None
         retries = 0
         ok = False
-        while ( (self.max_retries>retries) and (not ok) ):
+        while self.max_retries>retries and not ok:
             retries += 1
             try: 
                 response =  requests.request( 'DELETE', url, auth=self.auth )
@@ -82,7 +87,8 @@ class ManagerChronos():
                 print('Successfully deleted job: ' + jobName)
                 return True
             else:
-                print('ERROR: '+ str(response.status_code) + ' when we trying to delete ' + jobName) 
+                print('ERROR: '+ str(response.status_code) +
+                      ' when trying to delete ' + jobName)
         else:
             print('ERROR: Cannot connect to ' + url ) 
         return False
@@ -93,7 +99,7 @@ class ManagerChronos():
         response = None
         retries = 0
         ok = False
-        while ( (self.max_retries>retries) and (not ok) ):
+        while self.max_retries>retries and not ok:
             retries += 1
             try: 
                 response =  requests.request( 'PUT', url, auth=self.auth )
@@ -106,7 +112,8 @@ class ManagerChronos():
                 print('Successfully started job: ' + jobName)
                 return True
             else:
-                print('ERROR: '+ str(response.status_code) + ' when we trying to start a Docker job: ' + job['name']) 
+                print('ERROR: '+ str(response.status_code) +
+                      ' when trying to start a Docker job: ' + jobName)
         else: 
             print('ERROR: Cannot connect to ' + url ) 
         return False
