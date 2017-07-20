@@ -73,11 +73,15 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
     
     def modify_job(self, api_rest_ip, jobname, job):
         updateCommand_1 = "startedAt=$(date +%s); "
-        updateCommand_2 = "; /usr/bin/curl -H 'Content-type: application/json' -X POST " \
-                          + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + \
-                          "\", \"finished_at\": \"'$(date +%s)'\", " \
-                          "\"started_at\": \"'$(echo $startedAt)'\", \"hostname\": " \
-                          "\"'$(hostname)'\", \"uuid\": \"" + self.id + "\"}'"
+        updateCommand_2 = ("; /usr/bin/curl -H 'Content-type: application/json' -X POST " +
+                          api_rest_ip +
+                           "/updateTask -d '{\"name\": \""
+                           + jobname +
+                          "\", \"finished_at\": \"'$(date +%s)'\", " +
+                          "\"started_at\": \"'$(echo $startedAt)'\", " +
+                          "\"hostname\": " +
+                          "\"'$(hostname)'\", \"uuid\": \""
+                           + self.id + "\"}'")
         job['command'] = updateCommand_1 + job['command'] + updateCommand_2
         job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
         return job
@@ -86,12 +90,10 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
         head = { 'Content-type':'application/json'}
         print head
         url = url_webhook+'/initTask'
-	print url
         msg = json.dumps(payload)
-	print msg
         response = requests.post( url, headers=head, data=msg)
         print "Response " + str(response)
- 
+
 
 
 
