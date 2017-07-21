@@ -30,10 +30,7 @@ public_key = config.get('os-generic', 'public_key')
 key_path = config.get('os-generic', 'key_path')
 user_domain_name = config.get('os-generic', 'user_domain_name')
 project_id = config.get('os-generic', 'project_id')
-auth_ip = config.get('os-generic', 'auth_ip')<<<<<<< chronos
-2
- 
-
+auth_ip = config.get('os-generic', 'auth_ip')
 user = config.get('os-generic', 'user')
 password = config.get('os-generic', 'password')
 domain = config.get('os-generic', 'user_domain_name')
@@ -51,7 +48,19 @@ domain = config.get('spark-sahara', 'user_domain_name')
 hosts = config.get('infra', 'hosts').split(' ')
 
 
+mesos_url = config.get('spark-mesos', 'mesos_url')
+mesos_port = config.get('spark-mesos', 'mesos_port')
+cluster_username = config.get('spark-mesos', 'cluster_username')
+cluster_password = config.get('spark-mesos', 'cluster_password')
+cluster_key_path = config.get('spark-mesos', 'key_path')
+supervisor_url = config.get('spark-mesos', 'supervisor_url')
+one_url = config.get('spark-mesos', 'one_url')
+one_password = config.get('spark-mesos', 'one_password')
+one_username = config.get('spark-mesos', 'one_username')
+spark_path = config.get('spark-mesos', 'spark_path')
+
+
 chronos_url = config.get('chronos', 'url')
 chronos_username = config.get('chronos', 'username')
 chronos_password = config.get('chronos', 'password')
-supervisor_ip = config.get('chronos', 'supervisor_ip')
+supervisor_url = config.get('chronos', 'supervisor_url')

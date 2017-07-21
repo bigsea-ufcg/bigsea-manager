@@ -24,13 +24,24 @@ project_id = 0022cedasdaj3n4407beea319878e9590h
 user_domain_name = LSD
 swift_container =
 
-
 [chronos]
 
 url = http://152.48.109.15:4004
 username = user
 password = secret
 supervisor_ip = http://152.48.115.19:20010
+
+[spark-mesos]
+
+mesos_url = http://158.42.105.19:4400
+mesos_port = 4400
+cluster_username = ubuntu
+cluster_password = ubuntu_secret
+cluster_key_path =
+supervisor_url = http://158.42.105.19:20000
+one_url =
+one_user = igor
+one_password = Ri4queb3
 
 [infra]
 hosts = 
