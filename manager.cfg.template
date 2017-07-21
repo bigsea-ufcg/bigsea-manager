@@ -6,23 +6,27 @@ authorization_url =
 optimizer_url =
 plugins =
 
-[openstack]
-
-hosts =
-net_id =
-cluster_id =
-slave_ng =
-master_ng =
-
-plugin =
-version =
-
-[credentials]
-
+[os-generic]
 public_key =
 key_path =
+log_path =
 user =
 password =
 auth_ip =
 project_id =
 user_domain_name =
+
+[spark-sahara]
+public_key =
+user =
+password =
+auth_ip =
+project_id =
+user_domain_name =
+swift_container =
+
+[chronos]
+url = 
+username = 
+password = 
+supervisor_ip = 

@@ -43,6 +43,7 @@ setup(
             'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
             'fake=application_manager.plugins.test_plugin.plugin:FakeProvider',
             'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
+            'chronos=application_manager.plugins.chronos.plugin:ChronosGenericProvider'
         ],
     },
 )

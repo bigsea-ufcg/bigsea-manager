@@ -17,7 +17,7 @@ import ConfigParser
 
 # Conf reading
 config = ConfigParser.RawConfigParser()
-config.read('./manager.cfg.lsd')
+config.read('./manager.cfg')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
@@ -26,15 +26,32 @@ optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').split(',')
 
 
-public_key = config.get('credentials', 'public_key')
-key_path = config.get('credentials', 'key_path')
-user_domain_name = config.get('credentials', 'user_domain_name')
-project_id = config.get('credentials', 'project_id')
-auth_ip = config.get('credentials', 'auth_ip')
-user = config.get('credentials', 'user')
-password = config.get('credentials', 'password')
-domain = config.get('credentials', 'user_domain_name')
-log_path = config.get('credentials', 'log_path')
-container = config.get('credentials', 'swift_container')
+public_key = config.get('os-generic', 'public_key')
+key_path = config.get('os-generic', 'key_path')
+user_domain_name = config.get('os-generic', 'user_domain_name')
+project_id = config.get('os-generic', 'project_id')
+auth_ip = config.get('os-generic', 'auth_ip')<<<<<<< chronos
+2
+ 
+
+user = config.get('os-generic', 'user')
+password = config.get('os-generic', 'password')
+domain = config.get('os-generic', 'user_domain_name')
+log_path = config.get('os-generic', 'log_path')
+
+container = config.get('spark-sahara', 'swift_container')
+user_domain_name = config.get('spark-sahara', 'user_domain_name')
+project_id = config.get('spark-sahara', 'project_id')
+auth_ip = config.get('spark-sahara', 'auth_ip')
+user = config.get('spark-sahara', 'user')
+password = config.get('spark-sahara', 'password')
+domain = config.get('spark-sahara', 'user_domain_name')
+
 
 hosts = config.get('infra', 'hosts').split(' ')
+
+
+chronos_url = config.get('chronos', 'url')
+chronos_username = config.get('chronos', 'username')
+chronos_password = config.get('chronos', 'password')
+supervisor_ip = config.get('chronos', 'supervisor_ip')
