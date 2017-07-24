@@ -16,11 +16,22 @@ from urllib3 import response
 
 from application_manager.plugins import base
 from application_manager.service import api
+from application_manager.utils import monitor
+from application_manager.utils import scaler
+
+from uuid import uuid4
 
 import paramiko
 import requests
 
+
 class SparkMesosProvider(base.PluginInterface):
+
+    def __init__(self):
+        self.get_frameworks_url = "%s:%s" % (api.mesos_url,
+                                             api.mesos_port)
+        self.app_id = app_id = "app-one-spark-mesos-"+str(uuid4())[:8]
+
 
     def get_title(self):
         return 'Spark-Mesos plugin '
@@ -48,7 +59,8 @@ class SparkMesosProvider(base.PluginInterface):
         binary_url = data['binary_url']
         execution_class = data['execution_class']
         execution_parameters = data['execution_parameters']
-        app_id = ''
+        starting_cap = data['starting_cap']
+        actuator = data['actuator']
 
         # TODO: Creates a connection ssh with Mesos cluster
         conn = self._get_ssh_connection(api.mesos_url,
@@ -56,39 +68,41 @@ class SparkMesosProvider(base.PluginInterface):
                                         api.cluster_password,
                                         api.cluster_key_path)
 
-        # TODO: Discovery ips of the executors from Mesos
-        get_frameworks_url = "%s:%s" % (api.mesos_url, api.mesos_port)
-        response = requests.get(get_frameworks_url).json()
-
-        cluster_ips = []
-        for t in response['framework'][0]['tasks']:
-            for s in t['statuses']:
-                for n in s['container_status']['network_infos']:
-                    for i in n['ip_addresses']:
-                        cluster_ips.append(i['ip_address'])
-
         # TODO: Discovery the ids on KVM using the ips
         conn.exec_command('')
 
         # TODO: Download the binary from a public link
         stdi, stdo, stdr = conn.exec_command('wget %s > /tmp/exec_bin.jar') \
                            % binary_url
+
         binary_path = stdo.read()
         # TODO: execute all the spark needed commands
-        # to run an spark job from command line
-        conn.exec_command('%s{sparkpath} --name %s ' +
+        # TODO: to run an spark job from command line
+        conn.exec_command('%s --name %s ' +
                           '--executor-memory 512M ' +
                           '--num-executors 1 ' +
-                          '--master mesos://%s:%s ' +
+                          '--master mesos://%s:%s ' + 
                           '--class %s %s %s') % (api.spark_path,
-                                                 app_id,
+                                                 self.app_id,
                                                  api.mesos_url,
                                                  api.mesos_port,
                                                  binary_path,
                                                  execution_class,
                                                  execution_parameters)
 
+        # TODO: It have to ensure that the application was
+        # TODO: started before try to get the executors
+
+        # TODO: Discovery ips of the executors from Mesos
+        executors_ips = self._get_executors_ip()
+
+        # TODO: set up the initial configuration of cpu cap
+        scaler.setup_environment(api.controller_url, executors_ips,
+                                 starting_cap, actuator)
+
         # TODO: start monitor service
+        self._start_monitoring(executors_ips, data)
+
         # TODO: start controller service
         # TODO: stop monitor
         # TODO: stop controller
@@ -98,10 +112,12 @@ class SparkMesosProvider(base.PluginInterface):
 
     def _get_ssh_connection(self, ip, username=None,
                             password=None, key_path=None):
+
         # Preparing SSH connection
         keypair = paramiko.RSAKey.from_private_key_file(key_path)
         conn = paramiko.SSHClient()
         conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
         # Checking if the connection will be established using
         # keys or passwords
         if key_path != "" and key_path is not None:
@@ -110,3 +126,40 @@ class SparkMesosProvider(base.PluginInterface):
             conn.connect(hostname=ip, username=username, password=password)
 
         return conn
+
+    def _get_executors_ip(self):
+        frameworks = requests.get(self.get_frameworks_url).json()
+
+        executors_ips = []
+        framework = None
+        # TODO: look for app-id into the labels and
+        # TODO: get the framework that contains it
+        for t in frameworks['framework'][0]['tasks']:
+            for s in t['statuses']:
+                for n in s['container_status']['network_infos']:
+                    for i in n['ip_addresses']:
+                        # TODO: it must return a list with tuples (ip, host)
+                        executors_ips.append(i['ip_address'])
+
+        return executors_ips, framework['webui_url']
+
+    def _start_monitoring(self, data):
+        print "Executing commands into the instance"
+        # TODO Check if exec_command will work without blocking exec
+
+        monitor_plugin = data['monitor_plugin']
+        info_plugin = {
+            "spark_submisson_url": data['webui_url'],
+            "expected_time": data['reference_value']
+        }
+        collect_period = 1
+        try:
+            print "Starting monitoring"
+
+            monitor.start_monitor(api.monitor_url, self.app_id,
+                                  monitor_plugin, info_plugin,
+                                  collect_period)
+
+            print "Starting scaling"
+        except Exception as e:
+            print e.message
