@@ -23,6 +23,7 @@ from uuid import uuid4
 
 import paramiko
 import requests
+import time
 
 
 class SparkMesosProvider(base.PluginInterface):
@@ -81,7 +82,7 @@ class SparkMesosProvider(base.PluginInterface):
         conn.exec_command('%s --name %s ' +
                           '--executor-memory 512M ' +
                           '--num-executors 1 ' +
-                          '--master mesos://%s:%s ' + 
+                          '--master mesos://%s:%s ' +
                           '--class %s %s %s') % (api.spark_path,
                                                  self.app_id,
                                                  api.mesos_url,
@@ -94,18 +95,23 @@ class SparkMesosProvider(base.PluginInterface):
         # TODO: started before try to get the executors
 
         # TODO: Discovery ips of the executors from Mesos
-        executors_ips = self._get_executors_ip()
+        executors = self._get_executors_ip()
+
 
         # TODO: set up the initial configuration of cpu cap
-        scaler.setup_environment(api.controller_url, executors_ips,
+        scaler.setup_environment(api.controller_url, executors[0],
                                  starting_cap, actuator)
 
         # TODO: start monitor service
-        self._start_monitoring(executors_ips, data)
+        self._start_monitoring(executors[1], data)
 
         # TODO: start controller service
+        self._start_controller(executors[0], data)
+
         # TODO: stop monitor
+        # monitor.stop_monitor(api.monitor_url, self.app_id)
         # TODO: stop controller
+        # scaler.stop_scaler(api.controller_url, self.app_id)
         # TODO: remove binary
         conn.exec_command('rm -f /tmp/exec_bin.jar')
         return True
@@ -132,6 +138,14 @@ class SparkMesosProvider(base.PluginInterface):
 
         executors_ips = []
         framework = None
+        for i in range(50):
+            for f in frameworks:
+                if 'bigsea_id' in f['labels'] and \
+                    f['labels']['bigsea_id'] == self.app_id:
+                    framework = f
+
+            time.sleep(2)
+
         # TODO: look for app-id into the labels and
         # TODO: get the framework that contains it
         for t in frameworks['framework'][0]['tasks']:
@@ -143,13 +157,20 @@ class SparkMesosProvider(base.PluginInterface):
 
         return executors_ips, framework['webui_url']
 
-    def _start_monitoring(self, data):
+    def _start_contoller(self, executors_ips, data):
+        scaler.start_scaler(api.controller_url,
+                            self.app_id,
+                            data['scaler_plugin'],
+                            executors_ips,
+                            data['scaling_parameters'])
+
+    def _start_monitoring(self, master, data):
         print "Executing commands into the instance"
         # TODO Check if exec_command will work without blocking exec
 
-        monitor_plugin = data['monitor_plugin']
+        monitor_plugin = 'spark-progress'
         info_plugin = {
-            "spark_submisson_url": data['webui_url'],
+            "spark_submisson_url": master,
             "expected_time": data['reference_value']
         }
         collect_period = 1
