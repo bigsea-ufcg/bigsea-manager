@@ -79,17 +79,29 @@ class SparkMesosProvider(base.PluginInterface):
         binary_path = stdo.read()
         # TODO: execute all the spark needed commands
         # TODO: to run an spark job from command line
-        conn.exec_command('%s --name %s ' +
-                          '--executor-memory 512M ' +
-                          '--num-executors 1 ' +
-                          '--master mesos://%s:%s ' +
-                          '--class %s %s %s') % (api.spark_path,
-                                                 self.app_id,
-                                                 api.mesos_url,
-                                                 api.mesos_port,
-                                                 binary_path,
-                                                 execution_class,
-                                                 execution_parameters)
+        if execution_class != "" and execution_class is not None:
+            conn.exec_command('%s --name %s ' +
+                              '--executor-memory 512M ' +
+                              '--num-executors 1 ' +
+                              '--master mesos://%s:%s ' +
+                              '--class %s %s %s') % (api.spark_path,
+                                                     self.app_id,
+                                                     api.mesos_url,
+                                                     api.mesos_port,
+                                                     binary_path,
+                                                     execution_class,
+                                                     execution_parameters)
+        else:
+            conn.exec_command('%s --name %s ' +
+                              '--executor-memory 512M ' +
+                              '--num-executors 1 ' +
+                              '--master mesos://%s:%s ' +
+                              '%s %s') % (api.spark_path,
+                                                     self.app_id,
+                                                     api.mesos_url,
+                                                     api.mesos_port,
+                                                     binary_path,
+                                                     execution_parameters)
 
         # TODO: It have to ensure that the application was
         # TODO: started before try to get the executors
@@ -138,17 +150,19 @@ class SparkMesosProvider(base.PluginInterface):
 
         executors_ips = []
         framework = None
-        for i in range(50):
+        find_fw = False
+        while not find_fw:
             for f in frameworks:
-                if 'bigsea_id' in f['labels'] and \
-                    f['labels']['bigsea_id'] == self.app_id:
+                if f['id'] == self.app_id:
                     framework = f
+                    find_fw = True
+                    break
 
             time.sleep(2)
 
         # TODO: look for app-id into the labels and
         # TODO: get the framework that contains it
-        for t in frameworks['framework'][0]['tasks']:
+        for t in framework['tasks']:
             for s in t['statuses']:
                 for n in s['container_status']['network_infos']:
                     for i in n['ip_addresses']:
