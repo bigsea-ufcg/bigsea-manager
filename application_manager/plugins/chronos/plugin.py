@@ -1,3 +1,4 @@
+# Copyright (c) 2017 UPV-GryCAP & UFCG-LSD.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -46,7 +47,7 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
             # Obtain arguments 
             start_job = time.time()
             job = data['info_plugin']['job']            
-            deadline = data['info_plugin']['qos']['deadline'] + start_job 
+            deadline = data['info_plugin']['qos']['deadline'] #+ start_job 
             job_duration = data['info_plugin']['qos']['duration'] # seconds
             desv_deadline = data['info_plugin']['qos']['desv_deadline'] # %/100 (e.g 5% --> desv_deadline=0.05 )
             jobname = job['name'] 
@@ -58,8 +59,9 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
                 'job_duration': job_duration,
                 'deadline': deadline,
                 'desv_deadline': desv_deadline,
-                'uuid': self.id,
-                'iterations': int( job['schedule'].split('/')[0][1:] )
+                #'iterations': int( job['schedule'].split('/')[0][1:] ),
+                'uuid': self.id
+                
             }   
 
             job = self.modify_job(supervisor_ip, jobname, job)
@@ -83,7 +85,7 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
                           "\"'$(hostname)'\", \"uuid\": \""
                            + self.id + "\"}'")
         job['command'] = updateCommand_1 + job['command'] + updateCommand_2
-        job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
+        # job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
         return job
 
     def init_webhook(self, url_webhook, payload ):
