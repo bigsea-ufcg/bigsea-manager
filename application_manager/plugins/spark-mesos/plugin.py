@@ -104,7 +104,7 @@ class SparkMesosProvider(base.PluginInterface):
         stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
         executors = self._get_executors_ip()
-        vms_ips = self._get_executors_ip()[0]
+        vms_ips = executors[0]
         vms_ids = self._extract_vms_ids(stdout.read())
 
         executors_vms_ids = []
@@ -191,6 +191,9 @@ class SparkMesosProvider(base.PluginInterface):
         return ids
 
     def _start_contoller(self, executors_ids, data):
+        data['scaling_parameters']['cluster_password'] = api.cluster_password
+        data['scaling_parameters']['cluster_username'] = api.cluster_username
+        data['scaling_parameters']['cluster_ip'] = api.mesos_url
         scaler.start_scaler(api.controller_url,
                             self.app_id,
                             data['scaler_plugin'],
