@@ -176,11 +176,11 @@ class OpenStackConnector(object):
                        public_key, net_id, image_id, plugin, version,
                        master_ng_id, slave_ng_id, op_slave_ng_id):
         if pred_cluster_size > req_cluster_size:
-            size = pred_cluster_size
+            cluster_size = pred_cluster_size
         else:
-            size = req_cluster_size
+            cluster_size = req_cluster_size
         cluster_template = self.get_cluster_template(sahara, req_cluster_size,
-                                                     size, plugin)
+                                                     cluster_size, plugin)
 
         if cluster_template is not None:
             cluster = self._create_cluster(sahara, cluster_template.id,

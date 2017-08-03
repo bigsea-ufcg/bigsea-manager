@@ -281,7 +281,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         subprocess.call(ssh_command + "%s ubuntu@%s 'echo '%s' >> %s'" %
                         (key_path, master_ip, spark_eventlog_enabled, path),
                         shell=True)
-        subprocess.call(ssh_command + "ubuntu@%s 'echo '%s' >> %s'" %
+        subprocess.call(ssh_command + "%s ubuntu@%s 'echo '%s' >> %s'" %
                         (key_path, master_ip, spark_eventlog_dir, path),
                         shell=True)
         subprocess.call(ssh_command + "%s ubuntu@%s 'echo '%s' >> %s'" %
