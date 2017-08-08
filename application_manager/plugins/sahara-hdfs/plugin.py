@@ -66,7 +66,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         try:
             self.update_application_state("Running")
 
-			# Broker Parameters
+            # Broker Parameters
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -78,7 +78,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             container = api.container
             hosts = api.hosts
 
-			# User Parameters
+            # User Parameters
             net_id = data['net_id']
             master_ng = data['master_ng']
             slave_ng = data['slave_ng']
@@ -101,7 +101,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             scaling_parameters = data["scaling_parameters"]
             scaler_plugin = data["scaler_plugin"]
 
-			# Openstack Components
+            # Openstack Components
             connector = os_connector.OpenStackConnector(LOG)
 
             sahara = connector.get_sahara_client(user, password, project_id,
@@ -138,7 +138,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                   plugin, version, master_ng,
                                                   slave_ng, op_slave_ng)
 
-            	LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
+            LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
                                                  cluster_id))
 
             if cluster_id:
@@ -166,30 +166,30 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 #                                                       job_binary_url, user,
 #                                                       password)
 
-				# Pull data from swift
+                # Pull data from swift
                 LOG.log("%s | Pull data from swift" % (time.strftime("%H:%M:%S"))
-				self._download_from_swift(swift, container, swiftpath, localpath)
+                self._download_from_swift(swift, container, swiftpath, localpath)
 
-				# Push data to master HDFS
+                # Push data to master HDFS
                 LOG.log("%s | Push data to master HDFS" % (time.strftime("%H:%M:%S"))
                 self._push_to_hdfs(master, localpath, hdfspath)
 
-				# Submit job
+                # Submit job
                 LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S"))
-				self._submit_job(master, job_exec_id, hdfspath)
+                self._submit_job(master, job_exec_id, hdfspath)
 
-				# Wait for job to finish
+                # Wait for job to finish
                 LOG.log("%s | Waiting for job to finish" % (time.strftime("%H:%M:%S"))
                 job_status = self._wait_on_job_finish(sahara, connector,
                                                       job_exec_id, app_id)
 
-				# Pull data from HDFS
+                # Pull data from HDFS
                 LOG.log("%s | Pull data from HDFS" % (time.strftime("%H:%M:%S"))
-				self._pull_from_hdfs(master, hdfspath, localpath)
-	
-				# Push data to swift
+                self._pull_from_hdfs(master, hdfspath, localpath)
+
+                # Push data to swift
                 LOG.log("%s | Push data to swift" % (time.strftime("%H:%M:%S"))
-				self._upload_to_swift(swift, container, localpath, swiftpath)
+                self._upload_to_swift(swift, container, localpath, swiftpath)
 
 #               mains = [job_binary_id]
 #               job_template_id = self._get_job_template_id(sahara, connector,
@@ -407,22 +407,21 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     def _push_to_hdfs(self, master, localpath, hdfspath):
         subprocess.call("hadoop distcp %s hdfs://%s:8020/%s" % (localpath, master, hdfspath), shell=True)
 
-	def _pull_from_hdfs(self, master, hdfspath, localpath):
-		pass
+    def _pull_from_hdfs(self, master, hdfspath, localpath):
+        pass
 
-	def _download_from_swift(self, swift, container, swiftpath, localpath):
-		input_files = self._get_input_files(args)
+    def _download_from_swift(self, swift, container, swiftpath, localpath):
+        input_files = self._get_input_files(args)
  
         for files in input_files:
-        	container, file_path = self._split_input_file_info(files)
+            container, file_path = self._split_input_file_info(files)
             connector.download_file(swift, container, file_path)
 
-	def _upload_to_swift(self, swift, container, localpath, swiftpath):
-		pass
+    def _upload_to_swift(self, swift, container, localpath, swiftpath):
+        pass
 
-	def _submit_job(self, master, job_binary, hdfspath):
-		pass
-
+    def _submit_job(self, master, job_binary, hdfspath):
+        pass
 
 class SaharaProvider(base.PluginInterface):
 
