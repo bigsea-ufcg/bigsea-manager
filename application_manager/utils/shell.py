@@ -33,6 +33,12 @@ def execute_r_script(script, args):
         raise
 
 
-def write_to_file(outfile, line):
+def append_to_file(outfile, line):
     with open(outfile, 'a') as f:
         f.write(line)
+
+
+def write_to_file(outfile, line):
+    with open(outfile, 'w') as f:
+        f.write(line)
+

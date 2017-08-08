@@ -26,6 +26,7 @@ from saharaclient.api.client import Client as saharaclient
 from swiftclient.client import Connection as swiftclient
 from subprocess import *
 
+from application_manager.utils import shell
 
 class OpenStackConnector(object):
     def __init__(self, logger):
@@ -76,6 +77,13 @@ class OpenStackConnector(object):
                 swift.put_object(container, swift_name,
                                  contents=swift_file.read(),
                                  content_type='text/plain')
+
+    def download_file(self, swift, container, file_path):
+        sf_file = swift.get_object(container, file_path)
+        file_name = sf_file[0]['x-object-meta-orig-filename']
+        file_content = sf_file[1]
+        shell.write_to_file(file_name, file_content)
+
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
@@ -155,14 +163,15 @@ class OpenStackConnector(object):
             reducers = int(cluster_size) * 2
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
         else:
-            configs = {'configs': {
-                            'edp.java.main_class': main_class,
-                            'edp.spark.adapt_for_swift': 'True',
-                            'fs.swift.service.sahara.password': password,
-                            'fs.swift.service.sahara.username': username
-                            },
-                       'args': args
-                       }
+            configs = {
+                'configs': {
+                    'edp.java.main_class': main_class,
+                    'edp.spark.adapt_for_swift': 'True',
+                    'fs.swift.service.sahara.password': password,
+                    'fs.swift.service.sahara.username': username
+                },
+                'args': args
+            }
 
         return configs
 
