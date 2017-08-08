@@ -38,7 +38,6 @@ application_time_log = Log("Application_time", "application_time.log")
 instances_log = Log("Instances", "instances.log")
 configure_logging()
 
-
 class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
     def __init__(self):
@@ -46,7 +45,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self.state_lock = threading.RLock()
         self.application_time = -1
         self.start_time = -1
-        # self.workers = []
 
     def get_application_state(self):
         with self.state_lock:
@@ -68,6 +66,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         try:
             self.update_application_state("Running")
 
+			# Broker Parameters
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -79,34 +78,30 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             container = api.container
             hosts = api.hosts
 
+			# User Parameters
             net_id = data['net_id']
             master_ng = data['master_ng']
             slave_ng = data['slave_ng']
             op_slave_ng = data['opportunistic_slave_ng']
-
             plugin = data['openstack_plugin']
             job_type = data['job_type']
             version = data['version']
-            # cluster_id = data['cluster_id']
             req_cluster_size = data['cluster_size']
             args = data['args']
             main_class = data['main_class']
             job_template_name = data['job_template_name']
             job_binary_name = data['job_binary_name']
             job_binary_url = data['job_binary_url']
-            # input_ds_id = data['input_datasource_id']
-            # output_ds_id = data['output_datasource_id']
             plugin_app = data['plugin']
             expected_time = data['expected_time']
             collect_period = data['collect_period']
             image_id = data['image_id']
             starting_cap = data['starting_cap']
             actuator = data["actuator"]
-
-            #### SCALER PARAMETERS ###
             scaling_parameters = data["scaling_parameters"]
             scaler_plugin = data["scaler_plugin"]
 
+			# Openstack Components
             connector = os_connector.OpenStackConnector(LOG)
 
             sahara = connector.get_sahara_client(user, password, project_id,
@@ -118,23 +113,21 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             # Cluster Creation
             LOG.log("%s | Checking if opportunistic instances are available" %
                     (time.strftime("%H:%M:%S")))
-            pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
-                                                           hosts)
+
+            pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url, hosts)
 
             if pred_cluster_size > req_cluster_size:
                 cluster_size = pred_cluster_size
             else:
                 cluster_size = req_cluster_size
+
             LOG.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
                                                str(cluster_size)))
 
-            # cluster_size = int(req_cluster_size)
-            # cluster_size = _get_new_cluster_size(hosts)ah
             cluster_id = connector.get_existing_cluster_by_size(sahara,
                                                                 cluster_size)
 
             if not cluster_id:
-
                 LOG.log("%s | Cluster does not exist. Creating cluster..." %
                         (time.strftime("%H:%M:%S")))
 
@@ -145,12 +138,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                   plugin, version, master_ng,
                                                   slave_ng, op_slave_ng)
 
-            LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
-                                             cluster_id))
+            	LOG.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
+                                                 cluster_id))
 
             if cluster_id:
-                master = connector.get_master_instance(
-                    sahara, cluster_id)['internal_ip']
+                master = connector.get_master_instance(sahara, cluster_id)['internal_ip']
+
                 LOG.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"),
                                                 master))
 
@@ -167,88 +160,101 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                      master))
                 self._enable_log(master, key_path)
 
-                # Preparing job
-                job_binary_id = self._get_job_binary_id(sahara, connector,
-                                                        job_binary_name,
-                                                        job_binary_url, user,
-                                                        password)
+#               # Preparing job
+#               job_binary_id = self._get_job_binary_id(sahara, connector,
+#                                                       job_binary_name,
+#                                                       job_binary_url, user,
+#                                                       password)
 
-                input_files = self._get_input_files(args)
+				# Pull data from swift
+                LOG.log("%s | Pull data from swift" % (time.strftime("%H:%M:%S"))
+				self._download_from_swift(swift, container, swiftpath, localpath)
 
-                for files in input_files:
-                    container, file_path = self._split_input_file_info(files)
-                    connector.download_file(swift, container, file_path)
+				# Push data to master HDFS
+                LOG.log("%s | Push data to master HDFS" % (time.strftime("%H:%M:%S"))
+                self._push_to_hdfs(master, localpath, hdfspath)
 
-                self._upload_files_to_hdfs(master, files)
+				# Submit job
+                LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S"))
+				self._submit_job(master, job_exec_id, hdfspath)
 
-                mains = [job_binary_id]
-                job_template_id = self._get_job_template_id(sahara, connector,
-                                                            mains,
-                                                            job_template_name,
-                                                            job_type)
-
-                LOG.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
-
-                # Running job
-                job = connector.create_job_execution(sahara, job_template_id,
-                                                     cluster_id,
-                                                     configs=configs)
-
-                LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
-
-                spark_app_id = spark.get_running_app(master,
-                                                     spark_applications_ids)
-                spark_applications_ids.append(spark_app_id)
-
-                LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
-
-                job_exec_id = job.id
-
-                for worker_id in workers_id:
-                    instances_log.log("%s|%s" % (app_id, worker_id))
-
-                job_status = connector.get_job_status(sahara, job_exec_id)
-
-                LOG.log("%s | Sahara job status: %s" %
-                        (time.strftime("%H:%M:%S"), job_status))
-
-                info_plugin = {"spark_submisson_url": "http://" + master,
-                               "expected_time": expected_time}
-
-                LOG.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
-                monitor.start_monitor(api.monitor_url, spark_app_id,
-                                      plugin_app, info_plugin, collect_period)
-                LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-                scaler.start_scaler(api.controller_url, spark_app_id,
-                                    scaler_plugin, workers_id,
-                                    scaling_parameters)
-
+				# Wait for job to finish
+                LOG.log("%s | Waiting for job to finish" % (time.strftime("%H:%M:%S"))
                 job_status = self._wait_on_job_finish(sahara, connector,
                                                       job_exec_id, app_id)
 
-                LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
-                monitor.stop_monitor(api.monitor_url, spark_app_id)
-                LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
-                scaler.stop_scaler(api.controller_url, spark_app_id)
+				# Pull data from HDFS
+                LOG.log("%s | Pull data from HDFS" % (time.strftime("%H:%M:%S"))
+				self._pull_from_hdfs(master, hdfspath, localpath)
+	
+				# Push data to swift
+                LOG.log("%s | Push data to swift" % (time.strftime("%H:%M:%S"))
+				self._upload_to_swift(swift, container, localpath, swiftpath)
 
-                spark_applications_ids.remove(spark_app_id)
-
-                # Copy log to manager
-                LOG.log("%s | Copying log to manager" % (
-                    time.strftime("%H:%M:%S")))
-                local_dir = '%s/%s' % (log_path, spark_app_id)
-                self._download_log(master, key_path, spark_app_id,
-                                   job_binary_name, job_exec_id, local_dir)
-
-                # Copy log to Swift
-                LOG.log("%s | Uploading application log to Swift" % (
-                    time.strftime("%H:%M:%S")))
-                swift_dir = '%s/logs/%s' % (job_binary_name, spark_app_id)
-                connector.upload_files(swift, local_dir, swift_dir, container)
-                # Delete cluster
-                LOG.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
-                                                     cluster_id))
-                connector.delete_cluster(sahara, cluster_id)
+#               mains = [job_binary_id]
+#               job_template_id = self._get_job_template_id(sahara, connector,
+#                                                           mains,
+#                                                           job_template_name,
+#                                                           job_type)
+#
+#               LOG.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
+#
+#               # Running job
+#               job = connector.create_job_execution(sahara, job_template_id,
+#                                                    cluster_id,
+#                                                    configs=configs)
+#
+#               LOG.log("%s | Created job" % (time.strftime("%H:%M:%S")))
+#
+#               spark_app_id = spark.get_running_app(master,
+#                                                    spark_applications_ids)
+#               spark_applications_ids.append(spark_app_id)
+#
+#               LOG.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
+#
+#               job_exec_id = job.id
+#
+#               for worker_id in workers_id:
+#                   instances_log.log("%s|%s" % (app_id, worker_id))
+#
+#               job_status = connector.get_job_status(sahara, job_exec_id)
+#
+#               LOG.log("%s | Sahara job status: %s" %
+#                       (time.strftime("%H:%M:%S"), job_status))
+#
+#               info_plugin = {"spark_submisson_url": "http://" + master,
+#                              "expected_time": expected_time}
+#
+#               LOG.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+#               monitor.start_monitor(api.monitor_url, spark_app_id,
+#                                     plugin_app, info_plugin, collect_period)
+#               LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+#               scaler.start_scaler(api.controller_url, spark_app_id,
+#                                   scaler_plugin, workers_id,
+#                                   scaling_parameters)
+#
+#               job_status = self._wait_on_job_finish(sahara, connector,
+#                                                     job_exec_id, app_id)
+#
+#               LOG.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
+#               monitor.stop_monitor(api.monitor_url, spark_app_id)
+#               LOG.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
+#               scaler.stop_scaler(api.controller_url, spark_app_id)
+#
+#               spark_applications_ids.remove(spark_app_id)
+#
+#               # Copy log to manager
+#               LOG.log("%s | Copying log to manager" % (
+#                   time.strftime("%H:%M:%S")))
+#               local_dir = '%s/%s' % (log_path, spark_app_id)
+#               self._download_log(master, key_path, spark_app_id,
+#                                  job_binary_name, job_exec_id, local_dir)
+#
+#               # Copy log to Swift
+#               LOG.log("%s | Uploading application log to Swift" % (
+#                   time.strftime("%H:%M:%S")))
+#               swift_dir = '%s/logs/%s' % (job_binary_name, spark_app_id)
+#               connector.upload_files(swift, local_dir, swift_dir, container)
 
                 LOG.log("Finished application execution")
                 print "Finished application execution"
@@ -275,8 +281,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                           "/usr/lib/hadoop-mapreduce/hadoop-openstack.jar")
         spark_eventlog_enabled = "spark.eventLog.enabled true"
         spark_eventlog_dir = "spark.eventLog.dir file:/opt/spark/logs"
-        spark_history_dir = (
-            "spark.history.fs.logDirectory file:/opt/spark/logs")
+        spark_history_dir = "spark.history.fs.logDirectory file:/opt/spark/logs"
+
         ssh_command = "ssh -o 'StrictHostKeyChecking no' -i "
 
         subprocess.call(ssh_command + "%s ubuntu@%s 'echo '%s' > %s'" %
@@ -384,9 +390,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     def _get_input_files(self, args):
         inputs = []
         input_args = args.split(' ')
+
         for arg in input_args:
             if arg.startswith('swift://'):
                 inputs.append(arg)
+
         return inputs
 
     def _split_input_file_info(self, input_file):
@@ -396,8 +404,24 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         return container, file_path
 
-    def _upload_files_to_hdfs(self, master, files):
-        pass
+    def _push_to_hdfs(self, master, localpath, hdfspath):
+        subprocess.call("hadoop distcp %s hdfs://%s:8020/%s" % (localpath, master, hdfspath), shell=True)
+
+	def _pull_from_hdfs(self, master, hdfspath, localpath):
+		pass
+
+	def _download_from_swift(self, swift, container, swiftpath, localpath):
+		input_files = self._get_input_files(args)
+ 
+        for files in input_files:
+        	container, file_path = self._split_input_file_info(files)
+            connector.download_file(swift, container, file_path)
+
+	def _upload_to_swift(self, swift, container, localpath, swiftpath):
+		pass
+
+	def _submit_job(self, master, job_binary, hdfspath):
+		pass
 
 
 class SaharaProvider(base.PluginInterface):
@@ -407,7 +431,7 @@ class SaharaProvider(base.PluginInterface):
         self.id_generator = ID_Generator()
 
     def get_title(self):
-        return 'OpenStack Sahara'
+        return 'OpenStack Sahara HDFS'
 
     def get_description(self):
         return 'Plugin that allows utilization of Sahara to run jobs'
