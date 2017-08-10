@@ -69,21 +69,30 @@ class OpenStackConnector(object):
 
         return swift_connection
 
-    def upload_files(self, swift, localdir, swiftdir, container):
-        for targetfile in os.listdir(localdir):
-            localfile = localdir + '/' + targetfile
-            swift_name = swiftdir + '/' + targetfile
-            with open(localfile, 'r') as swift_file:
-                swift.put_object(container, swift_name,
-                                 contents=swift_file.read(),
-                                 content_type='text/plain')
+    def upload_directory(self, swift, local_dir, swift_dir, container):
+        for target_file in os.listdir(local_dir):
+            local_file = local_dir + target_file
+            swift_name = swift_dir + target_file
+            if os.path.isdir(local_file): 
+                self.upload_directory(swift, local_file+'/', swift_name+'/', container)
+            else:
+                with open(local_file, 'r') as swift_file:
+                    swift.put_object(container, swift_name,
+                                     contents=swift_file.read(),
+                                     content_type='text/plain')
 
-    def download_file(self, swift, container, file_path):
-        sf_file = swift.get_object(container, file_path)
-        file_name = sf_file[0]['x-object-meta-orig-filename']
-        file_content = sf_file[1]
-        shell.write_to_file(file_name, file_content)
+    def download_directory(self, swift, src_dir, dest_dir, container):
+        for obj in swift.get_container(container)[1]:
+            if obj['name'].startswith(src_dir):
+                self.download_file(swift, obj['name'], dest_dir, container)
 
+    def download_file(self, swift, src_file, dest_dir, container):
+        headers, content = swift.get_object(container, src_file)
+        splitted = src_file.split('/')
+ 
+        dest_file = dest_dir + '/' + splitted[len(splitted)-1]
+        with open(dest_file, 'w') as local:
+            local.write(content)
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
