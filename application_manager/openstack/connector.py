@@ -71,10 +71,15 @@ class OpenStackConnector(object):
 
     def upload_directory(self, swift, local_dir, swift_dir, container):
         for target_file in os.listdir(local_dir):
-            local_file = local_dir + target_file
-            swift_name = swift_dir + target_file
-            if os.path.isdir(local_file): 
-                self.upload_directory(swift, local_file+'/', swift_name+'/', container)
+            if local_dir[len(local_dir)-1] == '/':
+                local_file = local_dir[:len(local_dir)-1]+'/'+target_file
+                swift_name = swift_dir[:len(swift_dir)-1]+'/'+target_file
+            else:
+                local_file = local_dir +'/'+target_file
+                swift_name = swift_dir +'/'+target_file
+
+            if os.path.isdir(local_file):
+                self.upload_directory(swift, local_file, swift_name, container)
             else:
                 with open(local_file, 'r') as swift_file:
                     swift.put_object(container, swift_name,
