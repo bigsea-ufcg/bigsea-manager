@@ -88,7 +88,7 @@ class OpenStackConnector(object):
 
     def download_directory(self, swift, src_dir, dest_dir, container):
         for obj in swift.get_container(container)[1]:
-            if obj['name'].startswith(src_dir):
+            if obj['name'].startswith(src_dir) and obj['name'][len(obj['name'])-1] != '/':
                 self.download_file(swift, obj['name'], dest_dir, container)
 
     def download_file(self, swift, src_file, dest_dir, container):

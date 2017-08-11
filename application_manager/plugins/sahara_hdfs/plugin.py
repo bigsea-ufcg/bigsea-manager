@@ -193,6 +193,9 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
                 # Submit job
                 LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S")))
                 local_binary_file = local_binary_path + os.listdir(local_binary_path)[0]
+
+                LOG.log("----------------------> %s" % local_input_path)
+ 
                 self._submit_job(key_path, master, main_class, local_binary_file, local_input_path, local_output_path, job_params)
 
                 # Copy output from cluster to broker
@@ -267,11 +270,17 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
         return container
 
     def _download_from_swift(self, connector, swift, swift_path, local_path, container):
+        new_local_path = local_path
+
         for path in swift_path:
-            if os.path.isdir(path):
-                connector.download_directory(swift, path, local_path, container)
-            else:
-                connector.download_file(swift, path, local_path, container) 
+            for obj in swift.get_container(container)[1]:
+                if obj['name'].startswith(path) and obj['name'][len(obj['name'])-1] == '/':
+                    splitted = obj['name'].split('/')
+                    new_local_path = local_path + splitted[len(splitted)-2]+'/'
+                    self._mkdir(local_path + splitted[len(splitted)-2])
+
+                if obj['name'].startswith(path) and obj['name'][len(obj['name'])-1] != '/':
+                    connector.download_file(swift, obj['name'], new_local_path, container)
 
     def _push_to_hdfs(self, master, local_path, hdfs_path):
         hadoop_mkdir_command = "hadoop fs -mkdir -p %s" % (hdfs_path)
@@ -289,6 +298,7 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
     def _submit_job(self, key, master, main_class, job_binary_file, input_path, output_path, parameters):
         input_param = ''
         for input_file in os.listdir(input_path):
+            LOG.log("-----------> %s" % input_file)
             input_param = input_param + 'file://' + input_path + input_file + ' '
 
         others = ''
@@ -300,8 +310,6 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
         spark_submit = '/opt/spark/bin/spark-submit --class ' + main_class + " " + job_binary_file + " " + input_param + " " + output_param + " " + others
 
         self._remote_command(key, master, spark_submit)
-
-
 
     def _mkdir(self, path):
         subprocess.call("mkdir -p %s" % path, shell=True)
