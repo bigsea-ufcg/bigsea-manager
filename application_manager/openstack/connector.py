@@ -75,11 +75,12 @@ class OpenStackConnector(object):
                 local_file = local_dir[:len(local_dir)-1]+'/'+target_file
                 swift_name = swift_dir[:len(swift_dir)-1]+'/'+target_file
             else:
-                local_file = local_dir +'/'+target_file
-                swift_name = swift_dir +'/'+target_file
+                local_file = local_dir + '/' + target_file
+                swift_name = swift_dir + '/' + target_file
 
             if os.path.isdir(local_file):
-                self.upload_directory(swift, local_file, swift_name, container)
+                self.upload_directory(swift, local_file,
+                                      swift_name, container)
             else:
                 with open(local_file, 'r') as swift_file:
                     swift.put_object(container, swift_name,
@@ -94,10 +95,17 @@ class OpenStackConnector(object):
     def download_file(self, swift, src_file, dest_dir, container):
         headers, content = swift.get_object(container, src_file)
         splitted = src_file.split('/')
- 
+
         dest_file = dest_dir + '/' + splitted[len(splitted)-1]
         with open(dest_file, 'w') as local:
             local.write(content)
+
+    def check_file_exists(self, swift, container, path):
+        try:
+            headers = swift.head_object(container, path)
+            return headers
+        except Exception:
+            return None
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
