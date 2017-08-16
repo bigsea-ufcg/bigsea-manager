@@ -99,6 +99,13 @@ class OpenStackConnector(object):
         with open(dest_file, 'w') as local:
             local.write(content)
 
+    def check_file_exists(self, swift, container, path):
+        try:
+            headers = swift.head_object(container, path)
+            return headers
+        except Exception:
+            return None
+
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
         return cluster.status
