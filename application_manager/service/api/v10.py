@@ -25,11 +25,11 @@ applications = {}
 
 
 def execute(data):
-    authorization = authorizer.get_authorization(api.authorization_url,
-                                                 data['bigsea_username'],
-                                                 data['bigsea_password'])
-    if not authorization['success']:
-        return 'Error: Authentication failed. User not authorized'
+    #authorization = authorizer.get_authorization(api.authorization_url,
+    #                                             data['bigsea_username'],
+    #                                             data['bigsea_password'])
+    #if not authorization['success']:
+    #    return 'Error: Authentication failed. User not authorized'
 
     if eval(data['opportunistic']):
         hosts = api.hosts
