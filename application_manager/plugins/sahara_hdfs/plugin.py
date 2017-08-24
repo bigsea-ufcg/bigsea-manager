@@ -205,6 +205,10 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
 
                 pdb.set_trace()
 
+                # Push input to cluster HDFS
+                LOG.log("%s | Push input to cluster HDFS" % (time.strftime("%H:%M:%S")))
+                self._push_to_hdfs(master, local_input_path, hdfs_path)
+
                 # Submit job
                 LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S")))
                 local_binary_file = saharahdfs.get_binary_file(local_binary_path)

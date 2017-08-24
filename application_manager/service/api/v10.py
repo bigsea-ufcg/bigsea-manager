@@ -31,7 +31,7 @@ def execute(data):
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
 
-    if data['opportunistic']:
+    if eval(data['opportunistic']):
         hosts = api.hosts
         pred_cluster_size = _get_new_cluster_size(hosts)
 
