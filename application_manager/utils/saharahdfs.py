@@ -31,6 +31,22 @@ def get_output_path(path, local_path):
 
     return local_output_path
 
+def get_output_subpath(path, local_path):
+    local_output_path = local_path
+    splitted = path.split('/')
+
+    if splitted[len(splitted)-1] == '':
+        splitted.remove('')
+
+    splitted.remove(splitted[len(splitted)-1])
+
+    for string in splitted:
+        local_output_path += '/' + string
+
+    local_output_path += '/'
+
+    return local_output_path
+
 def get_binary_path(path, local_path):
     local_binary_path = local_path
     splitted = path.split('/')

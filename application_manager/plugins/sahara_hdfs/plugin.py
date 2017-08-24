@@ -174,6 +174,7 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
                 hdfs_input_path = saharahdfs.get_input_path(job_input_paths, hdfs_path)
                 hdfs_output_path = saharahdfs.get_output_path(job_output_path, hdfs_path)
                 remote_output_path = saharahdfs.get_output_path(job_output_path, remote_path)
+                local_output_subpath = saharahdfs.get_output_subpath(job_output_path, local_path)
 
                 # Create temporary job directories
                 LOG.log("%s | Create temporary job directories" % (time.strftime("%H:%M:%S")))
@@ -205,10 +206,6 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
 
                 pdb.set_trace()
 
-                # Push input to cluster HDFS
-                LOG.log("%s | Push input to cluster HDFS" % (time.strftime("%H:%M:%S")))
-                self._push_to_hdfs(master, local_input_path, hdfs_path)
-
                 # Submit job
                 LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S")))
                 local_binary_file = saharahdfs.get_binary_file(local_binary_path)
@@ -219,12 +216,12 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
                 # Pull output from cluster HDFS
                 LOG.log("%s | Pull output from cluster HDFS" % (time.strftime("%H:%M:%S")))
                 remote.execute_command(key_path, master, 'mkdir -p %s' % local_output_path)
-                hdfs.pull(master, hdfs_output_path, local_path + '/output/')
+                hdfs.pull(master, hdfs_output_path, local_output_subpath)
  
                 # Copy output from cluster to broker
                 LOG.log("%s | Copying output from cluster to broker" % (time.strftime("%H:%M:%S")))
                 shell.make_directory(local_output_path)
-                remote.copy(key_path, remote_output_path, local_path + '/output/')
+                remote.copy(key_path, remote_output_path, local_output_subpath)
 
                 # Push data to swift
                 LOG.log("%s | Push data to swift" % (time.strftime("%H:%M:%S")))
