@@ -15,6 +15,9 @@
 
 import requests
 import time
+from application_manager.utils import swift
+from application_manager.utils import remote
+import os
 
 def get_running_app(submission_url, applications):
     app_id = None
@@ -31,4 +34,25 @@ def get_running_app(submission_url, applications):
             # self.logger.log("No application found")
             pass
             # return None
+
+def submit_job(key, hdfs_path, master, main_class,
+                job_binary_file, args):
+    param = ''
+    for arg in args:
+        if arg.startswith('swift://'):
+            path = swift.get_path(arg)
+
+            param += ('hdfs://%(master)s%(hdfs_path)s/%(path)s ' %
+                      {'master': master,
+                       'hdfs_path': hdfs_path,
+                       'path': path})
+        else:
+            param += arg + ' '
+
+    spark_submit = ('/opt/spark/bin/spark-submit --class %(main_class)s '
+                    '%(job_binary_file)s %(param)s ' %
+                    {'main_class': main_class,
+                     'job_binary_file': job_binary_file, 'param': param})
+
+    remote.execute_command(key, master, spark_submit)
 

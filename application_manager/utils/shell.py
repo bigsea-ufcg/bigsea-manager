@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from subprocess import *
+import subprocess
 
 R_PREFIX = 'Rscript '
 PYTHON_PREFIX = 'python '
@@ -41,4 +42,7 @@ def append_to_file(outfile, line):
 def write_to_file(outfile, line):
     with open(outfile, 'w') as f:
         f.write(line)
+
+def make_directory(path):
+    subprocess.call("mkdir -p %s" % path, shell=True)
 

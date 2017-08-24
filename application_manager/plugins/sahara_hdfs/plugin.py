@@ -19,6 +19,7 @@ import threading
 import subprocess
 import uuid
 import os
+import pdb
 
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
@@ -28,7 +29,12 @@ from application_manager.service import api
 from application_manager.utils import monitor
 from application_manager.utils import optimizer
 from application_manager.utils import scaler
+from application_manager.utils import remote
+from application_manager.utils import shell
+from application_manager.utils import swift
+from application_manager.utils import hdfs
 from application_manager.utils import spark
+from application_manager.utils import saharahdfs
 from application_manager.utils.logger import Log, configure_logging
 
 from saharaclient.api.base import APIException as SaharaAPIException
@@ -106,7 +112,7 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
                                                  auth_ip, 
                                                  domain)
 
-            swift = connector.get_swift_client(user, 
+            swift_client = connector.get_swift_client(user, 
                                                password, 
                                                project_id,
                                                auth_ip, 
@@ -147,74 +153,78 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
 
+                # Define job ID
                 job_exec_id = str(uuid.uuid4())[0:7]
                 LOG.log("%s | Job execution ID: %s" % (time.strftime("%H:%M:%S"), job_exec_id))
 
                 # Defining params
+                job_input_paths, job_output_path, job_params, job_container = swift.job_params(swift_client, connector, args)
+
+                # General paths
                 local_path = '/tmp/spark-jobs/' + job_exec_id
                 hdfs_path = '/user/ubuntu/' + job_exec_id
                 remote_path = 'ubuntu@' + master + ':' + local_path
+                remote_jobs_path = 'ubuntu@' + master + ':/tmp/spark-jobs/'
+                job_binary_path = swift.get_path(job_bin_url)
 
-                job_input_paths, job_output_path, job_params, job_container = self._get_job_params(swift, connector, args)
-                job_binary_path = self._get_swift_path(job_bin_url)
+                # Specific paths
+                local_input_path = saharahdfs.get_input_path(job_input_paths, local_path)
+                local_output_path = saharahdfs.get_output_path(job_output_path, local_path)
+                local_binary_path = saharahdfs.get_binary_path(job_binary_path, local_path)
+                hdfs_input_path = saharahdfs.get_input_path(job_input_paths, hdfs_path)
+                hdfs_output_path = saharahdfs.get_output_path(job_output_path, hdfs_path)
+                remote_output_path = saharahdfs.get_output_path(job_output_path, remote_path)
 
-                local_input_path  = local_path + '/input/'
-                local_output_path = local_path + '/output/'
-                local_binary_path = local_path + '/bin/'
-
-                hdfs_input_path  = hdfs_path + '/input/'
-                hdfs_output_path = hdfs_path + '/output/'
-                hdfs_binary_path = hdfs_path + '/bin/'
-
-                remote_output_path = remote_path + '/output/'
-                
                 # Create temporary job directories
                 LOG.log("%s | Create temporary job directories" % (time.strftime("%H:%M:%S")))
-                self._mkdir(local_input_path)
-                self._mkdir(local_binary_path)
+                shell.make_directory(local_input_path)
+                shell.make_directory(local_binary_path)
 
                 # Pull data from swift
                 LOG.log("%s | Pull data from swift" % (time.strftime("%H:%M:%S")))
-                self._download_from_swift(connector, swift, job_input_paths, 
+                swift.download(connector, swift_client, job_input_paths, 
                                           local_input_path, job_container)
 
                 # Get job binary from swift
                 LOG.log("%s | Get job binary from %s" % (time.strftime("%H:%M:%S"), job_binary_path))
-                connector.download_file(swift, job_binary_path, 
+                connector.download_file(swift_client, job_binary_path, 
                                         local_binary_path, job_container)
 
                 # Create cluster directories
                 LOG.log("%s | Creating cluster directories" % (time.strftime("%H:%M:%S")))
-                self._remote_command(key_path, master, 'mkdir -p %s' % local_path)
-                self._remote_command(key_path, master, 'mkdir -p %s' % local_output_path)
+                remote.execute_command(key_path, master, 'mkdir -p %s' % local_path)
 
                 # Copy input and binary from broker to cluster
                 LOG.log("%s | Copying input and binary from broker to cluster" % (time.strftime("%H:%M:%S")))
-                self._remote_copy(key_path, local_input_path, remote_path)
-                self._remote_copy(key_path, local_binary_path, remote_path)
+                remote.copy(key_path, local_path, remote_jobs_path)
 
                 # Push input to cluster HDFS
                 LOG.log("%s | Push input to cluster HDFS" % (time.strftime("%H:%M:%S")))
-                self._push_to_hdfs(master, local_input_path, hdfs_path)
+                hdfs.make_directory(master, hdfs_input_path)
+                hdfs.push(master, local_path, '/user/ubuntu/')
+
+                pdb.set_trace()
 
                 # Submit job
                 LOG.log("%s | Submit job" % (time.strftime("%H:%M:%S")))
-                local_binary_file = local_binary_path + os.listdir(local_binary_path)[0]
+                local_binary_file = saharahdfs.get_binary_file(local_binary_path)
 
-                self._submit_job(key_path, hdfs_path, master, main_class,
+                spark.submit_job(key_path, hdfs_path, master, main_class,
                                  local_binary_file, args)
 
                 # Pull output from cluster HDFS
                 LOG.log("%s | Pull output from cluster HDFS" % (time.strftime("%H:%M:%S")))
-                self._pull_from_hdfs(master, hdfs_output_path, local_output_path)
+                remote.execute_command(key_path, master, 'mkdir -p %s' % local_output_path)
+                hdfs.pull(master, hdfs_output_path, local_path + '/output/')
  
                 # Copy output from cluster to broker
                 LOG.log("%s | Copying output from cluster to broker" % (time.strftime("%H:%M:%S")))
-                self._remote_copy(key_path, remote_output_path, local_path)
+                shell.make_directory(local_output_path)
+                remote.copy(key_path, remote_output_path, local_path + '/output/')
 
                 # Push data to swift
                 LOG.log("%s | Push data to swift" % (time.strftime("%H:%M:%S")))
-                connector.upload_directory(swift, local_output_path, job_output_path, job_container)
+                connector.upload_directory(swift_client, local_output_path, job_output_path, job_container)
 
                 LOG.log("Finished application execution")
                 self.update_application_state("OK")
@@ -248,137 +258,6 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
             raise SaharaAPIException('Could not create clusters')
 
         return cluster_id
-
-    def _get_job_params(self, swift, connector, args):
-        in_paths = []
-        others = []
-        container = self._get_swift_container(args[0])
-
-        for arg in args:
-            if arg.startswith('swift://'):
-                if connector.check_file_exists(swift, container,
-                                               self._get_swift_path(arg)):
-                    in_paths.append(self._get_swift_path(arg))
-                else:
-                    out_path = self._get_swift_path(arg)
-            else:
-                others.append(arg)
-
-        return in_paths, out_path, others, container
-#       in_paths = []
-#       others = []
-#
-#       for arg in args:
-#           if arg.startswith('swift://'):
-#               if "input" in arg: in_paths.append(self._get_swift_path(arg))
-#               if "output" in arg: out_path = self._get_swift_path(arg)
-#           else:
-#               others.append(arg)
-#
-#       container = self._get_swift_container(args[0])
-#
-#       return in_paths, out_path, others, container
-
-    def _get_swift_path(self, arg):
-        splitted = arg.split('/')
-        swift_path = splitted[3]
-
-        for i in range(len(splitted[4:])):
-            swift_path = swift_path + '/' + splitted[i+4]
-
-        return swift_path
-
-    def _get_swift_container(self, arg):
-        splitted = arg.split('/')
-        container = splitted[2]
-
-        return container
-
-    def _download_from_swift(self, connector, swift, swift_path, local_path, container):
-        new_local_path = local_path
-
-        for path in swift_path:
-            for obj in swift.get_container(container)[1]:
-                if obj['name'].startswith(path) and not self._is_file(obj['name']):
-                    splitted = obj['name'].split('/')
-                    new_local_path = local_path + splitted[len(splitted)-2]+'/'
-                    self._mkdir(local_path + splitted[len(splitted)-2])
-
-                if obj['name'].startswith(path) and self._is_file(obj['name']):
-                    connector.download_file(swift, obj['name'], new_local_path, container)
-
-    def _is_file(self, path):
-        return path[len(path)-1] != '/'
-
-    def _push_to_hdfs(self, master, local_path, hdfs_path):
-        hadoop_mkdir_command = ("export HADOOP_USER_NAME=ubuntu && hadoop fs "
-                                "-fs hdfs://%(master)s:8020/ -mkdir -p "
-                                "%(path)s" % {'master': master,
-                                              'path': hdfs_path})
-
-        subprocess.call("ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i /home/ubuntu/.ssh/bigsea ubuntu@%s '%s'" % (master, hadoop_mkdir_command), shell=True)
-
-        hadoop_command = ("export HADOOP_USER_NAME=ubuntu && hadoop fs -fs "
-                          "hdfs://%(master)s:8020/ -put %(local_path)s "
-                          "%(hdfs_path)s" % {'master': master,
-                                             'local_path': local_path,
-                                             'hdfs_path': hdfs_path})
-
-        subprocess.call("ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i /home/ubuntu/.ssh/bigsea ubuntu@%s '%s'" % (master, hadoop_command), shell=True)
-
-#       hadoop_mkdir_command = "hadoop fs -mkdir -p %s" % (hdfs_path)
-#       ssh_command = "ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i /home/ubuntu/.ssh/bigsea ubuntu@%s '%s'" % (master, hadoop_mkdir_command)
-#       subprocess.call(ssh_command, shell=True)
-#
-#       hadoop_command = "hadoop fs -copyFromLocal %s %s" % (local_path, hdfs_path)
-#       ssh_command = "ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i /home/ubuntu/.ssh/bigsea ubuntu@%s '%s'" % (master, hadoop_command)
-#       subprocess.call(ssh_command, shell=True)
-
-    def _pull_from_hdfs(self, master, hdfs_path, local_path):
-        hadoop_command = "hadoop fs -get %s %s" % (hdfs_path, local_path)
-        subprocess.call("ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i /home/ubuntu/.ssh/bigsea ubuntu@%s '%s'" % (master, hadoop_command), shell=True)
-
-    def _submit_job(self, key, hdfs_path, master, main_class,
-                    job_binary_file, args):
-        param = ''
-        for arg in args:
-            if arg.startswith('swift://'):
-                param += ('hdfs://%(master)s%(hdfs_path)s/%(path)s ' %
-                          {'master': master,
-                           'hdfs_path': hdfs_path,
-                           'path': self._get_swift_path(arg)})
-            else:
-                param += arg + ' '
-
-        spark_submit = ('/opt/spark/bin/spark-submit --class %(main_class)s '
-                        '%(job_binary_file)s %(param)s ' %
-                        {'main_class': main_class,
-                         'job_binary_file': job_binary_file, 'param': param})
-
-        self._remote_command(key, master, spark_submit)
-
-#       input_param = ''
-#       for input_file in os.listdir(input_path):
-#           input_param = input_param + 'file://' + input_path + input_file + ' '
-#
-#       others = ''
-#       for param in parameters:
-#           others = others + param + ' '
-#
-#       output_param = 'file://' + output_path
-#
-#       spark_submit = '/opt/spark/bin/spark-submit --class ' + main_class + " " + job_binary_file + " " + input_param + " " + output_param + " " + others
-#
-#       self._remote_command(key, master, spark_submit)
-
-    def _mkdir(self, path):
-        subprocess.call("mkdir -p %s" % path, shell=True)
-
-    def _remote_command(self, key, master, command):
-        subprocess.call("ssh -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile=/dev/null' -i %s ubuntu@%s %s" % (key, master, command), shell=True)
-
-    def _remote_copy(self, key, source, destination):
-        subprocess.call("scp -i %s -r %s %s" % (key, source, destination), shell=True)
 
 class SaharaHDFSProvider(base.PluginInterface):
 
