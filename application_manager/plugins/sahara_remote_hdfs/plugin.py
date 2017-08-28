@@ -20,6 +20,7 @@ import subprocess
 import uuid
 import os
 
+from subprocess import PIPE
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
 from application_manager.plugins import base
@@ -253,6 +254,7 @@ class OpenStackSparkStandaloneApplicationExecutor(GenericApplicationExecutor):
         for arg in args:
             args_line += arg + ' '
 
+        import pdb; pdb.set_trace()
         spark_submit = ('/opt/spark/bin/spark-submit --class %(main_class)s '
                         '%(job_binary_file)s %(args)s ' %
                         {'main_class': main_class,
