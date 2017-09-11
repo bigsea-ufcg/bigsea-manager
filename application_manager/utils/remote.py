@@ -42,17 +42,6 @@ def read_file_from(remote_file, run_as_root=False, timeout=120):
     """Read remote file from the specified host and return given data."""
 
 
-def create_hdfs_path(hdfs_address, user, hdfs_path):
-    command = (
-        'export HADOOP_USER_NAME=%(user)s && hdfs dfs '
-        '-fs hdfs://%(hdfs_address)s:8020/ -mkdir -p '
-        '%(path)s' % {'hdfs_address': hdfs_address, 'user': user,
-                      'path': hdfs_path}
-    )
-
-    subprocess.call(command, shell=True)
-
-
 def execute_command(remote, key_path, command):
     command = ('ssh -i %(key_path)s ubuntu@%(remote)s %(command)s' %
                {'remote': remote, 'key_path': key_path, 'command': command})
@@ -66,44 +55,3 @@ def copy_to_remote(remote, key_path, source, destination):
                 'destination': destination})
 
     subprocess.call(command, shell=True)
-
-
-def copy_to_hdfs(hdfs_address, user, local_path, hdfs_path):
-
-    command = (
-        'export HADOOP_USER_NAME=%(user)s && hdfs dfs -fs '
-        'hdfs://%(hdfs_url)s:8020/ -put %(local_path)s '
-        '%(hdfs_path)s' % {'hdfs_address': hdfs_address,
-                           'local_path': local_path,
-                           'hdfs_path': hdfs_path}
-    )
-
-    subprocess.call(command, shell=True)
-
-
-def copy_from_hdfs(hdfs_address, hdfs_path, local_path):
-    command = (
-        'export HADOOP_USER_NAME=ubuntu && hdfs dfs -fs '
-        'hdfs://%(hdfs_address)s:8020/ -copyToLocal '
-        '%(hdfs_path)s %(local_path)s' % {'hdfs_address': hdfs_address,
-                                          'local_path': local_path,
-                                          'hdfs_path': hdfs_path}
-    )
-
-    subprocess.call(command, shell=True)
-
-
-def check_file_exists(hdfs_url, file_path):
-    command = (
-        'export HADOOP_USER_NAME=ubuntu && hdfs dfs -fs '
-        'hdfs://%(hdfs_url)s:8020/ -test -e '
-        '%(file_path)s && echo $?' % {'hdfs_url': hdfs_url,
-                                      'file_path': file_path}
-    )
-
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-
-    output, err = process.communicate()
-
-    return True if output else False
