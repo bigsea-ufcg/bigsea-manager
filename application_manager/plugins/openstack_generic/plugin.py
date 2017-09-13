@@ -75,9 +75,6 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             flavor_id = data['flavor_id']
             command = data['command']
             cluster_size = data['cluster_size']
-            scaler_plugin = data["scaler_plugin"]
-            scaling_parameters = data["scaling_parameters"]
-            actuator = data["actuator"]
             starting_cap = data["starting_cap"]
 
             app_start_time = 0
@@ -141,8 +138,11 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             LOG.log("Setting up environment")
             print "Setting up environment"
             # Set CPU cap in all instances
+            #scaler.setup_environment(api.controller_url, instances,
+            #                         starting_cap, actuator)
+            
             scaler.setup_environment(api.controller_url, instances,
-                                     starting_cap, actuator)
+                                         starting_cap, data)
 
             # Execute application and start monitor and scaler service.
             applications = []
@@ -175,10 +175,9 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
                     LOG.log("Starting scaling")
                     print "Starting scaling"
-
-                    scaler.start_scaler(api.controller_url, app_id,
-                                        scaler_plugin, instances,
-                                        scaling_parameters)
+                    
+                    scaler.start_scaler(api.controller_url, app_id, instances,
+                                            data)
 
                 except Exception as e:
                     LOG.log(e.message)
