@@ -101,11 +101,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             collect_period = data['collect_period']
             image_id = data['image_id']
             starting_cap = data['starting_cap']
-            actuator = data["actuator"]
-
-            #### SCALER PARAMETERS ###
-            scaling_parameters = data["scaling_parameters"]
-            scaler_plugin = data["scaler_plugin"]
 
             connector = os_connector.OpenStackConnector(LOG)
 
@@ -164,7 +159,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                     workers_id.append(worker['instance_id'])
 
                 scaler.setup_environment(api.controller_url, workers_id,
-                                         starting_cap, actuator)
+                                         starting_cap, data)
 
                 # Enabling logs in master
                 LOG.log("%s | Enabling log in %s" % (time.strftime("%H:%M:%S"),
@@ -215,9 +210,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 monitor.start_monitor(api.monitor_url, spark_app_id,
                                       plugin_app, info_plugin, collect_period)
                 LOG.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-                scaler.start_scaler(api.controller_url, spark_app_id,
-                                    scaler_plugin, workers_id,
-                                    scaling_parameters)
+                scaler.start_scaler(api.controller_url, spark_app_id, workers_id,
+                                            data)
 
                 job_status = self._wait_on_job_finish(sahara, connector,
                                                       job_exec_id, app_id)
