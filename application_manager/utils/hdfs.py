@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import subprocess
+from application_manager.utils import remote
 
 
 def create_hdfs_path(hdfs_address, user, hdfs_path):
@@ -66,3 +67,27 @@ def check_file_exists(hdfs_url, file_path):
     output, err = process.communicate()
 
     return True if output else False
+
+def get_job_params(key_path, hdfs_url, args):
+    in_paths = []
+    out_paths = []
+    others = []
+
+    for arg in args:
+        if arg.startswith('hdfs://'):
+            if remote.check_file_exists(key_path, hdfs_url,
+                                        get_path(arg)):
+                in_paths.append(get_path(arg))
+            else:
+                out_paths.append(get_path(arg))
+        else:
+            others.append(arg)
+
+    return in_paths, out_paths, others
+
+def get_path(arg):
+    delimeter = '/'
+    splitted = arg.split(delimeter)
+    hdfs_path = delimeter + (delimeter).join(splitted[3:])
+
+    return hdfs_path

@@ -17,14 +17,13 @@ import ConfigParser
 
 # Conf reading
 config = ConfigParser.RawConfigParser()
-config.read('./manager.lsd.cfg')
+config.read('./manager.cfg')
 
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
 authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').split(',')
-
 
 public_key = config.get('os-generic', 'public_key')
 key_path = config.get('os-generic', 'key_path')
@@ -38,17 +37,9 @@ domain = config.get('os-generic', 'user_domain_name')
 log_path = config.get('os-generic', 'log_path')
 
 container = config.get('spark-sahara', 'swift_container')
-#user_domain_name = config.get('spark-sahara', 'user_domain_name')
-#project_id = config.get('spark-sahara', 'project_id')
-#auth_ip = config.get('spark-sahara', 'auth_ip')
-#user = config.get('spark-sahara', 'user')
-#password = config.get('spark-sahara', 'password')
-#domain = config.get('spark-sahara', 'user_domain_name')
 remote_hdfs = config.get('spark-sahara', 'remote_hdfs')
 
-
 hosts = config.get('infra', 'hosts').split(' ')
-
 
 chronos_url = config.get('chronos', 'url')
 chronos_username = config.get('chronos', 'username')
