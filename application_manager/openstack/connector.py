@@ -26,6 +26,7 @@ from saharaclient.api.client import Client as saharaclient
 from swiftclient.client import Connection as swiftclient
 from subprocess import *
 
+from application_manager.utils import shell
 
 class OpenStackConnector(object):
     def __init__(self, logger):
@@ -68,14 +69,43 @@ class OpenStackConnector(object):
 
         return swift_connection
 
-    def upload_files(self, swift, localdir, swiftdir, container):
-        for targetfile in os.listdir(localdir):
-            localfile = localdir + '/' + targetfile
-            swift_name = swiftdir + '/' + targetfile
-            with open(localfile, 'r') as swift_file:
-                swift.put_object(container, swift_name,
-                                 contents=swift_file.read(),
-                                 content_type='text/plain')
+    def upload_directory(self, swift, local_dir, swift_dir, container):
+        for target_file in os.listdir(local_dir):
+            if local_dir[len(local_dir)-1] == '/':
+                local_file = local_dir[:len(local_dir)-1]+'/'+target_file
+                swift_name = swift_dir[:len(swift_dir)-1]+'/'+target_file
+            else:
+                local_file = local_dir + '/' + target_file
+                swift_name = swift_dir + '/' + target_file
+
+            if os.path.isdir(local_file):
+                self.upload_directory(swift, local_file,
+                                      swift_name, container)
+            else:
+                with open(local_file, 'r') as swift_file:
+                    swift.put_object(container, swift_name,
+                                     contents=swift_file.read(),
+                                     content_type='text/plain')
+
+    def download_directory(self, swift, src_dir, dest_dir, container):
+        for obj in swift.get_container(container)[1]:
+            if obj['name'].startswith(src_dir) and obj['name'][len(obj['name'])-1] != '/':
+                self.download_file(swift, obj['name'], dest_dir, container)
+
+    def download_file(self, swift, src_file, dest_dir, container):
+        headers, content = swift.get_object(container, src_file)
+        splitted = src_file.split('/')
+
+        dest_file = dest_dir + '/' + splitted[len(splitted)-1]
+        with open(dest_file, 'w') as local:
+            local.write(content)
+
+    def check_file_exists(self, swift, container, path):
+        try:
+            headers = swift.head_object(container, path)
+            return headers
+        except Exception:
+            return None
 
     def get_cluster_status(self, sahara, cluster_id):
         cluster = sahara.clusters.get(cluster_id)
@@ -155,14 +185,15 @@ class OpenStackConnector(object):
             reducers = int(cluster_size) * 2
             configs = {'configs': {'mapreduce.job.reduces': reducers}}
         else:
-            configs = {'configs': {
-                            'edp.java.main_class': main_class,
-                            'edp.spark.adapt_for_swift': 'True',
-                            'fs.swift.service.sahara.password': password,
-                            'fs.swift.service.sahara.username': username
-                            },
-                       'args': args
-                       }
+            configs = {
+                'configs': {
+                    'edp.java.main_class': main_class,
+                    'edp.spark.adapt_for_swift': 'True',
+                    'fs.swift.service.sahara.password': password,
+                    'fs.swift.service.sahara.username': username
+                },
+                'args': args
+            }
 
         return configs
 
