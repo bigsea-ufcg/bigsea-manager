@@ -55,3 +55,67 @@ def copy_to_remote(remote, key_path, source, destination):
                 'destination': destination})
 
     subprocess.call(command, shell=True)
+
+def copy_from_hdfs(remote, key_path, hdfs_address, hdfs_path, local_path):
+    command = (
+        'export HADOOP_USER_NAME=ubuntu && hdfs dfs -fs '
+        'hdfs://%(hdfs_address)s:8020/ -copyToLocal '
+        '%(hdfs_path)s %(local_path)s' % {'hdfs_address': hdfs_address,
+                                          'local_path': local_path,
+                                          'hdfs_path': hdfs_path}
+    )
+
+    subprocess.call(
+        'ssh -o "StrictHostKeyChecking no" '
+        '-o "UserKnownHostsFile=/dev/null" '
+        '-i %(key_path)s '
+        'ubuntu@%(remote)s "%(command)s"' % {'key_path': key_path,
+                                             'remote': remote,
+                                             'command': command},
+                                                      shell=True)
+
+def list_directory(key_path, remote, file_path):
+    command = 'ls %s' % file_path
+
+    ssh = (
+          'ssh -o "StrictHostKeyChecking no" '
+          '-o "UserKnownHostsFile=/dev/null" '
+          '-i %(key_path)s '
+          'ubuntu@%(remote)s "%(command)s"' % {'key_path': key_path,
+                                               'remote': remote,
+                                               'command': command}
+    )
+
+    process = subprocess.Popen(ssh, shell=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    output, err = process.communicate()
+
+    output = output.replace('\n', '')
+
+    return output
+
+def check_file_exists(key_path, hdfs_url, file_path):
+    command = (
+        'export HADOOP_USER_NAME=ubuntu && hdfs dfs -fs '
+        'hdfs://%(hdfs_url)s:8020/ -test -e '
+        '%(file_path)s && echo $?' % {'hdfs_url': hdfs_url,
+                                      'file_path': file_path}
+    )
+
+    ssh = (
+          'ssh -o "StrictHostKeyChecking no" '
+          '-o "UserKnownHostsFile=/dev/null" '
+          '-i %(key_path)s '
+          'ubuntu@%(hdfs_url)s "%(command)s"' % {'key_path': key_path,
+                                                 'hdfs_url': hdfs_url,
+                                                 'command': command}
+    )
+
+    process = subprocess.Popen(ssh, shell=True, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    output, err = process.communicate()
+
+    return True if output else False
+
