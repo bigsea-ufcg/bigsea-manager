@@ -30,7 +30,7 @@ def get_cluster_size(optimizer_url, hosts):
     request_url = optimizer_url + '/get_cluster_size'
     headers = {'Content-type': 'application/json'}
     data = _get_optimizer_data(hosts)
-    request = requests.get(request_url, data=data, headers=headers)
+    request = requests.post(request_url, data=data, headers=headers)
     data = request.json()
 
     return data['cluster_size']
