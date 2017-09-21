@@ -119,8 +119,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             # Check Oportunism
             plugin_log.log("%s | Checking if opportunistic instances are available" %
                     (time.strftime("%H:%M:%S")))
-            pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
-                                                         hosts)
+#           pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
+#                                                        hosts)
+
+            pred_cluster_size = req_cluster_size
 
             if pred_cluster_size > req_cluster_size:
                 cluster_size = pred_cluster_size
@@ -172,18 +174,17 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_binary_url, user, password, job_template_name,
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
-                        expected_time, plugin_app, collect_period,
-                        scaler_plugin, scaling_parameters, log_path, swift,
-                        container)
+                        expected_time, plugin_app, collect_period, log_path, swift,
+                        container, data)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
                         main_class, dependencies)
 
-                # Delete cluster
-                plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
-                                                            cluster_id))
-                connector.delete_cluster(sahara, cluster_id)
+#               # Delete cluster
+#               plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
+#                                                           cluster_id))
+#               connector.delete_cluster(sahara, cluster_id)
 
             else:
                 # FIXME: exception type
@@ -283,8 +284,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                cluster_size, args, main_class, cluster_id,
                                spark_applications_ids, workers_id, app_id,
                                expected_time, plugin_app, collect_period,
-                               scaler_plugin, scaling_parameters, log_path,
-                               swift, container):
+                               log_path, swift, container, data):
 
         # Preparing job
         job_binary_id = self._get_job_binary_id(sahara, connector,
