@@ -23,7 +23,7 @@ from application_manager.service import api
 from application_manager.utils.logger import Log
 import threading
 
-LOG = Log("Servicev10", "serviceAPIv10.log")
+LOG = Log("Servicev10", "logs/serviceAPIv10.log")
 
 def required(fun):
     return abc.abstractmethod(fun)

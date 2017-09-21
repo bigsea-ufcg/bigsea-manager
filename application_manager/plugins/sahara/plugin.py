@@ -178,7 +178,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
-                        main_class)
+                        main_class, dependencies)
 
                 # Delete cluster
                 plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
@@ -358,7 +358,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return job_status
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class):
+                              job_bin_url, main_class, dependencies):
         job_exec_id = str(uuid.uuid4())[0:7]
         plugin_log.log("%s | Job execution ID: %s" %
                 (time.strftime("%H:%M:%S"), job_exec_id))
@@ -394,7 +394,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         local_binary_file = (local_path +
                              remote.list_directory(key_path, master, local_path))
 
-        self._submit_job(master, key_path, main_class,
+        self._submit_job(master, key_path, main_class, dependencies,
                          local_binary_file, args)
 
         plugin_log.log("Finished application execution")

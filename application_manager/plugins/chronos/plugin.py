@@ -24,8 +24,8 @@ from application_manager.utils.logger import Log
 from application_manager.service import api
 
 
-LOG = Log("ChronosPlugin", "chronos_plugin.log")
-application_time_log = Log("Application_time", "application_time.log")
+LOG = Log("ChronosPlugin", "logs/chronos_plugin.log")
+application_time_log = Log("Application_time", "logs/application_time.log")
 
 class ChronosApplicationExecutor(GenericApplicationExecutor):
 
