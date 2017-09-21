@@ -16,44 +16,36 @@ import json
 import requests
 
 
-def _get_scaler_data(scaler_plugin, workers, scaling_parameters):
-    scaling_parameters["instances"] = workers
-    start_scaling_dict = {
-        'plugin': scaler_plugin,
-        'scaling_parameters': scaling_parameters
-    }
-    start_scaler_body = json.dumps(start_scaling_dict)
-
+def _get_scaler_data(workers, data):
+    data["scaling_parameters"]["instances"] = workers
+    start_scaler_body = json.dumps(data)
     return start_scaler_body    
 
-
-def start_scaler(controller_url, app_id, scaler_plugin, workers,
-                 scaling_parameters):
+def start_scaler(controller_url, app_id, workers, data):
     request_url = controller_url + '/scaler/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_scaler_data(scaler_plugin, workers, scaling_parameters)
+    data = _get_scaler_data(workers, data)
     requests.post(request_url, data=data, headers=headers)
-
 
 def stop_scaler(controller_url, app_id):
     stop_scaling_url = controller_url + '/scaler/stop_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     requests.post(stop_scaling_url, headers=headers)
 
-
-def _get_setup_environment_data(instances, cap, actuator):
-    data = {}
+def _get_setup_environment_data(instances, cap, data):
+    instances_cap = {}
     
     for instance in instances:
-        data[instance] = cap    
-    data['plugin'] = actuator
+        instances_cap[instance] = cap    
+    
+    data["instances_cap"] = instances_cap
     
     return json.dumps(data)
 
 
-def setup_environment(controller_url, instances, cap, actuator):
+def setup_environment(controller_url, instances, cap, data):
     setup_enviroment_url = controller_url + '/scaler/setup_env'
     headers = {'Content-type': 'application/json'}
-    data = _get_setup_environment_data(instances, cap, actuator)
+    data = _get_setup_environment_data(instances, cap, data)
     requests.post(setup_enviroment_url, data=data, headers=headers)
 

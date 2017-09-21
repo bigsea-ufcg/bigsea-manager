@@ -120,7 +120,6 @@ def setup_plugins():
     PLUGINS = PluginManager()
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class ApplicationExecutor(object):
 
@@ -139,6 +138,7 @@ class ApplicationExecutor(object):
     @required
     def get_application_start_time(self):
         pass
+
 
 class GenericApplicationExecutor(ApplicationExecutor):
 
