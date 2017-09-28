@@ -68,6 +68,7 @@ def check_file_exists(hdfs_url, file_path):
 
     return True if output else False
 
+
 def get_job_params(key_path, hdfs_url, args):
     in_paths = []
     out_paths = []
@@ -84,6 +85,7 @@ def get_job_params(key_path, hdfs_url, args):
             others.append(arg)
 
     return in_paths, out_paths, others
+
 
 def get_path(arg):
     delimeter = '/'
