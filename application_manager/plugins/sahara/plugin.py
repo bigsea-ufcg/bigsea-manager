@@ -83,13 +83,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             container = api.container
             hosts = api.hosts
             remote_hdfs = api.remote_hdfs
-            
+
             # User Request Parameters
             net_id = data['net_id']
             master_ng = data['master_ng']
             slave_ng = data['slave_ng']
             op_slave_ng = data['opportunistic_slave_ng']
             plugin = data['openstack_plugin']
+            percentage = data['percentage']
             job_type = data['job_type']
             version = data['version']
             req_cluster_size = data['cluster_size']
@@ -117,26 +118,30 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                auth_ip, domain)
 
             # Check Oportunism
-            plugin_log.log("%s | Checking if opportunistic instances are available" %
-                    (time.strftime("%H:%M:%S")))
+            plugin_log.log(
+                "%s | Checking if opportunistic instances are available" %
+                (time.strftime("%H:%M:%S")))
             pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
-                                                         hosts)
+                                                           hosts,
+                                                           percentage)
 
             if pred_cluster_size > req_cluster_size:
                 cluster_size = pred_cluster_size
             else:
                 cluster_size = req_cluster_size
 
-            plugin_log.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
-                                                      str(cluster_size)))
+            plugin_log.log(
+                "%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
+                                           str(cluster_size)))
 
             # Cluster Operations
             cluster_id = connector.get_existing_cluster_by_size(sahara,
                                                                 cluster_size)
 
             if not cluster_id:
-                plugin_log.log("%s | Cluster does not exist. Creating cluster..." %
-                              (time.strftime("%H:%M:%S")))
+                plugin_log.log(
+                    "%s | Cluster does not exist. Creating cluster..." %
+                    (time.strftime("%H:%M:%S")))
 
                 cluster_id = self._create_cluster(sahara, connector,
                                                   req_cluster_size,
@@ -412,19 +417,19 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         '--packages %(dependencies)s '
                         '--class %(main_class)s '
                         '%(job_binary_file)s %(args)s ' %
-                              {'dependencies': dependencies,
-                               'main_class': main_class,
-                               'job_binary_file': 'file://'+job_binary_file,
-                               'args': args_line})
+                        {'dependencies': dependencies,
+                         'main_class': main_class,
+                         'job_binary_file': 'file://'+job_binary_file,
+                         'args': args_line})
 
         if main_class == '':
             spark_submit = spark_submit.replace('--class', '')
-            
+
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
 
         remote.execute_command(remote_instance, key_path, spark_submit)
-        
+
     def _mkdir(self, path):
         subprocess.call('mkdir -p %s' % path, shell=True)
 
