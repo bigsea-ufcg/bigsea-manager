@@ -118,6 +118,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                auth_ip, domain)
 
             # Check Oportunism
+
             plugin_log.log(
                 "%s | Checking if opportunistic instances are available" %
                 (time.strftime("%H:%M:%S")))
@@ -177,18 +178,17 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_binary_url, user, password, job_template_name,
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
-                        expected_time, plugin_app, collect_period,
-                        scaler_plugin, scaling_parameters, log_path, swift,
-                        container)
+                        expected_time, plugin_app, collect_period, log_path, swift,
+                        container, data)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
-                        main_class)
+                        main_class, dependencies)
 
-                # Delete cluster
-                plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
-                                                            cluster_id))
-                connector.delete_cluster(sahara, cluster_id)
+#               # Delete cluster
+#               plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
+#                                                           cluster_id))
+#               connector.delete_cluster(sahara, cluster_id)
 
             else:
                 # FIXME: exception type
@@ -288,8 +288,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                cluster_size, args, main_class, cluster_id,
                                spark_applications_ids, workers_id, app_id,
                                expected_time, plugin_app, collect_period,
-                               scaler_plugin, scaling_parameters, log_path,
-                               swift, container):
+                               log_path, swift, container, data):
 
         # Preparing job
         job_binary_id = self._get_job_binary_id(sahara, connector,
@@ -363,7 +362,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return job_status
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class):
+                              job_bin_url, main_class, dependencies):
         job_exec_id = str(uuid.uuid4())[0:7]
         plugin_log.log("%s | Job execution ID: %s" %
                 (time.strftime("%H:%M:%S"), job_exec_id))
@@ -399,7 +398,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         local_binary_file = (local_path +
                              remote.list_directory(key_path, master, local_path))
 
-        self._submit_job(master, key_path, main_class,
+        self._submit_job(master, key_path, main_class, dependencies,
                          local_binary_file, args)
 
         plugin_log.log("Finished application execution")

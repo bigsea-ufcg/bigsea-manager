@@ -26,8 +26,8 @@ from application_manager.utils.logger import *
 from application_manager.utils.ids import ID_Generator
 from application_manager.plugins.base import GenericApplicationExecutor
 
-LOG = Log("OpenStackGenericPlugin", "openstack_generic_plugin.log")
-application_time_log = Log("Application_time", "application_time.log")
+LOG = Log("OpenStackGenericPlugin", "logs/openstack_generic_plugin.log")
+application_time_log = Log("Application_time", "logs/application_time.log")
 configure_logging()
 
 class OpenStackApplicationExecutor(GenericApplicationExecutor):

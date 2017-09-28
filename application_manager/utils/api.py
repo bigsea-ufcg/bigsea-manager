@@ -22,7 +22,7 @@ from application_manager import exceptions as ex
 from application_manager.utils import serializer as u_serializer
 from application_manager.utils.logger import *
 
-LOG = Log("UtilsAPI", "utilsapi.log")
+LOG = Log("UtilsAPI", "logs/utilsapi.log")
 
 
 class Rest(flask.Blueprint):
