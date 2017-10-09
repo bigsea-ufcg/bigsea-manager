@@ -69,6 +69,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
     def start_application(self, data, spark_applications_ids, app_id):
         try:
+            # Clean sahara log file
+            f = open("logs/sahara_plugin.log", "w")
+            f.close()
+
             self.update_application_state("Running")
 
             # Broker Parameters
@@ -89,6 +93,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             master_ng = data['master_ng']
             slave_ng = data['slave_ng']
             op_slave_ng = data['opportunistic_slave_ng']
+            opportunism = str(data['opportunistic'])
             plugin = data['openstack_plugin']
             job_type = data['job_type']
             version = data['version']
@@ -117,12 +122,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                auth_ip, domain)
 
             # Check Oportunism
-            plugin_log.log("%s | Checking if opportunistic instances are available" %
-                    (time.strftime("%H:%M:%S")))
-#           pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
-#                                                        hosts)
-
-            pred_cluster_size = req_cluster_size
+            if opportunism == "True": 
+                plugin_log.log("%s | Checking if opportunistic instances are available" %
+                              (time.strftime("%H:%M:%S")))
+                pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
+                                                               hosts)
+            else:
+                pred_cluster_size = req_cluster_size
 
             if pred_cluster_size > req_cluster_size:
                 cluster_size = pred_cluster_size
@@ -132,20 +138,15 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             plugin_log.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
                                                       str(cluster_size)))
 
-            # Cluster Operations
-            cluster_id = connector.get_existing_cluster_by_size(sahara,
-                                                                cluster_size)
+            plugin_log.log("%s | Cluster does not exist. Creating cluster..." %
+                          (time.strftime("%H:%M:%S")))
 
-            if not cluster_id:
-                plugin_log.log("%s | Cluster does not exist. Creating cluster..." %
-                              (time.strftime("%H:%M:%S")))
-
-                cluster_id = self._create_cluster(sahara, connector,
-                                                  req_cluster_size,
-                                                  pred_cluster_size,
-                                                  public_key, net_id, image_id,
-                                                  plugin, version, master_ng,
-                                                  slave_ng, op_slave_ng)
+            cluster_id = self._create_cluster(sahara, connector,
+                                              req_cluster_size,
+                                              pred_cluster_size,
+                                              public_key, net_id, image_id,
+                                              plugin, version, master_ng,
+                                              slave_ng, op_slave_ng)
 
             plugin_log.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
                                                     cluster_id))
@@ -179,17 +180,20 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
-                        main_class, dependencies)
-
-#               # Delete cluster
-#               plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
-#                                                           cluster_id))
-#               connector.delete_cluster(sahara, cluster_id)
+                        main_class, dependencies, spark_applications_ids, 
+                        expected_time, plugin_app, collect_period, workers_id, data)
 
             else:
                 # FIXME: exception type
                 self.update_application_state("Error")
                 raise ex.ClusterNotCreatedException()
+
+            # Delete cluster
+            plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
+                                                            cluster_id))
+            connector.delete_cluster(sahara, cluster_id)
+
+            plugin_log.log("%s | Finished application execution" % (time.strftime("%H:%M:%S")))
 
             return job_status
 
@@ -236,7 +240,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             current_time = datetime.datetime.now()
             current_job_time = (current_time - start_time).total_seconds()
             if current_job_time > 3600:
-                plugin_log.log("Job execution killed due to inactivity")
+                plugin_log.log("%s | Job execution killed due to inactivity" % time.strftime("%H:%M:%S"))
                 job_status = 'TIMEOUT'
 
             completed = connector.is_job_completed(job_status)
@@ -358,7 +362,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return job_status
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class, dependencies):
+                              job_bin_url, main_class, dependencies, spark_applications_ids, 
+                              expected_time, plugin_app, collect_period, workers_id, data):
         job_exec_id = str(uuid.uuid4())[0:7]
         plugin_log.log("%s | Job execution ID: %s" %
                 (time.strftime("%H:%M:%S"), job_exec_id))
@@ -378,26 +383,58 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._mkdir(local_path)
 
         # Create cluster directories
-        plugin_log.log("%s | Creating cluster directories" %
+        plugin_log.log("%s | Creating directories (CLUSTER)" %
                 (time.strftime("%H:%M:%S")))
         remote.execute_command(master, key_path,
                                'mkdir -p %s' % local_path)
 
         # Get job binary from hdfs
-        plugin_log.log("%s | Get job binary from %s" %
-                (time.strftime("%H:%M:%S"), job_binary_path))
+        plugin_log.log("%s | Get job binary from hdfs (CLUSTER)" %
+                (time.strftime("%H:%M:%S")))
         remote.copy_from_hdfs(master, key_path, remote_hdfs,
                               job_binary_path, local_path)
 
         # Submit job
-        plugin_log.log("%s | Submit job" % (time.strftime("%H:%M:%S")))
-        local_binary_file = (local_path +
-                             remote.list_directory(key_path, master, local_path))
+        plugin_log.log("%s | Submit job (CLUSTER)" % 
+                      (time.strftime("%H:%M:%S")))
 
-        self._submit_job(master, key_path, main_class, dependencies,
-                         local_binary_file, args)
+        local_binary_file = (local_path + remote.list_directory(key_path, 
+                                                                master, 
+                                                                local_path))
 
-        plugin_log.log("Finished application execution")
+        spark_job = self._submit_job(master, key_path, main_class, 
+                                     dependencies, local_binary_file, args)
+
+        spark_app_id = spark.get_running_app(master, spark_applications_ids)
+        spark_applications_ids.append(spark_app_id)
+
+        info_plugin = {"spark_submisson_url": "http://" + master,
+                       "expected_time": expected_time}
+
+        plugin_log.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+        monitor.start_monitor(api.monitor_url, spark_app_id,
+                              plugin_app, info_plugin, collect_period)
+        plugin_log.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+        scaler.start_scaler(api.controller_url, spark_app_id, 
+                            workers_id, data)
+
+        (output, err) = spark_job.communicate()
+
+        plugin_log.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
+        monitor.stop_monitor(api.monitor_url, spark_app_id)
+        plugin_log.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
+        scaler.stop_scaler(api.controller_url, spark_app_id)
+
+        f = open("logs/stdout", "w")
+        f.write(output)
+        f.close()
+
+        f = open("logs/stderr", "w")
+        f.write(err)
+        f.close()
+
+        spark_applications_ids.remove(spark_app_id)
+
         self.update_application_state("OK")
 
         return 'OK'
@@ -411,9 +448,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         spark_submit = ('/opt/spark/bin/spark-submit '
                         '--packages %(dependencies)s '
                         '--class %(main_class)s '
+                        '--master spark://%(master)s:7077 '
                         '%(job_binary_file)s %(args)s ' %
                               {'dependencies': dependencies,
                                'main_class': main_class,
+                               'master': remote_instance,
                                'job_binary_file': 'file://'+job_binary_file,
                                'args': args_line})
 
@@ -423,7 +462,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
 
-        remote.execute_command(remote_instance, key_path, spark_submit)
+        job = remote.execute_command_popen(remote_instance, key_path, 
+                                           spark_submit)
+
+        return job
+
         
     def _mkdir(self, path):
         subprocess.call('mkdir -p %s' % path, shell=True)

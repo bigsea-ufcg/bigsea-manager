@@ -35,6 +35,14 @@ def kill_all(data):
     api.kill_all()
     return u.render()
 
-@rest.post('/manager/status')
-def status(data):
+@rest.get('/manager/status')
+def status():
     return u.render(api.status())
+
+@rest.get('/manager/broker_log')
+def broker_log():
+    return u.render(api.broker_log())
+
+@rest.get('/manager/execution_log')
+def execution_log():
+    return u.render(api.execution_log())

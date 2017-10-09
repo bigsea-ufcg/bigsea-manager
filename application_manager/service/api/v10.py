@@ -57,12 +57,34 @@ def status():
         application_stat["status"] = applications[app_id].get_application_state()
         application_stat["time"] = applications[app_id].get_application_execution_time()
         application_stat["start_time"] = applications[app_id].get_application_start_time()
-
+    
     return applications_status
+
+def broker_log():
+    log = open("logs/sahara_plugin.log", "r")
+    str_log = map(_replace, log.readlines())
+    
+    log.close()
+
+    return str_log
+
+def execution_log():
+    stderr = open("logs/stderr", "r")
+    stdout = open("logs/stdout", "r")
+
+    err = stderr.read()
+    out = stdout.read()
+
+    stderr.close()
+    stdout.close()
+
+    return out, err
 
 def _get_new_cluster_size(hosts):
     return optimizer.get_cluster_size(api.optimizer_url, hosts)
 
+def _replace(string):
+    return string.replace("\n", "")
 
 if __name__ == "__main__":
     data = {'cluster_size': 3}
