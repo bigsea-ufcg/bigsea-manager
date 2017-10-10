@@ -87,7 +87,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             container = api.container
             hosts = api.hosts
             remote_hdfs = api.remote_hdfs
-            
+
             # User Request Parameters
             net_id = data['net_id']
             master_ng = data['master_ng']
@@ -95,6 +95,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             op_slave_ng = data['opportunistic_slave_ng']
             opportunism = str(data['opportunistic'])
             plugin = data['openstack_plugin']
+            percentage = data['percentage']
             job_type = data['job_type']
             version = data['version']
             req_cluster_size = data['cluster_size']
@@ -135,8 +136,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             else:
                 cluster_size = req_cluster_size
 
-            plugin_log.log("%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
-                                                      str(cluster_size)))
+            plugin_log.log(
+                "%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
+                                           str(cluster_size)))
 
             plugin_log.log("%s | Cluster does not exist. Creating cluster..." %
                           (time.strftime("%H:%M:%S")))
@@ -458,16 +460,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         if main_class == '':
             spark_submit = spark_submit.replace('--class', '')
-            
+
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
-
         job = remote.execute_command_popen(remote_instance, key_path, 
                                            spark_submit)
 
         return job
-
-        
+      
     def _mkdir(self, path):
         subprocess.call('mkdir -p %s' % path, shell=True)
 
