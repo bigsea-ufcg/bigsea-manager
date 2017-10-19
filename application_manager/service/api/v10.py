@@ -37,16 +37,13 @@ def execute(data):
 
     return app_id
 
-
 def stop_app(app_id):
     # stop monitoring
     # stop scaling
     return 'App %(app_id)s stopped' % {'app_id': app_id}
 
-
 def kill_all():
     return 'Apps killed'
-
 
 def status():
     applications_status = {}
@@ -54,14 +51,48 @@ def status():
     for app_id in applications.keys():
         application_stat = {}
         applications_status[app_id] = application_stat
-        application_stat["status"] = applications[app_id].get_application_state()
-        application_stat["time"] = applications[app_id].get_application_execution_time()
-        application_stat["start_time"] = applications[app_id].get_application_start_time()
+        application_stat["status"] = (applications[app_id].
+                                      get_application_state())
 
+        application_stat["time"] = (applications[app_id].
+                                    get_application_execution_time())
+
+        application_stat["start_time"] = (applications[app_id].
+                                          get_application_start_time())
+    
     return applications_status
+
+def execution_log(app_id):
+    if app_id not in applications:
+        return "App %(app_id)s doesn't exist" % {'app_id': app_id} 
+
+    log = open("logs/apps/%s/execution" % app_id, "r")
+    str_log = map(_remove_newline, log.readlines())
+    
+    log.close()
+
+    return str_log
+
+def std_log(app_id):
+    if app_id not in applications:
+        return "App %(app_id)s doesn't exist" % {'app_id': app_id}
+
+    stderr = open("logs/apps/%s/stderr" % app_id, "r")
+    stdout = open("logs/apps/%s/stdout" % app_id, "r")
+
+    err = stderr.read()
+    out = stdout.read()
+
+    stderr.close()
+    stdout.close()
+
+    return out, err
 
 def _get_new_cluster_size(hosts):
     return optimizer.get_cluster_size(api.optimizer_url, hosts)
+
+def _remove_newline(string):
+    return string.replace("\n", "")
 
 
 if __name__ == "__main__":
