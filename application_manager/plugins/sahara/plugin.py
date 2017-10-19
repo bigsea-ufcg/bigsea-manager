@@ -43,13 +43,25 @@ instances_log = Log("Instances", "logs/instances.log")
 
 configure_logging()
 
+
 class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
-    def __init__(self):
+    def __init__(self, app_id):
         self.application_state = "None"
         self.state_lock = threading.RLock()
         self.application_time = -1
         self.start_time = -1
+        self.app_id = app_id
+
+        self._verify_existing_log_paths(app_id)
+        self._clean_log_files(app_id)
+     
+        self.running_log = Log("Running_Application_%s" % app_id, 
+                               "logs/apps/%s/execution" % app_id)
+
+        self.stdout = Log("stdout_%s" % app_id, "logs/apps/%s/stdout" % app_id)
+        self.stderr = Log("stderr_%s" % app_id, "logs/apps/%s/stderr" % app_id)
+
 
     def get_application_state(self):
         with self.state_lock:
@@ -57,7 +69,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return state
 
     def update_application_state(self, state):
-        print state
         with self.state_lock:
             self.application_state = state
 
@@ -69,10 +80,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
     def start_application(self, data, spark_applications_ids, app_id):
         try:
-            # Clean sahara log file
-            f = open("logs/sahara_plugin.log", "w")
-            f.close()
-
             self.update_application_state("Running")
 
             # Broker Parameters
@@ -95,7 +102,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             op_slave_ng = data['opportunistic_slave_ng']
             opportunism = str(data['opportunistic'])
             plugin = data['openstack_plugin']
-            percentage = data['percentage']
             job_type = data['job_type']
             version = data['version']
             req_cluster_size = data['cluster_size']
@@ -123,11 +129,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                auth_ip, domain)
 
             # Check Oportunism
-            if opportunism == "True": 
-                plugin_log.log("%s | Checking if opportunistic instances are available" %
-                              (time.strftime("%H:%M:%S")))
-                pred_cluster_size = optimizer.get_cluster_size(api.optimizer_url,
-                                                               hosts)
+            if opportunism == "True":
+                self._log("""%s | Checking if opportunistic instances 
+                          are available""" % (time.strftime("%H:%M:%S")))
+
+                pred_cluster_size = optimizer.get_cluster_size(
+                                        api.optimizer_url, 
+                                        hosts)
             else:
                 pred_cluster_size = req_cluster_size
 
@@ -136,12 +144,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             else:
                 cluster_size = req_cluster_size
 
-            plugin_log.log(
-                "%s | Cluster size: %s" % (time.strftime("%H:%M:%S"),
-                                           str(cluster_size)))
+            self._log("%s | Cluster size: %s" % 
+                     (time.strftime("%H:%M:%S"), str(cluster_size)))
 
-            plugin_log.log("%s | Cluster does not exist. Creating cluster..." %
-                          (time.strftime("%H:%M:%S")))
+            self._log("%s | Creating cluster..."
+                       % (time.strftime("%H:%M:%S")))
 
             cluster_id = self._create_cluster(sahara, connector,
                                               req_cluster_size,
@@ -150,7 +157,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                               plugin, version, master_ng,
                                               slave_ng, op_slave_ng)
 
-            plugin_log.log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
+            self._log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
                                                     cluster_id))
 
             swift_path = self._is_swift_path(args)
@@ -159,14 +166,17 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 master = connector.get_master_instance(
                      sahara, cluster_id)['internal_ip']
 
-                plugin_log.log("%s | Master is: %s" % (time.strftime("%H:%M:%S"),
-                                                       master))
+                self._log("%s | Master is %s" % 
+                    (time.strftime("%H:%M:%S"), master))
 
                 workers = connector.get_worker_instances(sahara, cluster_id)
                 workers_id = []
 
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
+
+                self._log("%s | Configuring controller" % 
+                    (time.strftime("%H:%M:%S")))
 
                 scaler.setup_environment(api.controller_url, workers_id,
                                          starting_cap, data)
@@ -177,13 +187,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_binary_url, user, password, job_template_name,
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
-                        expected_time, plugin_app, collect_period, log_path, swift,
-                        container, data)
+                        expected_time, plugin_app, collect_period, log_path, 
+                        swift, container, data)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
                         main_class, dependencies, spark_applications_ids, 
-                        expected_time, plugin_app, collect_period, workers_id, data)
+                        expected_time, plugin_app, collect_period, workers_id, 
+                        data)
 
             else:
                 # FIXME: exception type
@@ -191,11 +202,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 raise ex.ClusterNotCreatedException()
 
             # Delete cluster
-            plugin_log.log("%s | Delete cluster: %s" % (time.strftime("%H:%M:%S"),
-                                                            cluster_id))
+            self._log("%s | Delete cluster: %s" % 
+                (time.strftime("%H:%M:%S"), cluster_id))
+ 
             connector.delete_cluster(sahara, cluster_id)
 
-            plugin_log.log("%s | Finished application execution" % (time.strftime("%H:%M:%S")))
+            self._log("%s | Finished application execution" % 
+                (time.strftime("%H:%M:%S")))
 
             return job_status
 
@@ -234,15 +247,18 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self.start_time = time.mktime(start_time.timetuple())
         while not (completed or failed):
             job_status = connector.get_job_status(sahara, job_exec_id)
-            plugin_log.log("%s | Sahara current job status: %s" %
-                    (time.strftime("%H:%M:%S"), job_status))
+            self._log("%s | Sahara current job status: %s" %
+                (time.strftime("%H:%M:%S"), job_status))
+
             if job_status == 'RUNNING':
                 time.sleep(2)
 
             current_time = datetime.datetime.now()
             current_job_time = (current_time - start_time).total_seconds()
             if current_job_time > 3600:
-                plugin_log.log("%s | Job execution killed due to inactivity" % time.strftime("%H:%M:%S"))
+                self._log("%s | Job execution killed due to inactivity" % 
+                    time.strftime("%H:%M:%S"))
+
                 job_status = 'TIMEOUT'
 
             completed = connector.is_job_completed(job_status)
@@ -250,20 +266,23 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         end_time = datetime.datetime.now()
         total_time = end_time - start_time
-        application_time_log.log(
-            "%s|%.0f|%.0f" % (spark_app_id,
-                              float(time.mktime(start_time.timetuple())),
-                              float(total_time.total_seconds())))
+        application_time_log.log("%s|%.0f|%.0f" % (
+                                 spark_app_id, 
+                                 float(time.mktime(start_time.timetuple())),
+                                 float(total_time.total_seconds())))
+
         self.application_time = total_time.total_seconds()
-        plugin_log.log("%s | Sahara job took %s seconds to execute" %
-                (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
+        self._log("%s | Sahara job took %s seconds to execute" %
+            (time.strftime("%H:%M:%S"), str(total_time.total_seconds())))
 
         return job_status
 
     def _create_cluster(self, sahara, connector, req_cluster_size,
                         pred_cluster_size, public_key, net_id, image_id,
                         plugin, version, master_ng, slave_ng, op_slave_ng):
-        plugin_log.log('Creating cluster')
+
+        self._log('Creating cluster')
+
         try:
             cluster_id = connector.create_cluster(sahara, req_cluster_size,
                                                   pred_cluster_size,
@@ -304,7 +323,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                     job_template_name,
                                                     job_type)
 
-        plugin_log.log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting job..." % (time.strftime("%H:%M:%S")))
 
         # Running job
         configs = os_utils.get_job_config(connector, plugin,
@@ -315,13 +334,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                              cluster_id,
                                              configs=configs)
 
-        plugin_log.log("%s | Created job" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Created job" % (time.strftime("%H:%M:%S")))
 
         spark_app_id = spark.get_running_app(master,
                                              spark_applications_ids)
         spark_applications_ids.append(spark_app_id)
 
-        plugin_log.log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
 
         job_exec_id = job.id
 
@@ -330,30 +349,30 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         job_status = connector.get_job_status(sahara, job_exec_id)
 
-        plugin_log.log("%s | Sahara job status: %s" %
+        self._log("%s | Sahara job status: %s" %
                 (time.strftime("%H:%M:%S"), job_status))
 
         info_plugin = {"spark_submisson_url": "http://" + master,
                        "expected_time": expected_time}
 
-        plugin_log.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
-        plugin_log.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
         scaler.start_scaler(api.controller_url, spark_app_id, 
                             workers_id, data)
 
         job_status = self._wait_on_job_finish(sahara, connector,
                                               job_exec_id, app_id)
 
-        plugin_log.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
-        plugin_log.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
         scaler.stop_scaler(api.controller_url, spark_app_id)
 
         spark_applications_ids.remove(spark_app_id)
 
-        plugin_log.log("Finished application execution")
+        self._log("Finished application execution")
 
         if connector.is_job_completed(job_status):
             self.update_application_state("OK")
@@ -364,11 +383,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return job_status
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class, dependencies, spark_applications_ids, 
-                              expected_time, plugin_app, collect_period, workers_id, data):
+                              job_bin_url, main_class, dependencies, 
+                              spark_applications_ids, expected_time, 
+                              plugin_app, collect_period, workers_id, data):
+
         job_exec_id = str(uuid.uuid4())[0:7]
-        plugin_log.log("%s | Job execution ID: %s" %
-                (time.strftime("%H:%M:%S"), job_exec_id))
+        self._log("%s | Job execution ID: %s" %
+            (time.strftime("%H:%M:%S"), job_exec_id))
 
         # Defining params
         local_path = '/tmp/spark-jobs/' + job_exec_id + '/'
@@ -380,24 +401,25 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         job_binary_path = hdfs.get_path(job_bin_url)
         
         # Create temporary job directories
-        plugin_log.log("%s | Create temporary job directories" %
-                (time.strftime("%H:%M:%S")))
-        self._mkdir(local_path)
+        self._log("%s | Create temporary job directories" %
+                      (time.strftime("%H:%M:%S")))
+
+        os.mkdir(local_path)
 
         # Create cluster directories
-        plugin_log.log("%s | Creating directories (CLUSTER)" %
+        self._log("%s | Creating cluster directories" %
                 (time.strftime("%H:%M:%S")))
         remote.execute_command(master, key_path,
                                'mkdir -p %s' % local_path)
 
         # Get job binary from hdfs
-        plugin_log.log("%s | Get job binary from hdfs (CLUSTER)" %
+        self._log("%s | Get job binary from hdfs" %
                 (time.strftime("%H:%M:%S")))
         remote.copy_from_hdfs(master, key_path, remote_hdfs,
                               job_binary_path, local_path)
 
         # Submit job
-        plugin_log.log("%s | Submit job (CLUSTER)" % 
+        self._log("%s | Starting job" % 
                       (time.strftime("%H:%M:%S")))
 
         local_binary_file = (local_path + remote.list_directory(key_path, 
@@ -413,28 +435,23 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         info_plugin = {"spark_submisson_url": "http://" + master,
                        "expected_time": expected_time}
 
-        plugin_log.log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
-        plugin_log.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
         scaler.start_scaler(api.controller_url, spark_app_id, 
                             workers_id, data)
 
         (output, err) = spark_job.communicate()
 
-        plugin_log.log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
-        plugin_log.log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
+        self._log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
         scaler.stop_scaler(api.controller_url, spark_app_id)
 
-        f = open("logs/stdout", "w")
-        f.write(output)
-        f.close()
-
-        f = open("logs/stderr", "w")
-        f.write(err)
-        f.close()
-
+        self.stdout.log(output)
+        self.stderr.log(err)
+  
         spark_applications_ids.remove(spark_app_id)
 
         self.update_application_state("OK")
@@ -463,15 +480,31 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
-        job = remote.execute_command_popen(remote_instance, key_path, 
+
+        job = remote.execute_command_popen(remote_instance, 
+                                           key_path, 
                                            spark_submit)
 
         return job
-      
-    def _mkdir(self, path):
-        subprocess.call('mkdir -p %s' % path, shell=True)
 
+    def _log(self, string):
+        plugin_log.log(string)
+        self.running_log.log(string)
 
+    def _verify_existing_log_paths(self, app_id):
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+        elif not os.path.exists('logs/apps'):
+            os.mkdir('logs/apps')
+        if not os.path.exists('logs/apps/%s' % app_id):
+            os.mkdir('logs/apps/%s' % app_id)
+
+    def _clean_log_files(self, app_id):
+        running_log_file = open("logs/apps/%s/execution" % app_id, "w").close()
+        stdout_file = open("logs/apps/%s/stdout" % app_id, "w").close()
+        stderr_file = open("logs/apps/%s/stderr" % app_id, "w").close()
+     
+ 
 class SaharaProvider(base.PluginInterface):
 
     def __init__(self):
@@ -492,8 +525,9 @@ class SaharaProvider(base.PluginInterface):
         }
 
     def execute(self, data):
-        executor = OpenStackSparkApplicationExecutor()
         app_id = "osspark" + self.id_generator.get_ID()
+        executor = OpenStackSparkApplicationExecutor(app_id)
+
         handling_thread = threading.Thread(target=executor.start_application,
                                            args=(data,
                                                  self.spark_applications_ids,

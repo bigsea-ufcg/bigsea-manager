@@ -23,12 +23,10 @@ rest = u.Rest('v10', __name__)
 def execute(data):
     return u.render(api.execute(data))
 
-
 @rest.post('/manager/stop_app/<app_id>')
 def stop_app(app_id, data):
     api.stop_app(app_id)
     return u.render()
-
 
 @rest.post('/manager/kill_all')
 def kill_all(data):
@@ -39,10 +37,10 @@ def kill_all(data):
 def status():
     return u.render(api.status())
 
-@rest.get('/manager/broker_log')
-def broker_log():
-    return u.render(api.broker_log())
+@rest.get('/manager/logs/execution/<app_id>')
+def execution_log(app_id):
+    return u.render(api.execution_log(app_id))
 
-@rest.get('/manager/execution_log')
-def execution_log():
-    return u.render(api.execution_log())
+@rest.get('/manager/logs/std/<app_id>')
+def std_log(app_id):
+    return u.render(api.std_log(app_id))
