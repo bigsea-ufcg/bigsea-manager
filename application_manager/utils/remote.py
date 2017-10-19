@@ -51,7 +51,6 @@ def execute_command(remote, key_path, command):
 def execute_command_popen(remote, key_path, command):
     command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s %(command)s' %
                {'remote': remote, 'key_path': key_path, 'command': command})
-
     
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
