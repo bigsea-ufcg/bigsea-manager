@@ -5,6 +5,7 @@ import requests
 import sys
 import uuid
 import time
+import subprocess
 
 
 config = ConfigParser.RawConfigParser()
@@ -46,15 +47,29 @@ starting_cap = config.get('scaler', 'starting_cap')
 scaler_plugin = config.get('scaler', 'scaler_plugin')
 scaling_parameters = {}
 scaling_parameters['actuator'] = config.get('scaler', 'actuator')
-scaling_parameters['metric_source'] = config.get('scaler', 'metric_source')
-scaling_parameters['application_type'] = config.get('scaler', 'application_type')
-scaling_parameters['check_interval'] = config.getint('scaler', 'check_interval')
+
+scaling_parameters['metric_source'] = config.get('scaler', 
+                                                  'metric_source')
+
+scaling_parameters['application_type'] = config.get('scaler',
+                                                    'application_type')
+
+scaling_parameters['check_interval'] = config.getint('scaler',
+                                                     'check_interval')
+
 scaling_parameters['trigger_down'] = config.getint('scaler', 'trigger_down')
+
 scaling_parameters['trigger_up'] = config.getint('scaler', 'trigger_up')
+
 scaling_parameters['min_cap'] = config.getint('scaler', 'min_cap')
+
 scaling_parameters['max_cap'] = config.getint('scaler', 'max_cap')
-scaling_parameters['actuation_size'] = config.getint('scaler', 'actuation_size')
-scaling_parameters['metric_rounding'] = config.getint('scaler', 'metric_rounding')
+
+scaling_parameters['actuation_size'] = config.getint('scaler', 
+                                                     'actuation_size')
+
+scaling_parameters['metric_rounding'] = config.getint('scaler', 
+                                                      'metric_rounding')
 
 headers = {'Content-Type': 'application/json'}
 body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
@@ -70,18 +85,27 @@ body = dict(plugin=plugin, scaler_plugin=scaler_plugin,
     job_type=job_type, version=version, opportunistic_slave_ng=opportunistic_slave_ng,
     slave_ng=slave_ng, master_ng=master_ng, net_id=net_id, dependencies=dependencies
     )
+
 url = "http://%s:%s/manager/execute" % (ip, port)
 print "Making request to", url
 body_log = body.copy()
 r = requests.post(url, headers=headers, data=json.dumps(body))
-print "Application id: %s" % r.content
 
-url_status = "http://%s:%s/manager/broker_log" % (ip, port)
-url_execution_log = "http://%s:%s/manager/execution_log" % (ip, port)
+app_id =  r.content.replace("\"", "")
+print "Application id: %s" % app_id
+
+url_status = "http://%s:%s/manager/logs/execution/%s" % (ip, port, app_id)
+url_execution_log = "http://%s:%s/manager/logs/std/%s" % (ip, port, app_id)
 print "Running application"
 
 old_status = []
-f = open("app.log", "w")
+
+if os.path.exists(app_id):
+    subprocess.call("rm -rf %s" % app_id, shell=True)
+
+os.mkdir(app_id)
+
+f = open("%s/execution" % app_id, "w")
 while(True):
     r_status = requests.get(url_status)
 
@@ -93,18 +117,19 @@ while(True):
         if "Finished" in line:
             std = requests.get(url_execution_log).json()
 
-            err = open("stderr", "w")
+            err = open("%s/stderr" % app_id, "w")
             err.write(str(std[1]))
             err.close()
 
-            out = open("stdout", "w")
+            out = open("%s/stdout" % app_id, "w")
             out.write(str(std[0]))
             out.close()
 
             f.close()
 
-            print "See stderr and stdout files to more details of application execution"
+            print """See stderr and stdout files to 
+                  more details of application execution"""
 
             exit()
 
-    time.sleep(10)
+    time.sleep(5)
