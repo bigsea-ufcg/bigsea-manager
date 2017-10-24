@@ -20,8 +20,8 @@ from application_manager.utils import scaler
 
 from uuid import uuid4
 
+import json
 import paramiko
-import requests
 import time
 
 
@@ -30,7 +30,7 @@ class SparkMesosProvider(base.PluginInterface):
     def __init__(self):
         self.get_frameworks_url = "%s:%s" % (api.mesos_url,
                                              api.mesos_port)
-        self.app_id = "app-one-spark-mesos-" + str(uuid4())[:8]
+        self.app_id = "app-spark-mesos-" + str(uuid4())[:8]
 
 
     def get_title(self):
@@ -54,40 +54,41 @@ class SparkMesosProvider(base.PluginInterface):
         # one_username = api.one_username
         # one_password = api.one_password
 
-        binary_url = data['binary_url']
-        execution_class = data['execution_class']
-        execution_parameters = data['execution_parameters']
-        starting_cap = data['starting_cap']
-        actuator = data['actuator']
+        binary_url = str(data['binary_url'])
+        execution_class = str(data['execution_class'])
+        execution_parameters = str(data['execution_parameters'])
+        starting_cap = 0 if data['starting_cap'] == "" else int(data['starting_cap'])
+        actuator = str(data['actuator'])
 
         # DONE: Creates a connection ssh with Mesos cluster
         conn = self._get_ssh_connection(api.mesos_url,
                                         api.cluster_username,
                                         api.cluster_password,
                                         api.cluster_key_path)
-
         # DONE: execute all the spark needed commands
         # DONE: to run an spark job from command line
         if execution_class != "" and execution_class is not None:
             # If the class field is empty, it means that the
             # job binary is python
-            binary_path = '~/exec_bin.py'
-            spark_run = ('%s --name %s ' +
-                              '--executor-memory 512M ' +
-                              '--num-executors 1 ' +
+            binary_path = '~/exec_bin.jar'
+            spark_run = ('sudo %s --name %s ' +
                               '--master mesos://%s:%s ' +
                               '--class %s %s %s')
         else:
-            binary_path = '~/exec_bin.jar'
-            spark_run = ('%s --name %s ' +
-                              '--executor-memory 512M ' +
-                              '--num-executors 1 ' +
+            binary_path = '~/exec_bin.py'
+            spark_run = ('sudo %s --name %s ' +
                               '--master mesos://%s:%s ' +
                               '%s %s %s')
 
         # DONE: Download the binary from a public link
-        stdin, stdout, stderr = conn.exec_command('wget -O %s > %s') \
-                                         % (binary_url, binary_path)
+
+        print ">>>>>>>>>>>>>>>>> ID: " + self.app_id
+        try:
+            stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
+                                                      (binary_url,
+                                                       binary_path))
+        except Exception as e:
+            print e.message
 
         conn.exec_command(spark_run % (api.spark_path,
                                        self.app_id,
@@ -99,18 +100,20 @@ class SparkMesosProvider(base.PluginInterface):
 
         # TODO: Discovery ips of the executors from Mesos
         # TODO: Discovery the ids on KVM using the ips
-        list_vms_one = 'ovm list --user %s --password %s --endpoint %s' % \
+        list_vms_one = 'onevm list --user %s --password %s --endpoint %s' % \
                        (api.one_username, api.one_password, api.one_url)
         stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
-        executors = self._get_executors_ip()
+        list_response = stdout.read()
+        print list_response
+        executors = self._get_executors_ip(conn)
         vms_ips = executors[0]
-        vms_ids = self._extract_vms_ids(stdout.read())
+        vms_ids = self._extract_vms_ids(list_response)
 
         executors_vms_ids = []
         for ip in vms_ips:
             for id in vms_ids:
-                vm_info_one = 'ovm show % --user %s --password %s --endpoint %s' % \
+                vm_info_one = 'onevm show % --user %s --password %s --endpoint %s' % \
                               (id, api.one_username, api.one_password, api.one_url)
 
                 stdin, stdout, stderr = conn.exec_command(vm_info_one)
@@ -119,14 +122,14 @@ class SparkMesosProvider(base.PluginInterface):
                     break
 
         # DONE: set up the initial configuration of cpu cap
-        scaler.setup_environment(api.controller_url, executors_vms_ids,
-                                 starting_cap, actuator)
+        #scaler.setup_environment(api.controller_url, executors_vms_ids,
+        #                         starting_cap, actuator)
 
         # DONE: start monitor service
-        self._start_monitoring(executors[1], data)
+        # self._start_monitoring(executors[1], data)
 
         # DONE: start controller service
-        self._start_controller(executors_vms_ids, data)
+        # self._start_controller(executors_vms_ids, data)
 
         # TODO: stop monitor
         # monitor.stop_monitor(api.monitor_url, self.app_id)
@@ -152,12 +155,26 @@ class SparkMesosProvider(base.PluginInterface):
 
         return conn
 
-    def _get_executors_ip(self):
-        mesos_resp = requests.get(self.get_frameworks_url).json()
+    # It must be mad by ssh access
+    # FIXME
+    def _get_executors_ip(self, conn):
+        frameworks_call = 'curl http://' + self.get_frameworks_url + '/frameworks'
+
+        stdin, stdout, sterr = conn.exec_command(frameworks_call)
+
+        try:
+            output = stdout.read()
+            mesos_resp = json.loads(output)
+        except Exception as e:
+            print e.message
+            # print str(e)
+            mesos_resp = {}
 
         executors_ips = []
         framework = None
         find_fw = False
+
+        # print mesos_resp
 
         # DONE: It must to ensure that the application was
         # DONE: started before try to get the executors
@@ -168,6 +185,10 @@ class SparkMesosProvider(base.PluginInterface):
                     framework = f
                     find_fw = True
                     break
+            if not find_fw:
+                print 'Trying to find framework'
+                stdin, stdout, sterr = conn.exec_command(frameworks_call)
+                mesos_resp = json.loads(stdout.read())
 
             time.sleep(2)
 
@@ -180,7 +201,8 @@ class SparkMesosProvider(base.PluginInterface):
                         # TODO: it must return a list with tuples (ip, host)
                         executors_ips.append(i['ip_address'])
 
-        return executors_ips, framework['webui_url']
+        print executors_ips, framework['webui_url']
+        return None, None
 
     def _extract_vms_ids(self, output):
         lines = output.split('\n')
