@@ -1,0 +1,29 @@
+[services]
+monitor_url = http://0.0.0.0:5001
+controller_url = http://0.0.0.0:5002
+authorization_url = http://0.0.0.0:5003/authorization
+optimizer_url = http://0.0.0.0:5004/optimizer
+plugins = sahara,os_generic
+
+[os-generic]
+public_key = 
+key_path = 
+log_path = 
+user = 
+password = 
+auth_ip = 
+project_id =  
+user_domain_name = 
+
+[spark-sahara]
+swift_container = 
+remote_hdfs = 
+
+[chronos]
+url = 
+username = 
+password = 
+supervisor_ip = 
+
+[infra]
+hosts = 

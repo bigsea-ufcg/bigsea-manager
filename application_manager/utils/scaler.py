@@ -22,13 +22,13 @@ def _get_scaler_data(workers, data):
     return start_scaler_body    
 
 def start_scaler(controller_url, app_id, workers, data):
-    request_url = controller_url + '/scaler/start_scaling/' + app_id
+    request_url = controller_url + '/controller/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     data = _get_scaler_data(workers, data)
     requests.post(request_url, data=data, headers=headers)
 
 def stop_scaler(controller_url, app_id):
-    stop_scaling_url = controller_url + '/scaler/stop_scaling/' + app_id
+    stop_scaling_url = controller_url + '/controller/stop_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     requests.post(stop_scaling_url, headers=headers)
 
@@ -44,7 +44,7 @@ def _get_setup_environment_data(instances, cap, data):
 
 
 def setup_environment(controller_url, instances, cap, data):
-    setup_enviroment_url = controller_url + '/scaler/setup_env'
+    setup_enviroment_url = controller_url + '/controller/setup_env'
     headers = {'Content-type': 'application/json'}
     data = _get_setup_environment_data(instances, cap, data)
     requests.post(setup_enviroment_url, data=data, headers=headers)

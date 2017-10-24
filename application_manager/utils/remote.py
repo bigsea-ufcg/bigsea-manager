@@ -43,11 +43,18 @@ def read_file_from(remote_file, run_as_root=False, timeout=120):
 
 
 def execute_command(remote, key_path, command):
-    command = ('ssh -i %(key_path)s ubuntu@%(remote)s %(command)s' %
+    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s %(command)s' %
                {'remote': remote, 'key_path': key_path, 'command': command})
 
     subprocess.call(command, shell=True)
 
+def execute_command_popen(remote, key_path, command):
+    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s %(command)s' %
+               {'remote': remote, 'key_path': key_path, 'command': command})
+    
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+    return p
 
 def copy_to_remote(remote, key_path, source, destination):
     command = ('scp -i %(key_path)s -r %(source)s %(destination)s' %
