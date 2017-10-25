@@ -403,8 +403,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         # Create temporary job directories
         self._log("%s | Create temporary job directories" %
                       (time.strftime("%H:%M:%S")))
-
-        os.mkdir(local_path)
+        self._mkdir(local_path)
 
         # Create cluster directories
         self._log("%s | Creating cluster directories" %
@@ -503,7 +502,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         running_log_file = open("logs/apps/%s/execution" % app_id, "w").close()
         stdout_file = open("logs/apps/%s/stdout" % app_id, "w").close()
         stderr_file = open("logs/apps/%s/stderr" % app_id, "w").close()
-     
+
+    def _mkdir(self, path):
+        subprocess.call('mkdir -p %s' % path, shell=True) 
+
  
 class SaharaProvider(base.PluginInterface):
 
