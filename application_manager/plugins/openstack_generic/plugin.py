@@ -37,6 +37,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
         self.state_lock = threading.RLock()
         self.application_time = -1
         self.start_time = -1
+        self.instances_ids = []
+        self.instances_ips = []
 
     def get_application_state(self):
         with self.state_lock:
@@ -53,6 +55,12 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
     def get_application_start_time(self):
         return self.start_time
+
+    def get_application_ips(self):
+        return self.instances_ips
+    
+    def get_application_ids(self):
+        return self.instances_ids
 
     def start_application(self, data):
         try:
@@ -107,6 +115,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                 instances_nets.append(instance_ips)
                 time.sleep(5)
 
+            self.instances_ids = instances
+
             time.sleep(30)
 
             LOG.log("Checking if ssh is available")
@@ -134,6 +144,8 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
                                 attempts -= 1
                                 time.sleep(30)
+
+            self.instances_ips = instances_ips
 
             LOG.log("Setting up environment")
             print "Setting up environment"

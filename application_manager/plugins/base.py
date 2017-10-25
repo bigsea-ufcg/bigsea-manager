@@ -138,6 +138,14 @@ class ApplicationExecutor(object):
     @required
     def get_application_start_time(self):
         pass
+    
+    @required
+    def get_application_ips(self):
+        pass
+    
+    @required
+    def get_application_ids(self):
+        pass
 
 
 class GenericApplicationExecutor(ApplicationExecutor):
@@ -155,4 +163,10 @@ class GenericApplicationExecutor(ApplicationExecutor):
         pass
 
     def get_application_start_time(self):
+        pass
+    
+    def get_application_ips(self):
+        pass
+    
+    def get_application_ids(self):
         pass

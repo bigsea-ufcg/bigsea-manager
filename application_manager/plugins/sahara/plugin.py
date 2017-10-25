@@ -52,6 +52,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self.application_time = -1
         self.start_time = -1
         self.app_id = app_id
+        self.instances_ids = []
+        self.instances_ips = []
 
         self._verify_existing_log_paths(app_id)
         self._clean_log_files(app_id)
@@ -77,6 +79,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
     def get_application_start_time(self):
         return self.start_time
+    
+    def get_application_ips(self):
+        return self.instances_ips
+    
+    def get_application_ids(self):
+        return self.instances_ids
 
     def start_application(self, data, spark_applications_ids, app_id):
         try:
@@ -150,12 +158,20 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self._log("%s | Creating cluster..."
                        % (time.strftime("%H:%M:%S")))
 
-            cluster_id = self._create_cluster(sahara, connector,
-                                              req_cluster_size,
-                                              pred_cluster_size,
-                                              public_key, net_id, image_id,
-                                              plugin, version, master_ng,
-                                              slave_ng, op_slave_ng)
+            cluster_id = connector.get_existing_cluster_by_size(sahara,
+                                                                cluster_size)
+
+            if not cluster_id:
+
+                self._log("%s | Cluster does not exist. Creating cluster..." %
+                        (time.strftime("%H:%M:%S")))
+
+                cluster_id = self._create_cluster(sahara, connector,
+                                                  req_cluster_size,
+                                                  pred_cluster_size,
+                                                  public_key, net_id, image_id,
+                                                  plugin, version, master_ng,
+                                                  slave_ng, op_slave_ng)
 
             self._log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
                                                     cluster_id))
@@ -174,6 +190,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
+                    self.instances_ips.append(worker['internal_ip'])
+
+                self.instances_ids = workers_id
 
                 self._log("%s | Configuring controller" % 
                     (time.strftime("%H:%M:%S")))
@@ -202,10 +221,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 raise ex.ClusterNotCreatedException()
 
             # Delete cluster
-            self._log("%s | Delete cluster: %s" % 
-                (time.strftime("%H:%M:%S"), cluster_id))
+#             self._log("%s | Delete cluster: %s" % 
+#                 (time.strftime("%H:%M:%S"), cluster_id))
  
-            connector.delete_cluster(sahara, cluster_id)
+            #connector.delete_cluster(sahara, cluster_id)
 
             self._log("%s | Finished application execution" % 
                 (time.strftime("%H:%M:%S")))

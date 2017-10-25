@@ -59,6 +59,12 @@ def status():
 
         application_stat["start_time"] = (applications[app_id].
                                           get_application_start_time())
+        
+        application_stat["instances"] = (applications[app_id].
+                                   get_application_ids())
+        
+        application_stat["ips"] = (applications[app_id].
+                                   get_application_ips())
     
     return applications_status
 
