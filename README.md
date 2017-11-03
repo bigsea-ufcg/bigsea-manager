@@ -100,18 +100,18 @@ curl -H "Content-Type: application/json" -X POST --data @your_json.json http://u
 
 This call expects a JSON on the body with the client’s specification of the application to run.
 
-#### Response codes
+### Response codes
 | Code | Reason |
 | --- | --- |
 | 200 | Normal response code |
 
-#### Request parameters
-##### Manager
+### Request
+##### Manager parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | plugin | string | The broker plugin. |
 
-##### Cluster
+##### Cluster parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | opportunism | boolean | If set to true, enables opportunism. |
@@ -122,18 +122,18 @@ This call expects a JSON on the body with the client’s specification of the ap
 | slave_ng | string | ID of slave node group. |
 | opportunistic_slave_ng | string | ID of opportunistic slave node group. |
 
-##### Infrastructure
+##### Infrastructure parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | net_id | string | ID of openstack network. |
-
-##### Authorizer
+ 
+##### Authorizer parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | username  | string | Username of authorizer. |
 | password  | string | Password of authorizer. |
 
-##### Job submission
+##### Job submission parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | args | string | Spark arguments of job submission (accept Swift and HDFS paths). |
@@ -146,26 +146,30 @@ This call expects a JSON on the body with the client’s specification of the ap
 | plugin_version | string | Version of job plugin. |
 | type | string | Job type. |
 
-##### Monitor
-| plugin_app | string | Monitor plugin |
+##### Monitor parameters
+| Name | Type | Description |
+| --- | --- | --- |
+| plugin_app | string | Monitor plugin. |
 | expected_time | int | Expected application time. |
 | collect_period | int | Collect period of Monitor component. |
 | number_of_jobs | int | Number of jobs of Spark application. |
 
-##### Controller
-| starting_cap | int |  |
-| actuator | string |  |
-| metric_source | string |  |
-| application_type | string |  |
-| check_interval | int |  |
-| trigger_down | int |  |
-| trigger_up | int |  |
-| min_cap | int |  |
-| max_cap | int |  |
-| actuation_size | int |  |
-| metric_rounding | int |  |
+##### Controller parameters
+| Name | Type | Description |
+| --- | --- | --- |
+| starting_cap | int | Starting capacity. |
+| actuator | string | Actuator type. |
+| metric_source | string | Metric source. |
+| application_type | string | Application type. |
+| check_interval | int | Check interval period. |
+| trigger_down | int | Trigger down. |
+| trigger_up | int | Trigger up. |
+| min_cap | int | Minimum capacity. |
+| max_cap | int | Maximum capacity. |
+| actuation_size | int | Actuation size. |
+| metric_rounding | int | Metric rounding. |
 
-#### Request example
+### Request example
 ```
 {
    "cluster":{
@@ -221,12 +225,12 @@ This call expects a JSON on the body with the client’s specification of the ap
 }
 ```
 
-#### Response parameters
+### Response parameters
 | Name | Type | Description |
 | --- | --- | --- |
 | execution_id | string | UUID of submitted application. |
 
-#### Response example
+### Response example
 ```
 {  
    "execution_id":"osspark04"
