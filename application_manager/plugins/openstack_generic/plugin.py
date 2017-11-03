@@ -128,7 +128,7 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                 for net_ip_list in instance_net.values():
                     for ip in net_ip_list:
 
-                        attempts = 2
+                        attempts = 100
                         while attempts != -1:
                             try:
                                 conn = self._get_ssh_connection(ip,

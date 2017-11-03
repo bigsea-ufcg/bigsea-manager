@@ -401,6 +401,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         return job_status
 
+    def _mkdir(self, path):
+        subprocess.call('mkdir -p %s' % path, shell=True)
+
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
                               job_bin_url, main_class, dependencies, 
                               spark_applications_ids, expected_time, 
@@ -423,7 +426,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Create temporary job directories" %
                       (time.strftime("%H:%M:%S")))
 
-        os.mkdir(local_path)
+        self._mkdir(local_path)
 
         # Create cluster directories
         self._log("%s | Creating cluster directories" %
@@ -448,6 +451,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         spark_job = self._submit_job(master, key_path, main_class, 
                                      dependencies, local_binary_file, args)
 
+        start_time = datetime.datetime.now()
+        self.start_time = time.mktime(start_time.timetuple())
+
         spark_app_id = spark.get_running_app(master, spark_applications_ids)
         spark_applications_ids.append(spark_app_id)
 
@@ -462,6 +468,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                             workers_id, data)
 
         (output, err) = spark_job.communicate()
+
+        end_time = datetime.datetime.now()
+        total_time = end_time - start_time
+        self.application_time = total_time.total_seconds()
 
         self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
