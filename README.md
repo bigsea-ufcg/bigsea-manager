@@ -1,10 +1,9 @@
-# BigSea WP3 - Manager
+# Manager/Broker - EUBra-BIGSEA WP3
 The Manager component is the framework entry point for the user. It is responsible for receiving the user request and preparing its execution. On the process of executing a request, the broker is responsible for submitting the application for the execution infrastructure and interacts using REST API with all the other needed services that allow to monitor the application execution, to optimize the cluster size and to act on the cluster to provide assurance on meeting the application QoS.
 
 # Table of Contents
 --------
 - [Architecture description](#architecture-description)
-- [Dependencies](#dependencies)
 - [Deploy](#deploy)
   - [Install](#install)
   - [Configure](#configure)
@@ -24,13 +23,6 @@ The Manager component is the framework entry point for the user. It is responsib
 --------
 The Manager is implemented following a plugin architecture, providing flexibility to add or remove plugins when necessary. All the integrations with different infrastructures and components are made by specific plugins, so the different technologies in the context of EUBra-BIGSEA framework can be easily integrated by the broker service.
 
-# Dependencies
---------
-To have your Manager working properly you need to ensure that it has access to following components in your infrastructure:
-
-* **OpenStack Compute Service** - *Nova* (with admin privileges)
-* **OpenStack Monitoring Service** - *Monasca*
-
 # Deploy
 To install, configure and run the Manager component you will need a virtual machine with the configurations described below.
 
@@ -42,7 +34,7 @@ Memory: 2GB of RAM
 Disk: there is no disk requirements.
 ```
 
-In the virtual machine that you want to install the manager follow the steps below:
+In the virtual machine that you want to install the broker follow the steps below:
 
 ## Install
 1. Install git
@@ -111,37 +103,56 @@ This call expects a JSON on the body with the client’s specification of the ap
 #### Response codes
 | Code | Reason |
 | --- | --- |
-| 200 |  |
-| 500 |  |
+| 200 | Normal response code |
 
 #### Request parameters
+##### Manager
 | Name | Type | Description |
 | --- | --- | --- |
-| plugin | string |  |
-| cluster_size | int |  |
-| bigsea_username | string |  |
-| bigsea_password | string |  |
-| opportunistic | boolean |  |
-| args | string |  |
-| main_class | string |  |
-| scaler_plugin | string |  |
-| flavor_id | string |  |
-| image_id | string |  |
-| job_template_name | string |  |
-| job_binary_name | string |  |
-| job_binary_url | string |  |
-| input_ds_id | string |  |
-| output_ds_id | string |  |
-| plugin_app | string |  |
-| expected_time | int |  |
-| collect_period | int |  |
-| openstack_plugin | string |  |
-| version | string |  |
-| job_type | string |  |
-| cluster_id | string |  |
-| master_ng | string |  |
-| slave_ng | string |  |
-| net_id | string |  |
+| plugin | string | The broker plugin. |
+
+##### Cluster
+| Name | Type | Description |
+| --- | --- | --- |
+| opportunism | boolean | If set to true, enables opportunism. |
+| size | int | The size of cluster that will be created. |
+| flavor_id | string | The openstack flavor of cluster. |
+| image_id | string | The openstack image of cluster. |
+| master_ng | string | ID of master node group. |
+| slave_ng | string | ID of slave node group. |
+| opportunistic_slave_ng | string | ID of opportunistic slave node group. |
+
+##### Infrastructure
+| Name | Type | Description |
+| --- | --- | --- |
+| net_id | string | ID of openstack network. |
+
+##### Authorizer
+| Name | Type | Description |
+| --- | --- | --- |
+| username  | string | Username of authorizer. |
+| password  | string | Password of authorizer. |
+
+##### Job submission
+| Name | Type | Description |
+| --- | --- | --- |
+| args | string | Spark arguments of job submission (accept Swift and HDFS paths). |
+| dependencies | string | Dependencies of job (separated by comma). |
+| main_class | string | If the job is Java, set the main class of job binary. |
+| binary_url | string | Job binary url (accept Swift and HDFS paths). |
+| template_name | string | Name of job template (Swift submission parameter). |
+| binary_name | string | Name of job binary (Swift submission parameter). |
+| openstack_plugin | string | Job plugin. |
+| plugin_version | string | Version of job plugin. |
+| type | string | Job type. |
+
+##### Monitor
+| plugin_app | string | Monitor plugin |
+| expected_time | int | Expected application time. |
+| collect_period | int | Collect period of Monitor component. |
+| number_of_jobs | int | Number of jobs of Spark application. |
+
+##### Controller
 | starting_cap | int |  |
 | actuator | string |  |
 | metric_source | string |  |
@@ -156,44 +167,56 @@ This call expects a JSON on the body with the client’s specification of the ap
 
 #### Request example
 ```
-{  
-   "plugin":"sahara",
-   "scaler_plugin":"progress-error",
-   "cluster_size":10,
-   "flavor_id":"7e0a0241-72de-4773-9ef2-cfb38ecfdb82",
-   "image_id":"f2530513-6286-4907-b313-f417d8d703ce",
-   "bigsea_username":"my_username",
-   "bigsea_password":"my_password",
-   "opportunistic":"False",
-   "args":["swift://bigsea-ex/EMaaS/input/shapes.csv", "swift://bigsea-ex/EMaaS/input/gps_data_5d.csv", "swift://bigsea-ex/EMaaS/output/output_1843768234769",  "10"],
-   "main_class":"LineMatching.MatchingRoutesShapeGPS",
-   "job_template_name":"EMaaS",
-   "job_binary_name":"EMaaS",
-   "job_binary_url":"swift://bigsea-ex/EMaaS/EMaaS.jar",
-   "input_ds_id":"",
-   "output_ds_id":"",
-   "plugin_app":"spark_progress",
-   "expected_time":100,
-   "collect_period":5,
-   "openstack_plugin":"spark",
-   "version":"1.6.0",
-   "job_type":"Spark",
-   "cluster_id":"",
-   "master_ng":"ffb464df-d06e-49ce-afd6-fed4e14260fb",
-   "slave_ng":"2f0f946e-2bdb-43b0-add0-e3bbbca1d5c4",
-   "net_id":"64ee4355-4d7f-4170-80b4-5e8348af6a61",
-   "starting_cap":50,
-   "actuator":"service",
-   "scaling_parameters":{  
-      "metric_source":"monasca",
+{
+   "cluster":{
+      "slave_ng":"acb2d6aa-858e-40e4-b436-cc195506e819",
+      "image_id":"96e4df4d-2398-4330-99d8-e030d689a226",
+      "opportunism":"False",
+      "master_ng":"89428c9c-2b4d-4a63-8c85-68d778b0c715",
+      "flavor_id":"89789ded-183b-4a75-b7e9-5467d6fc944f",
+      "opportunistic_slave_ng":"acb2d6aa-858e-40e4-b436-cc195506e819",
+      "size":1
+   },
+   "job":{
+      "plugin_version":"2.1.0",
+      "openstack_plugin":"spark",
+      "template_name":"myapp",
+      "args":"hdfs://192.168.1.75/myinput.csv hdfs://10.11.4.222/myoutput.csv",
+      "dependencies":"package1,package2",
+      "binary_name":"",
+      "main_class":"Package.MainClass",
+      "type":"Spark",
+      "binary_url":"hdfs://10.11.4.222/mybinary.jar"
+   },
+   "authorizer":{
+      "username":"bob",
+      "password":"alice"
+   },
+   "monitor":{
+      "expected_time":"100",
+      "number_of_jobs":"5",
+      "collect_period":"5",
+      "plugin_app":"spark_progress"
+   },
+   "scaler":{
+      "starting_cap":"80",
       "application_type":"os_generic",
-      "check_interval":10,
-      "trigger_down":10,
+      "scaler_plugin":"progress-error",
+      "metric_rounding":2,
       "trigger_up":10,
-      "min_cap":20,
-      "max_cap":100,
+      "trigger_down":10,
       "actuation_size":15,
-      "metric_rounding":2
+      "max_cap":100,
+      "check_interval":10,
+      "metric_source":"monasca",
+      "actuator":"service",
+      "min_cap":20
+   },
+   "broker":{
+      "plugin":"sahara"
+   },
+   "infra":{
+      "net_id":"64ee4355-4d7f-4170-80b4-5e8348af6a61"
    }
 }
 ```
@@ -201,7 +224,7 @@ This call expects a JSON on the body with the client’s specification of the ap
 #### Response parameters
 | Name | Type | Description |
 | --- | --- | --- |
-| execution_id | string |  |
+| execution_id | string | UUID of submitted application. |
 
 #### Response example
 ```

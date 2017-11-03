@@ -96,29 +96,32 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             remote_hdfs = api.remote_hdfs
 
             # User Request Parameters
-            net_id = data['net_id']
-            master_ng = data['master_ng']
-            slave_ng = data['slave_ng']
-            op_slave_ng = data['opportunistic_slave_ng']
-            opportunism = str(data['opportunistic'])
-            plugin = data['openstack_plugin']
-            job_type = data['job_type']
-            version = data['version']
-            req_cluster_size = data['cluster_size']
-            cluster_size = data['cluster_size']
-            args = data['args']
-            main_class = data['main_class']
-            dependencies = data['dependencies']
-            job_template_name = data['job_template_name']
-            job_binary_name = data['job_binary_name']
-            job_binary_url = data['job_binary_url']
-            image_id = data['image_id']
-            plugin_app = data['plugin']
-            expected_time = data['expected_time']
-            collect_period = data['collect_period']
-            number_of_jobs = data['number_of_jobs']
-            image_id = data['image_id']
-            starting_cap = data['starting_cap']
+            net_id = data['infra']['net_id']
+
+            master_ng = data['cluster']['master_ng']
+            slave_ng = data['cluster']['slave_ng']
+            op_slave_ng = data['cluster']['opportunistic_slave_ng']
+            opportunism = data['cluster']['opportunism']
+            image_id = data['cluster']['image_id']
+            req_cluster_size = data['cluster']['size']
+            cluster_size = data['cluster']['size']
+
+            plugin = data['job']['openstack_plugin']
+            job_type = data['job']['type']
+            version = data['job']['plugin_version']
+            args = data['job']['args'].split()
+            main_class = data['job']['main_class']
+            dependencies = data['job']['dependencies']
+            job_template_name = data['job']['template_name']
+            job_binary_name = data['job']['binary_name']
+            job_binary_url = data['job']['binary_url']
+
+            plugin_app = data['monitor']['plugin_app']
+            expected_time = data['monitor']['expected_time']
+            collect_period = data['monitor']['collect_period']
+            number_of_jobs = data['monitor']['number_of_jobs']
+
+            starting_cap = data['scaler']['starting_cap']
 
             # Openstack Components
             connector = os_connector.OpenStackConnector(plugin_log)
@@ -440,14 +443,15 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                        "number_of_jobs": number_of_jobs}
 
         self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
+
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
         self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
         scaler.start_scaler(api.controller_url, spark_app_id, 
                             workers_id, data)
-
+ 
         (output, err) = spark_job.communicate()
-
+ 
         self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
         self._log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
@@ -464,6 +468,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
     def _submit_job(self, remote_instance, key_path, main_class,
                     dependencies, job_binary_file, args):
+
         args_line = ''
         for arg in args:
             args_line += arg + ' '

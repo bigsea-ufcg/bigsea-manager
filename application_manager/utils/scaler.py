@@ -17,7 +17,7 @@ import requests
 
 
 def _get_scaler_data(workers, data):
-    data["scaling_parameters"]["instances"] = workers
+    data['scaler']['instances'] = workers
     start_scaler_body = json.dumps(data)
     return start_scaler_body    
 

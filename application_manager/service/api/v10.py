@@ -25,13 +25,16 @@ applications = {}
 
 
 def execute(data):
+    username = data['authorizer']['username']
+    password = data['authorizer']['password']
+
     authorization = authorizer.get_authorization(api.authorization_url,
-                                                 data['bigsea_username'],
-                                                 data['bigsea_password'])
+                                                 username,
+                                                 password)
     if not authorization['success']:
         return 'Error: Authentication failed. User not authorized'
 
-    plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
+    plugin = plugin_base.PLUGINS.get_plugin(data['broker']['plugin'])
     app_id, executor = plugin.execute(data)
     applications[app_id] = executor
 
