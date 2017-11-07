@@ -38,6 +38,7 @@ log_path = config.get('os-generic', 'log_path')
 
 container = config.get('spark-sahara', 'swift_container')
 remote_hdfs = config.get('spark-sahara', 'remote_hdfs')
+swift_logdir = config.get('spark-sahara', 'swift_logdir')
 
 hosts = config.get('infra', 'hosts').split(' ')
 

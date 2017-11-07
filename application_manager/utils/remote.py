@@ -43,13 +43,13 @@ def read_file_from(remote_file, run_as_root=False, timeout=120):
 
 
 def execute_command(remote, key_path, command):
-    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s %(command)s' %
+    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s "%(command)s"' %
                {'remote': remote, 'key_path': key_path, 'command': command})
 
     subprocess.call(command, shell=True)
 
 def execute_command_popen(remote, key_path, command):
-    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s %(command)s' %
+    command = ('ssh -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s ubuntu@%(remote)s "%(command)s"' %
                {'remote': remote, 'key_path': key_path, 'command': command})
     
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -58,6 +58,13 @@ def execute_command_popen(remote, key_path, command):
 
 def copy_to_remote(remote, key_path, source, destination):
     command = ('scp -i %(key_path)s -r %(source)s %(destination)s' %
+               {'key_path': key_path, 'source': source,
+                'destination': destination})
+
+    subprocess.call(command, shell=True)
+
+def copy(key_path, source, destination):
+    command = ('scp -o "StrictHostKeyChecking no" -o "UserKnownHostsFile=/dev/null" -i %(key_path)s %(source)s %(destination)s' %
                {'key_path': key_path, 'source': source,
                 'destination': destination})
 
