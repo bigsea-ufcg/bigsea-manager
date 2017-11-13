@@ -15,20 +15,28 @@
 
 import requests
 import time
+from application_manager.utils.logger import Log
 
-def get_running_app(submission_url, applications):
+spark_log = Log("Spark Log", "logs/spark.log")
+
+def get_running_app(submission_url, applications, number_of_attempts):
     app_id = None
+    attempts = 0
     while app_id is None:
         try:
             all_app = requests.get('http://' + submission_url +
                                    ':4040/api/v1/applications?status=running')
+
             for app in all_app.json():
                 if app['attempts'][0]['completed'] == False:
                     if app['id'] not in applications:
                         print app['id']
                         return app['id']#, app['name']
         except:
-            # self.logger.log("No application found")
-            pass
-            # return None
+            if attempts > number_of_attempts:
+                return None
+            else:
+                time.sleep(1)
+                attempts = attempts + 1
+                pass
 

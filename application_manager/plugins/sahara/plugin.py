@@ -94,6 +94,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             hosts = api.hosts
             remote_hdfs = api.remote_hdfs
             swift_logdir = api.swift_logdir
+            number_of_attempts = api.number_of_attempts
 
             # User Request Parameters
             net_id = data['net_id']
@@ -189,14 +190,15 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
                         expected_time, plugin_app, collect_period, 
-                        number_of_jobs, log_path, swift, container, data)
+                        number_of_jobs, log_path, swift, container, data, 
+                        number_of_attempts)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
                         main_class, dependencies, spark_applications_ids, 
                         expected_time, plugin_app, collect_period,
                         number_of_jobs, workers_id, data, connector, swift,
-                        swift_logdir, container)
+                        swift_logdir, container, number_of_attempts)
 
             else:
                 # FIXME: exception type
@@ -215,6 +217,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             return job_status
 
         except Exception as e:
+            self._log("%s | Delete cluster: %s" % 
+                (time.strftime("%H:%M:%S"), cluster_id))
+ 
+            connector.delete_cluster(sahara, cluster_id)
+
+            self._log("%s | Finished application execution with error" % 
+                (time.strftime("%H:%M:%S")))
+
             self.update_application_state("Error")
             plugin_log.log(str(e))
 
@@ -312,7 +322,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                spark_applications_ids, workers_id, app_id,
                                expected_time, plugin_app, collect_period,
                                number_of_jobs, log_path, swift, 
-                               container, data):
+                               container, data, number_of_attempts):
 
         # Preparing job
         job_binary_id = self._get_job_binary_id(sahara, connector,
@@ -340,7 +350,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Created job" % (time.strftime("%H:%M:%S")))
 
         spark_app_id = spark.get_running_app(master,
-                                             spark_applications_ids)
+                                             spark_applications_ids, 
+                                             number_of_attempts)
         spark_applications_ids.append(spark_app_id)
 
         self._log("%s | Spark app id" % (time.strftime("%H:%M:%S")))
@@ -391,7 +402,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                               spark_applications_ids, expected_time, 
                               plugin_app, collect_period, number_of_jobs, 
                               workers_id, data, connector, swift, 
-                              swift_logdir, container):
+                              swift_logdir, container, number_of_attempts):
 
         job_exec_id = str(uuid.uuid4())[0:7]
         self._log("%s | Job execution ID: %s" %
@@ -439,7 +450,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         spark_job = self._submit_job(master, key_path, main_class, 
                                      dependencies, local_binary_file, args)
 
-        spark_app_id = spark.get_running_app(master, spark_applications_ids)
+        spark_app_id = spark.get_running_app(master, 
+                                             spark_applications_ids,
+                                             number_of_attempts)
+
+        if spark_app_id == None:
+            self._log("""%s | Error on submission of application, please check the config file""" % (time.strftime("%H:%M:%S")))
+            raise ex.ConfigurationError()
+
         spark_applications_ids.append(spark_app_id)
 
         info_plugin = {"spark_submisson_url": "http://" + master,
