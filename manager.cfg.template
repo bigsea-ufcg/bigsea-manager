@@ -17,7 +17,9 @@ user_domain_name =
 
 [spark-sahara]
 swift_container = 
-remote_hdfs = 
+swift_logdir =
+remote_hdfs =
+number_of_attempts =
 
 [chronos]
 url = 
