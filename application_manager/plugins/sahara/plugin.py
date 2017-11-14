@@ -455,7 +455,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                              number_of_attempts)
 
         if spark_app_id == None:
-            self._log("""%s | Error on submission of application, please check the config file""" % (time.strftime("%H:%M:%S")))
+            self._log("%s | Error on submission of application, "
+                      "please check the config file" %
+                      (time.strftime("%H:%M:%S")))
             raise ex.ConfigurationError()
 
         spark_applications_ids.append(spark_app_id)
