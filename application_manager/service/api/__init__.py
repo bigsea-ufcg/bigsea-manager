@@ -45,7 +45,8 @@ if 'sahara' in plugins:
     user = config.get('spark-sahara', 'user')
     password = config.get('spark-sahara', 'password')
     domain = config.get('spark-sahara', 'user_domain_name')
-
+    number_of_attempts = config.getint('spark-sahara', 'number_of_attempts')
+    swift_logdir = config.get('spark-sahara', 'swift_logdir')
 
 hosts = config.get('infra', 'hosts').split(' ')
 
