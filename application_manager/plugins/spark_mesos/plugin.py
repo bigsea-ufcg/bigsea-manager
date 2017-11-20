@@ -87,16 +87,23 @@ class SparkMesosProvider(base.PluginInterface):
             stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
                                                       (binary_url,
                                                        binary_path))
+            print "waiting to download the binary"
+            print stdout.read()
+            print "binary downloaded"
+
         except Exception as e:
+            print "Error downloading binary"
             print e.message
 
-        conn.exec_command(spark_run % (api.spark_path,
-                                       self.app_id,
-                                       api.mesos_url,
-                                       api.mesos_port,
-                                       binary_path,
-                                       execution_class,
-                                       execution_parameters))
+        i, o, e = conn.exec_command(spark_run % (api.spark_path,
+                                                 self.app_id,
+                                                 api.mesos_url,
+                                                 api.mesos_port,
+                                                 execution_class,
+                                                 binary_path,
+                                                 execution_parameters))
+
+        # print 'ERROR RUNNING APPLCATION: ' + e.read()
 
         # TODO: Discovery ips of the executors from Mesos
         # TODO: Discovery the ids on KVM using the ips
@@ -105,7 +112,6 @@ class SparkMesosProvider(base.PluginInterface):
         stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
         list_response = stdout.read()
-        print list_response
         executors = self._get_executors_ip(conn)
         vms_ips = executors[0]
         vms_ids = self._extract_vms_ids(list_response)
@@ -113,13 +119,15 @@ class SparkMesosProvider(base.PluginInterface):
         executors_vms_ids = []
         for ip in vms_ips:
             for id in vms_ids:
-                vm_info_one = 'onevm show % --user %s --password %s --endpoint %s' % \
+                vm_info_one = 'onevm show %s --user %s --password %s --endpoint %s' % \
                               (id, api.one_username, api.one_password, api.one_url)
 
                 stdin, stdout, stderr = conn.exec_command(vm_info_one)
                 if ip in stdout.read():
                     executors_vms_ids.append(id)
                     break
+
+        print executors_vms_ids
 
         # DONE: set up the initial configuration of cpu cap
         #scaler.setup_environment(api.controller_url, executors_vms_ids,
@@ -131,13 +139,15 @@ class SparkMesosProvider(base.PluginInterface):
         # DONE: start controller service
         # self._start_controller(executors_vms_ids, data)
 
+        # This command locks the plugin execution until the execution be done
+        # o.read()
         # TODO: stop monitor
         # monitor.stop_monitor(api.monitor_url, self.app_id)
         # TODO: stop controller
         # scaler.stop_scaler(api.controller_url, self.app_id)
         # DONE: remove binaries
         conn.exec_command('rm -rf ~/exec_bin.*')
-        return True
+        return None, None
 
     def _get_ssh_connection(self, ip, username=None,
                             password=None, key_path=None):
@@ -165,6 +175,7 @@ class SparkMesosProvider(base.PluginInterface):
         try:
             output = stdout.read()
             mesos_resp = json.loads(output)
+            # print mesos_resp
         except Exception as e:
             print e.message
             # print str(e)
@@ -202,7 +213,7 @@ class SparkMesosProvider(base.PluginInterface):
                         executors_ips.append(i['ip_address'])
 
         print executors_ips, framework['webui_url']
-        return None, None
+        return executors_ips, framework['webui_url']
 
     def _extract_vms_ids(self, output):
         lines = output.split('\n')
