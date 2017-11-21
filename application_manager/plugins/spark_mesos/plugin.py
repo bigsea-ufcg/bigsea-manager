@@ -86,11 +86,11 @@ class SparkMesosProvider(base.PluginInterface):
 
         print ">>>>>>>>>>>>>>>>> ID: " + self.app_id
         try:
-            stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
-                                                      (binary_url,
-                                                       binary_path))
+#           stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
+#                                                     (binary_url,
+#                                                      binary_path))
             print "waiting for download the binary"
-            stdout.read()
+#           stdout.read()
             print "binary downloaded"
 
         except Exception as e:
@@ -147,11 +147,11 @@ class SparkMesosProvider(base.PluginInterface):
 
         # TODO: start controller service
 
+        print "%s | Starting scaler" % (time.strftime("%H:%M:%S"))
         scaler.start_scaler(api.controller_url,
                             self.app_id,
-                            data['scaler_plugin'],
                             vms_ids,
-                            data['scaling_parameters'])
+                            data)
 
         # self._start_controller(executors_vms_ids, data)
 
@@ -162,7 +162,7 @@ class SparkMesosProvider(base.PluginInterface):
         # TODO: stop controller
         scaler.stop_scaler(api.controller_url, self.app_id)
         # DONE: remove binaries
-        conn.exec_command('rm -rf ~/exec_bin.*')
+#       conn.exec_command('rm -rf ~/exec_bin.*')
         return None, None
 
     def _get_ssh_connection(self, ip, username=None,
