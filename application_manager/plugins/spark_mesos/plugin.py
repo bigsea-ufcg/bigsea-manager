@@ -57,6 +57,8 @@ class SparkMesosProvider(base.PluginInterface):
         binary_url = str(data['binary_url'])
         execution_class = str(data['execution_class'])
         execution_parameters = str(data['execution_parameters'])
+        expected_time = int(data['expected_time'])
+        number_of_jobs = int(data['number_of_jobs'])
         starting_cap = 0 if data['starting_cap'] == "" else int(data['starting_cap'])
         actuator = str(data['actuator'])
 
@@ -87,8 +89,8 @@ class SparkMesosProvider(base.PluginInterface):
             stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
                                                       (binary_url,
                                                        binary_path))
-            print "waiting to download the binary"
-            print stdout.read()
+            print "waiting for download the binary"
+            stdout.read()
             print "binary downloaded"
 
         except Exception as e:
@@ -112,8 +114,7 @@ class SparkMesosProvider(base.PluginInterface):
         stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
         list_response = stdout.read()
-        executors = self._get_executors_ip(conn)
-        vms_ips = executors[0]
+        vms_ips, master = self._get_executors_ip(conn)
         vms_ids = self._extract_vms_ids(list_response)
 
         executors_vms_ids = []
@@ -129,18 +130,26 @@ class SparkMesosProvider(base.PluginInterface):
 
         print executors_vms_ids
 
-        # DONE: set up the initial configuration of cpu cap
+        # TODO: set up the initial configuration of cpu cap
         #scaler.setup_environment(api.controller_url, executors_vms_ids,
         #                         starting_cap, actuator)
 
-        # DONE: start monitor service
+        # TODO: start monitor service
+        info_plugin = {"spark_submisson_url": master,
+                       "expected_time": expected_time,
+                       "number_of_jobs": number_of_jobs}
+
+        print "%s | Starting monitor" % (time.strftime("%H:%M:%S"))
+        monitor.start_monitor(api.monitor_url, self.app_id,
+                              'spark-mesos', info_plugin, 2)
+
         # self._start_monitoring(executors[1], data)
 
-        # DONE: start controller service
+        # TODO: start controller service
         # self._start_controller(executors_vms_ids, data)
 
         # This command locks the plugin execution until the execution be done
-        # o.read()
+        print o.read()
         # TODO: stop monitor
         # monitor.stop_monitor(api.monitor_url, self.app_id)
         # TODO: stop controller
