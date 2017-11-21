@@ -186,6 +186,7 @@ class SparkMesosProvider(base.PluginInterface):
     def _get_executors_ip(self, conn):
         frameworks_call = 'curl http://' + self.get_frameworks_url + '/frameworks'
 
+        time.sleep(5)
         stdin, stdout, sterr = conn.exec_command(frameworks_call)
 
         try:
