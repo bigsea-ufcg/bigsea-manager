@@ -146,6 +146,13 @@ class SparkMesosProvider(base.PluginInterface):
         # self._start_monitoring(executors[1], data)
 
         # TODO: start controller service
+
+        scaler.start_scaler(api.controller_url,
+                            self.app_id,
+                            data['scaler_plugin'],
+                            vms_ids,
+                            data['scaling_parameters'])
+
         # self._start_controller(executors_vms_ids, data)
 
         # This command locks the plugin execution until the execution be done
@@ -153,7 +160,7 @@ class SparkMesosProvider(base.PluginInterface):
         # TODO: stop monitor
         # monitor.stop_monitor(api.monitor_url, self.app_id)
         # TODO: stop controller
-        # scaler.stop_scaler(api.controller_url, self.app_id)
+        scaler.stop_scaler(api.controller_url, self.app_id)
         # DONE: remove binaries
         conn.exec_command('rm -rf ~/exec_bin.*')
         return None, None
@@ -231,34 +238,3 @@ class SparkMesosProvider(base.PluginInterface):
             ids.append(lines[i].split()[0])
 
         return ids
-
-    def _start_contoller(self, executors_ids, data):
-        data['scaling_parameters']['cluster_password'] = api.cluster_password
-        data['scaling_parameters']['cluster_username'] = api.cluster_username
-        data['scaling_parameters']['cluster_ip'] = api.mesos_url
-        scaler.start_scaler(api.controller_url,
-                            self.app_id,
-                            data['scaler_plugin'],
-                            executors_ids,
-                            data['scaling_parameters'])
-
-    def _start_monitoring(self, master, data):
-        print "Executing commands into the instance"
-        # TODO Check if exec_command will work without blocking exec
-
-        monitor_plugin = 'spark-progress'
-        info_plugin = {
-            "spark_submisson_url": master,
-            "expected_time": data['reference_value']
-        }
-        collect_period = 1
-        try:
-            print "Starting monitoring"
-
-            monitor.start_monitor(api.monitor_url, self.app_id,
-                                  monitor_plugin, info_plugin,
-                                  collect_period)
-
-            print "Starting scaling"
-        except Exception as e:
-            print e.message
