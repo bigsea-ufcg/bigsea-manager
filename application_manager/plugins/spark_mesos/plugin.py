@@ -131,8 +131,8 @@ class SparkMesosProvider(base.PluginInterface):
         print executors_vms_ids
 
         # TODO: set up the initial configuration of cpu cap
-        #scaler.setup_environment(api.controller_url, executors_vms_ids,
-        #                         starting_cap, actuator)
+        scaler.setup_environment(api.controller_url, executors_vms_ids,
+                                 starting_cap, data)
 
         # TODO: start monitor service
         info_plugin = {"spark_submisson_url": master,
@@ -150,7 +150,7 @@ class SparkMesosProvider(base.PluginInterface):
         print "%s | Starting scaler" % (time.strftime("%H:%M:%S"))
         scaler.start_scaler(api.controller_url,
                             self.app_id,
-                            vms_ids,
+                            executors_vms_ids,
                             data)
 
         # self._start_controller(executors_vms_ids, data)
