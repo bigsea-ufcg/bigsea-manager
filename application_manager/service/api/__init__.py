@@ -38,6 +38,9 @@ if 'os_generic' in plugins:
     log_path = config.get('os-generic', 'log_path')
 
 if 'sahara' in plugins:
+    log_path = config.get('os-generic', 'log_path')
+    public_key = config.get('spark-sahara', 'public_key')
+    key_path = config.get('spark-sahara', 'key_path')
     container = config.get('spark-sahara', 'swift_container')
     user_domain_name = config.get('spark-sahara', 'user_domain_name')
     project_id = config.get('spark-sahara', 'project_id')
@@ -47,6 +50,8 @@ if 'sahara' in plugins:
     domain = config.get('spark-sahara', 'user_domain_name')
     number_of_attempts = config.getint('spark-sahara', 'number_of_attempts')
     swift_logdir = config.get('spark-sahara', 'swift_logdir')
+    remote_hdfs = config.get('spark-sahara', 'remote_hdfs')
+    number_of_attempts = config.getint('spark-sahara', 'number_of_attempts')
 
 hosts = config.get('infra', 'hosts').split(' ')
 
