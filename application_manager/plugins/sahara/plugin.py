@@ -217,10 +217,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             return job_status
 
         except Exception as e:
-            self._log("%s | Delete cluster: %s" % 
-                (time.strftime("%H:%M:%S"), cluster_id))
- 
-            connector.delete_cluster(sahara, cluster_id)
+            if cluster_id != None:
+                self._log("%s | Delete cluster: %s" %
+                    (time.strftime("%H:%M:%S"), cluster_id))
+                connector.delete_cluster(sahara, cluster_id)
 
             self._log("%s | Finished application execution with error" % 
                 (time.strftime("%H:%M:%S")))
@@ -458,6 +458,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self._log("%s | Error on submission of application, "
                       "please check the config file" %
                       (time.strftime("%H:%M:%S")))
+
+            (output, err) = spark_job.communicate()
+            self.stdout.log(output)
+            self.stderr.log(err)
+
             raise ex.ConfigurationError()
 
         spark_applications_ids.append(spark_app_id)
