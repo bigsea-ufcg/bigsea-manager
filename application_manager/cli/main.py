@@ -21,4 +21,4 @@ def main():
     plugin_base.setup_plugins()
     app = Flask(__name__)
     app.register_blueprint(rest)
-    app.run(host='0.0.0.0', port=1514, debug=True)
+    app.run(host='0.0.0.0', port=1516, debug=True)
