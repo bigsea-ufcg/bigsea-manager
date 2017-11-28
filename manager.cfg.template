@@ -1,31 +1,50 @@
 [services]
-monitor_url = http://0.0.0.0:5001
-controller_url = http://0.0.0.0:5002
-authorization_url = http://0.0.0.0:5003/authorization
-optimizer_url = http://0.0.0.0:5004/optimizer
-plugins = sahara,os_generic
+controller_url =
+monitor_url =
+optimizer_url =
+authorization_url =
+plugins =
 
 [os-generic]
-public_key = 
-key_path = 
-log_path = 
-user = 
-password = 
-auth_ip = 
-project_id =  
-user_domain_name = 
+public_key =
+key_path =
+log_path =
+user =
+password =
+auth_ip =
+project_id =
+user_domain_name =
 
 [spark-sahara]
-swift_container = 
+swift_container =
 swift_logdir =
 remote_hdfs =
 number_of_attempts =
+public_key =
+key_path =
+log_path =
+user =
+password =
+auth_ip =
+project_id =
+user_domain_name =
+
+[spark-mesos]
+mesos_url=
+mesos_port=
+cluster_username=
+cluster_password=
+key_path=
+one_url=
+one_username=
+one_password=
+spark_path=
 
 [chronos]
-url = 
-username = 
-password = 
-supervisor_ip = 
+url =
+username =
+password =
+supervisor_ip =
 
 [infra]
-hosts = 
+hosts =
