@@ -40,7 +40,7 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
             url = api.chronos_url
             user = api.chronos_username
             password = api.chronos_password
-            supervisor_url = api.supervisor_url
+            supervisor_ip = api.supervisor_ip
 
             chronos = ManagerChronos(url, user, password)
 
@@ -64,9 +64,9 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
                 
             }   
 
-            job = self.modify_job(supervisor_url, jobname, job)
+            job = self.modify_job(supervisor_ip, jobname, job)
             if ( chronos.sendJob(job) ):
-                self.init_webhook(supervisor_url, payload)
+                self.init_webhook(supervisor_ip, payload)
                 print('Launch completed with UUID: '+ self.id)
             else:
                 print('ERROR: Launch not completed')
@@ -76,18 +76,14 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
     def modify_job(self, api_rest_ip, jobname, job):
         updateCommand_1 = "startedAt=$(date +%s); "
         updateCommand_2 = ("; /usr/bin/curl -H 'Content-type: application/json' -X POST " +
-                           api_rest_ip +
-                           "/updateTask -d '"
-                           "{\"name\": \"" +
-                           jobname +
-                           "\", \"finished_at\": "
-                           "\"'$(date +%s)'\", " +
-                           "\"started_at\": \""
-                           "'$(echo $startedAt)'\", " +
-                           "\"hostname\": " +
-                           "\"'$(hostname)'\", "
-                           "\"uuid\": \"" +
-                           self.id + "\"}'")
+                          api_rest_ip +
+                           "/updateTask -d '{\"name\": \""
+                           + jobname +
+                          "\", \"finished_at\": \"'$(date +%s)'\", " +
+                          "\"started_at\": \"'$(echo $startedAt)'\", " +
+                          "\"hostname\": " +
+                          "\"'$(hostname)'\", \"uuid\": \""
+                           + self.id + "\"}'")
         job['command'] = updateCommand_1 + job['command'] + updateCommand_2
         # job['schedule'] = 'R//' + job['schedule'].split('/')[2] 
         return job
@@ -97,7 +93,7 @@ class ChronosApplicationExecutor(GenericApplicationExecutor):
         print head
         url = url_webhook+'/initTask'
         msg = json.dumps(payload)
-        response = requests.post(url, headers=head, data=msg)
+        response = requests.post( url, headers=head, data=msg)
         print "Response " + str(response)
 
 

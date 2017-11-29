@@ -6,7 +6,7 @@ dist/
 build/
 *.pyc
 manager.cfg.lsd
-*.un
+*.un~
 .*swp
 *.log
 *.pem
