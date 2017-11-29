@@ -46,12 +46,13 @@ configure_logging()
 
 class SparkGenericApplicationExecutor(GenericApplicationExecutor):
 
-    def __init__(self, app_id):
+    def __init__(self, app_id, master_ip):
         self.application_state = "None"
         self.state_lock = threading.RLock()
         self.application_time = -1
         self.start_time = -1
         self.app_id = app_id
+        self.master = master_ip
 
         self._verify_existing_log_paths(app_id)
         self._clean_log_files(app_id)
@@ -77,7 +78,7 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
     def get_application_start_time(self):
         return self.start_time
 
-    def start_application(self, data, spark_applications_ids, app_id, master):
+    def start_application(self, data, spark_applications_ids, app_id):
         try:
             self.update_application_state("Running")
 
@@ -95,7 +96,7 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
             remote_hdfs = api.remote_hdfs
             swift_logdir = api.swift_logdir
             number_of_attempts = api.number_of_attempts
-            master_ip = master
+            master_ip = self.master
 
             # User Request Parameters
             net_id = data['net_id']
@@ -293,12 +294,10 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
 class SparkGenericProvider(base.PluginInterface):
 
     def __init__(self):
+        self.applications = []
         self.spark_applications_ids = []
         self.id_generator = ID_Generator()
-        self.masters = {ip : spark.exists_running_app(ip, 
-                                     self.spark_applications_ids, 
-                                     api.number_of_attempts) \
-                             for ip in api.masters_ips}
+        self.masters = {ip : False for ip in api.masters_ips}
 
     def get_title(self):
         return 'Spark Generic'
@@ -313,7 +312,16 @@ class SparkGenericProvider(base.PluginInterface):
             'description': self.get_description(),
         }
 
+    def update_running_clusters(self):
+        for application in self.applications:
+            state = application.get_application_state()
+            if state == "Running":
+                self.masters[application.master] = True
+            else:
+                self.masters[application.master] = False
+
     def execute(self, data):
+        self.update_running_clusters()
         if not False in self.masters.values():
             plugin_log.log("%s | All clusters busy" % 
                           (time.strftime("%H:%M:%S")))
@@ -327,11 +335,13 @@ class SparkGenericProvider(base.PluginInterface):
                     break
             
             app_id = str(uuid.uuid4())[0:7]
-            executor = SparkGenericApplicationExecutor(app_id)
+            executor = SparkGenericApplicationExecutor(app_id, master_ip)
 
             handling_thread = threading.Thread(target=executor.\
                                                start_application, args=(data,
                                                self.spark_applications_ids,
-                                               app_id, master_ip))
+                                               app_id))
             handling_thread.start()
+
+            self.applications.append(executor)
             return (app_id, executor)
