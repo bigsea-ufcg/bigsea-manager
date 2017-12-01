@@ -132,11 +132,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             # Check Oportunism
             if opportunism == "True":
-                self._log("""%s | Checking if opportunistic instances 
+                self._log("""%s | Checking if opportunistic instances
                           are available""" % (time.strftime("%H:%M:%S")))
 
                 pred_cluster_size = optimizer.get_cluster_size(
-                                        api.optimizer_url, 
+                                        api.optimizer_url,
                                         hosts)
             else:
                 pred_cluster_size = req_cluster_size
@@ -146,12 +146,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             else:
                 cluster_size = req_cluster_size
 
-            self._log("%s | Cluster size: %s" % 
+            self._log("%s | Cluster size: %s" %
                      (time.strftime("%H:%M:%S"), str(cluster_size)))
 
             self._log("%s | Creating cluster..."
                        % (time.strftime("%H:%M:%S")))
 
+            cluster_id = None
             cluster_id = self._create_cluster(sahara, connector,
                                               req_cluster_size,
                                               pred_cluster_size,
@@ -168,7 +169,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 master = connector.get_master_instance(
                      sahara, cluster_id)['internal_ip']
 
-                self._log("%s | Master is %s" % 
+                self._log("%s | Master is %s" %
                     (time.strftime("%H:%M:%S"), master))
 
                 workers = connector.get_worker_instances(sahara, cluster_id)
@@ -177,7 +178,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
 
-                self._log("%s | Configuring controller" % 
+                self._log("%s | Configuring controller" %
                     (time.strftime("%H:%M:%S")))
 
                 scaler.setup_environment(api.controller_url, workers_id,
@@ -190,12 +191,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
                         expected_time, plugin_app, collect_period, 
-                        number_of_jobs, log_path, swift, container, data, 
+                        number_of_jobs, log_path, swift, container, data,
                         number_of_attempts)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
-                        main_class, dependencies, spark_applications_ids, 
+                        main_class, dependencies, spark_applications_ids,
                         expected_time, plugin_app, collect_period,
                         number_of_jobs, workers_id, data, connector, swift,
                         swift_logdir, container, number_of_attempts)
@@ -206,27 +207,35 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 raise ex.ClusterNotCreatedException()
 
             # Delete cluster
-            self._log("%s | Delete cluster: %s" % 
+            self._log("%s | Delete cluster: %s" %
                 (time.strftime("%H:%M:%S"), cluster_id))
  
             connector.delete_cluster(sahara, cluster_id)
 
-            self._log("%s | Finished application execution" % 
+            self._log("%s | Finished application execution" %
                 (time.strftime("%H:%M:%S")))
 
             return job_status
 
-        except Exception as e:
-            self._log("%s | Delete cluster: %s" % 
-                (time.strftime("%H:%M:%S"), cluster_id))
- 
-            connector.delete_cluster(sahara, cluster_id)
+        except SaharaAPIException as se:
+            self._log("%s | There is not enough resource to create a cluster" %
+                (time.strftime("%H:%M:%S")))
 
-            self._log("%s | Finished application execution with error" % 
+            self._log("%s | Finished application execution with error" %
                 (time.strftime("%H:%M:%S")))
 
             self.update_application_state("Error")
-            plugin_log.log(str(e))
+
+        except Exception as e:
+            if cluster_id != None:
+                self._log("%s | Delete cluster: %s" %
+                    (time.strftime("%H:%M:%S"), cluster_id))
+                connector.delete_cluster(sahara, cluster_id)
+
+            self._log("%s | Finished application execution with error" %
+                (time.strftime("%H:%M:%S")))
+
+            self.update_application_state("Error")
 
     def get_application_time(self):
         return self.application_time
@@ -268,7 +277,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             current_time = datetime.datetime.now()
             current_job_time = (current_time - start_time).total_seconds()
             if current_job_time > 3600:
-                self._log("%s | Job execution killed due to inactivity" % 
+                self._log("%s | Job execution killed due to inactivity" %
                     time.strftime("%H:%M:%S"))
 
                 job_status = 'TIMEOUT'
@@ -350,7 +359,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Created job" % (time.strftime("%H:%M:%S")))
 
         spark_app_id = spark.get_running_app(master,
-                                             spark_applications_ids, 
+                                             spark_applications_ids,
                                              number_of_attempts)
         spark_applications_ids.append(spark_app_id)
 
@@ -398,10 +407,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         return job_status
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class, dependencies, 
-                              spark_applications_ids, expected_time, 
-                              plugin_app, collect_period, number_of_jobs, 
-                              workers_id, data, connector, swift, 
+                              job_bin_url, main_class, dependencies,
+                              spark_applications_ids, expected_time,
+                              plugin_app, collect_period, number_of_jobs,
+                              workers_id, data, connector, swift,
                               swift_logdir, container, number_of_attempts):
 
         job_exec_id = str(uuid.uuid4())[0:7]
@@ -443,14 +452,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Starting job" % 
                       (time.strftime("%H:%M:%S")))
 
-        local_binary_file = (local_path + remote.list_directory(key_path, 
-                                                                master, 
+        local_binary_file = (local_path + remote.list_directory(key_path,
+                                                                master,
                                                                 local_path))
 
-        spark_job = self._submit_job(master, key_path, main_class, 
+        spark_job = self._submit_job(master, key_path, main_class,
                                      dependencies, local_binary_file, args)
 
-        spark_app_id = spark.get_running_app(master, 
+        spark_app_id = spark.get_running_app(master,
                                              spark_applications_ids,
                                              number_of_attempts)
 
@@ -458,6 +467,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self._log("%s | Error on submission of application, "
                       "please check the config file" %
                       (time.strftime("%H:%M:%S")))
+
+            (output, err) = spark_job.communicate()
+            self.stdout.log(output)
+            self.stderr.log(err)
+
             raise ex.ConfigurationError()
 
         spark_applications_ids.append(spark_app_id)
@@ -470,7 +484,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
         self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-        scaler.start_scaler(api.controller_url, spark_app_id, 
+        scaler.start_scaler(api.controller_url, spark_app_id,
                             workers_id, data)
 
         (output, err) = spark_job.communicate()
@@ -493,7 +507,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         remote.copy(key_path, remote_event_log_path, event_log_path)
 
         self._log("%s | Upload log to Swift" % (time.strftime("%H:%M:%S")))
-        connector.upload_directory(swift, event_log_path, 
+        connector.upload_directory(swift, event_log_path,
                                    swift_logdir, container)
         
         spark_applications_ids.remove(spark_app_id)
@@ -525,8 +539,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
 
-        job = remote.execute_command_popen(remote_instance, 
-                                           key_path, 
+        self._log("%s | spark-submit: %s" %
+                 (time.strftime("%H:%M:%S"), spark_submit))
+
+        job = remote.execute_command_popen(remote_instance,
+                                           key_path,
                                            spark_submit)
 
         return job
@@ -559,7 +576,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         stderr_file = open("logs/apps/%s/stderr" % app_id, "w").close()
 
     def _mkdir(self, path):
-        subprocess.call('mkdir -p %s' % path, shell=True) 
+        subprocess.call('mkdir -p %s' % path, shell=True)
 
  
 class SaharaProvider(base.PluginInterface):
