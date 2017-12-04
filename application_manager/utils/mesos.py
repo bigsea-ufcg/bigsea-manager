@@ -16,6 +16,7 @@
 import time
 import json
 
+
 def extract_vms_ids(output):
     lines = output.split('\n')
     ids = []
@@ -23,7 +24,6 @@ def extract_vms_ids(output):
         ids.append(lines[i].split()[0])
 
     return ids
-
 
 def get_executors_ip(conn, get_frameworks_url, app_id):
     frameworks_call = ('curl http://' + get_frameworks_url + '/frameworks')
@@ -35,6 +35,7 @@ def get_executors_ip(conn, get_frameworks_url, app_id):
         output = stdout.read()
         mesos_resp = json.loads(output)
     except Exception as e:
+        print e.message
         mesos_resp = {}
 
     executors_ips = []

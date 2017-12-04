@@ -20,13 +20,10 @@ from application_manager.utils import scaler
 from application_manager.utils import mesos
 from application_manager.utils import ssh
 from application_manager.utils.logger import Log, configure_logging
-from application_manager.utils.ids import ID_Generator
 from application_manager.plugins.base import GenericApplicationExecutor
 
 from uuid import uuid4
 
-import json
-import paramiko
 import time
 import threading
 
@@ -70,20 +67,16 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             execution_parameters = str(data['execution_parameters'])
             expected_time = int(data['expected_time'])
             number_of_jobs = int(data['number_of_jobs'])
-            actuator = str(data['actuator'])
-            starting_cap = 100 if data['starting_cap'] == "" \
-                             else int(data['starting_cap'])
+            starting_cap = int(data['starting_cap'])
 
-            plugin_log.log("%s | Submission id: %s" % 
+            plugin_log.log("%s | Submission id: %s" %
                           (time.strftime("%H:%M:%S"), self.app_id))
 
             plugin_log.log("%s | Connecting with Mesos cluster..." %
                           (time.strftime("%H:%M:%S")))
 
-            conn = ssh.get_connection(api.mesos_url,
-                                            api.cluster_username,
-                                            api.cluster_password,
-                                            api.cluster_key_path)
+            conn = ssh.get_connection(api.mesos_url, api.cluster_username,
+                               api.cluster_password, api.cluster_key_path)
 
             plugin_log.log("%s | Connected with Mesos cluster" %
                           (time.strftime("%H:%M:%S")))
@@ -94,14 +87,14 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                 # If the class field is empty, it means that the
                 # job binary is python
                 binary_path = '~/exec_bin.jar'
-                spark_run = ('sudo %s --name %s ' +
-                                  '--master mesos://%s:%s ' +
-                                  '--class %s %s %s')
+                spark_run = ('sudo %s --name %s '
+                           + '--master mesos://%s:%s '
+                           + '--class %s %s %s')
             else:
                 binary_path = '~/exec_bin.py'
-                spark_run = ('sudo %s --name %s ' +
-                                  '--master mesos://%s:%s ' +
-                                  '%s %s %s')
+                spark_run = ('sudo %s --name %s '
+                           + '--master mesos://%s:%s '
+                           + '%s %s %s')
 
             plugin_log.log("%s | Download the binary to cluster" %
                           (time.strftime("%H:%M:%S")))
@@ -111,17 +104,17 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                                                          (binary_url,
                                                           binary_path))
  
-                plugin_log.log("%s | Waiting for download the binary..."
-                                % (time.strftime("%H:%M:%S")))
+                plugin_log.log("%s | Waiting for download the binary..." %
+                              (time.strftime("%H:%M:%S")))
  
                 # TODO: Fix possible wget error
                 stdout.read()
-                plugin_log.log("%s | Binary downloaded"
-                                % (time.strftime("%H:%M:%S")))
+                plugin_log.log("%s | Binary downloaded" %
+                              (time.strftime("%H:%M:%S")))
  
             except Exception as e:
-                plugin_log.log("%s | Error downloading binary"
-                                % (time.strftime("%H:%M:%S")))
+                plugin_log.log("%s | Error downloading binary" %
+                              (time.strftime("%H:%M:%S")))
                 self.update_application_state("Error")
                 return "Error"
 
@@ -135,10 +128,10 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
 
             # Discovery ips of the executors from Mesos
             # and discovery the ids on KVM using the ips
-            list_vms_one = 'onevm list --user %s --password %s --endpoint %s'\
-                              % (api.one_username,
-                                 api.one_password,
-                                 api.one_url)
+            list_vms_one = ('onevm list --user %s --password %s --endpoint %s'
+                         % (api.one_username,
+                            api.one_password,
+                            api.one_url))
 
             stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
@@ -159,10 +152,12 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             executors_vms_ids = []
             for ip in vms_ips:
                 for id in vms_ids:
-                    vm_info_one = 'onevm show %s --user %s --password %s \
-                                  --endpoint %s' % (id, api.one_username,
-                                                        api.one_password,
-                                                        api.one_url)
+                    vm_info_one = ('onevm show %s ' 
+                                   '--user %s '
+                                   '--password %s '
+                                   '--endpoint %s' % (id, api.one_username,
+                                                          api.one_password,
+                                                          api.one_url))
 
                     stdin, stdout, stderr = conn.exec_command(vm_info_one)
                     if ip in stdout.read():
@@ -185,7 +180,8 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             monitor.start_monitor(api.monitor_url, self.app_id,
                                   'spark-mesos', info_plugin, 2)
 
-            plugin_log.log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
+            plugin_log.log("%s | Starting scaler" %
+                          (time.strftime("%H:%M:%S")))
             scaler.start_scaler(api.controller_url,
                                 self.app_id,
                                 executors_vms_ids,
@@ -203,7 +199,8 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                           (time.strftime("%H:%M:%S")))
             scaler.stop_scaler(api.controller_url, self.app_id)
 
-            plugin_log.log("%s | Remove binaries" % (time.strftime("%H:%M:%S")))
+            plugin_log.log("%s | Remove binaries" %
+                          (time.strftime("%H:%M:%S")))
             conn.exec_command('rm -rf ~/exec_bin.*')
 
             plugin_log.log("%s | Finished application execution" %
@@ -246,15 +243,17 @@ class SparkMesosProvider(base.PluginInterface):
         if not self.busy():
             frameworks_url = "%s:%s" % (api.mesos_url,
                                         api.mesos_port)
+
             app_id = "app-spark-mesos-" + str(uuid4())[:8]
             executor = SparkMesosApplicationExecutor(app_id, frameworks_url)
-            handling_thread = threading.Thread(target=executor.\
-                                               start_application, args=(data,))
+            handling_thread = threading.Thread(
+                                  target=executor.start_application,
+                                  args=(data,))
             handling_thread.start()
 
         else:
             plugin_log.log("%s | Cluster busy" % (time.strftime("%H:%M:%S")))
             return ("", None)
 
-        self.running_application = executor 
+        self.running_application = executor
         return (app_id, executor)

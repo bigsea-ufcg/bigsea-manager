@@ -16,8 +16,8 @@
 import paramiko
 
 
-def get_connection(ip, username=None,
-                       password=None, key_path=None):
+def get_connection(ip, username=None, password=None, key_path=None):
+
     # Preparing SSH connection
     conn = paramiko.SSHClient()
     conn.set_missing_host_key_policy(paramiko.AutoAddPolicy())
