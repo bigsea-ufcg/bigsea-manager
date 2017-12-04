@@ -103,6 +103,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             op_slave_ng = data['opportunistic_slave_ng']
             opportunism = str(data['opportunistic'])
             plugin = data['openstack_plugin']
+            percentage = data['percentage']
             job_type = data['job_type']
             version = data['version']
             req_cluster_size = data['cluster_size']
@@ -136,8 +137,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                           are available""" % (time.strftime("%H:%M:%S")))
 
                 pred_cluster_size = optimizer.get_cluster_size(
-                                        api.optimizer_url,
-                                        hosts)
+                    api.optimizer_url, hosts, percentage)
             else:
                 pred_cluster_size = req_cluster_size
 
