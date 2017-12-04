@@ -76,7 +76,8 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                           (time.strftime("%H:%M:%S")))
 
             conn = ssh.get_connection(api.mesos_url, api.cluster_username,
-                               api.cluster_password, api.cluster_key_path)
+                                      api.cluster_password,
+                                      api.cluster_key_path)
 
             plugin_log.log("%s | Connected with Mesos cluster" %
                           (time.strftime("%H:%M:%S")))
@@ -88,13 +89,13 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                 # job binary is python
                 binary_path = '~/exec_bin.jar'
                 spark_run = ('sudo %s --name %s '
-                           + '--master mesos://%s:%s '
-                           + '--class %s %s %s')
+                             + '--master mesos://%s:%s '
+                             + '--class %s %s %s')
             else:
                 binary_path = '~/exec_bin.py'
                 spark_run = ('sudo %s --name %s '
-                           + '--master mesos://%s:%s '
-                           + '%s %s %s')
+                             + '--master mesos://%s:%s '
+                             + '%s %s %s')
 
             plugin_log.log("%s | Download the binary to cluster" %
                           (time.strftime("%H:%M:%S")))
@@ -103,15 +104,15 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                 stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
                                                          (binary_url,
                                                           binary_path))
- 
+
                 plugin_log.log("%s | Waiting for download the binary..." %
                               (time.strftime("%H:%M:%S")))
- 
+
                 # TODO: Fix possible wget error
                 stdout.read()
                 plugin_log.log("%s | Binary downloaded" %
                               (time.strftime("%H:%M:%S")))
- 
+
             except Exception as e:
                 plugin_log.log("%s | Error downloading binary" %
                               (time.strftime("%H:%M:%S")))
@@ -129,16 +130,17 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             # Discovery ips of the executors from Mesos
             # and discovery the ids on KVM using the ips
             list_vms_one = ('onevm list --user %s --password %s --endpoint %s'
-                         % (api.one_username,
-                            api.one_password,
-                            api.one_url))
+                            % (api.one_username,
+                               api.one_password,
+                               api.one_url))
 
             stdin, stdout, stderr = conn.exec_command(list_vms_one)
 
             list_response = stdout.read()
-            
-            vms_ips, master = mesos.get_executors_ip(conn, self.frameworks_url,
-                                                           self.app_id)
+
+            vms_ips, master = mesos.get_executors_ip(
+                conn, self.frameworks_url, self.app_id
+            )
             plugin_log.log("%s | Master: %s"
                            % (time.strftime("%H:%M:%S"), master))
 
@@ -152,12 +154,12 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             executors_vms_ids = []
             for ip in vms_ips:
                 for id in vms_ids:
-                    vm_info_one = ('onevm show %s ' 
+                    vm_info_one = ('onevm show %s '
                                    '--user %s '
                                    '--password %s '
                                    '--endpoint %s' % (id, api.one_username,
-                                                          api.one_password,
-                                                          api.one_url))
+                                                      api.one_password,
+                                                      api.one_url))
 
                     stdin, stdout, stderr = conn.exec_command(vm_info_one)
                     if ip in stdout.read():
@@ -247,8 +249,8 @@ class SparkMesosProvider(base.PluginInterface):
             app_id = "app-spark-mesos-" + str(uuid4())[:8]
             executor = SparkMesosApplicationExecutor(app_id, frameworks_url)
             handling_thread = threading.Thread(
-                                  target=executor.start_application,
-                                  args=(data,))
+                target=executor.start_application, args=(data,)
+            )
             handling_thread.start()
 
         else:

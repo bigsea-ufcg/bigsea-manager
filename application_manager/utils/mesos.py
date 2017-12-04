@@ -25,6 +25,7 @@ def extract_vms_ids(output):
 
     return ids
 
+
 def get_executors_ip(conn, get_frameworks_url, app_id):
     frameworks_call = ('curl http://' + get_frameworks_url + '/frameworks')
 
