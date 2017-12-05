@@ -1,0 +1,50 @@
+[services]
+controller_url = http://0.0.0.0:5002
+monitor_url = http://0.0.0.0:5675
+optimizer_url = http://0.0.0.0:5001/optimizer
+authorization_url = http://0.0.0.0:5001/authorization/run_application/
+plugins = sahara,spark_mesos,os_generic
+
+[os-generic]
+public_key = bigsea
+key_path = /home/ubuntu/.ssh/bigsea
+log_path = /home/ubuntu/bigsea-manager/application_logs
+user = username 
+password = password 
+auth_ip = https://cloud.lsd.ufcg.edu.br
+project_id = 5054ee14b2c54982a322e6367e1055c3 
+user_domain_name = geral
+
+[spark-sahara]
+swift_container = bigsea-ex
+swift_logdir = BULMA/eventlogs/
+remote_hdfs = 10.10.10.20
+number_of_attempts = 30
+public_key = bigsea
+key_path = /home/ubuntu/.ssh/bigsea
+log_path = /home/ubuntu/bigsea-manager/application_logs
+user = username 
+password = password
+auth_ip = https://cloud.lsd.ufcg.edu.br
+project_id = 5054ee14b2c54982a322e6367e1055c3 
+user_domain_name = geral
+
+[spark-mesos]
+mesos_url = 158.158.158.158
+mesos_port = 5050
+cluster_username = username
+cluster_password = password
+key_path =
+one_url = http://onecloud.domains:2111
+one_username = username
+one_password = password
+spark_path = /opt/spark/bin/spark-submit
+
+[chronos]
+url = http://158.158.158.157:4040
+username = username
+password = password
+supervisor_ip = http://152.152.152.152:20000
+
+[infra]
+hosts = host1 host2 host3 host4 host5 host6

@@ -1,4 +1,5 @@
 Flask!=0.11,<1.0,>=0.10 # BSD
+ConfigParser
 pytz
 pytest
 cryptography==1.9
