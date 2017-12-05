@@ -82,6 +82,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self.update_application_state("Running")
 
             # Broker Parameters
+            cluster_id = None
             user = api.user
             password = api.password
             project_id = api.project_id
@@ -103,7 +104,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             op_slave_ng = data['opportunistic_slave_ng']
             opportunism = str(data['opportunistic'])
             plugin = data['openstack_plugin']
-            percentage = data['percentage']
+            percentage = int(data['percentage'])
             job_type = data['job_type']
             version = data['version']
             req_cluster_size = data['cluster_size']
@@ -152,7 +153,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self._log("%s | Creating cluster..."
                        % (time.strftime("%H:%M:%S")))
 
-            cluster_id = None
             cluster_id = self._create_cluster(sahara, connector,
                                               req_cluster_size,
                                               pred_cluster_size,
@@ -217,6 +217,16 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             return job_status
 
+        except KeyError as ke:
+            self._log("%s | Parameter missing in submission: %s, "
+                      "please check the config file" %
+                     (time.strftime("%H:%M:%S"), str(ke)))
+
+            self._log("%s | Finished application execution with error" %
+                (time.strftime("%H:%M:%S")))
+
+            self.update_application_state("Error")
+
         except SaharaAPIException as se:
             self._log("%s | There is not enough resource to create a cluster" %
                 (time.strftime("%H:%M:%S")))
@@ -227,10 +237,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self.update_application_state("Error")
 
         except Exception as e:
-            if cluster_id != None:
+            if cluster_id is not None:
                 self._log("%s | Delete cluster: %s" %
                     (time.strftime("%H:%M:%S"), cluster_id))
                 connector.delete_cluster(sahara, cluster_id)
+
+            self._log("%s | Unknown error, please report to administrators "
+                      "of WP3 infrastructure" % (time.strftime("%H:%M:%S")))
 
             self._log("%s | Finished application execution with error" %
                 (time.strftime("%H:%M:%S")))
@@ -463,7 +476,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                              spark_applications_ids,
                                              number_of_attempts)
 
-        if spark_app_id == None:
+        if spark_app_id is None:
             self._log("%s | Error on submission of application, "
                       "please check the config file" %
                       (time.strftime("%H:%M:%S")))
