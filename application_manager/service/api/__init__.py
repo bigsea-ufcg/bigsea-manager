@@ -24,7 +24,7 @@ controller_url = config.get('services', 'controller_url')
 authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').replace(' ', '').split(',')
-
+hosts = config.get('infra', 'hosts').split(' ')
 
 if 'os_generic' in plugins:
     public_key = config.get('os-generic', 'public_key')
@@ -69,8 +69,6 @@ if 'spark_generic' in plugins:
     remote_hdfs = config.get('spark-generic', 'remote_hdfs')
     number_of_attempts = config.getint('spark-generic', 'number_of_attempts')
     masters_ips = config.get('spark-generic', 'masters_ips').split(' ')
-
-hosts = config.get('infra', 'hosts').split(' ')
 
 if 'spark_mesos' in plugins:
     mesos_url = config.get('spark-mesos', 'mesos_url')
