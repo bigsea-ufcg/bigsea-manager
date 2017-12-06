@@ -136,12 +136,24 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
 
             return job_status
 
-        except Exception as e:
-            self._log("%s | Finished application execution with error" % 
+        except KeyError as ke:
+            self._log("%s | Parameter missing in submission: %s, "
+                      "please check the config file" %
+                     (time.strftime("%H:%M:%S"), str(ke)))
+
+            self._log("%s | Finished application execution with error" %
                 (time.strftime("%H:%M:%S")))
 
             self.update_application_state("Error")
-            plugin_log.log(str(e))
+
+        except Exception as e:
+            self._log("%s | Unknown error, please report to administrators "
+                      "of WP3 infrastructure" % (time.strftime("%H:%M:%S")))
+
+            self._log("%s | Finished application execution with error" %
+                (time.strftime("%H:%M:%S")))
+
+            self.update_application_state("Error")
 
 
     def get_application_time(self):
