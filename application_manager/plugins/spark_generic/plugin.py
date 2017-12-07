@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
 import os
 import subprocess
 import time
@@ -21,19 +20,13 @@ import threading
 import uuid
 
 from application_manager import exceptions as ex
-from application_manager.openstack import connector as os_connector
-from application_manager.openstack import utils as os_utils
 from application_manager.plugins import base
 from application_manager.service import api
 from application_manager.utils import hdfs
-from application_manager.utils import monitor
-from application_manager.utils import optimizer
 from application_manager.utils import remote
-from application_manager.utils import scaler
 from application_manager.utils import spark
 from application_manager.utils.logger import Log, configure_logging
 
-from saharaclient.api.base import APIException as SaharaAPIException
 from application_manager.utils.ids import ID_Generator
 from application_manager.plugins.base import GenericApplicationExecutor
 
@@ -56,8 +49,8 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
 
         self._verify_existing_log_paths(app_id)
         self._clean_log_files(app_id)
-     
-        self.running_log = Log("Running_Application_%s" % app_id, 
+
+        self.running_log = Log("Running_Application_%s" % app_id,
                                "logs/apps/%s/execution" % app_id)
 
         self.stdout = Log("stdout_%s" % app_id, "logs/apps/%s/stdout" % app_id)
@@ -83,137 +76,106 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
             self.update_application_state("Running")
 
             # Broker Parameters
-            user = api.user
-            password = api.password
-            project_id = api.project_id
-            auth_ip = api.auth_ip
-            domain = api.domain
-            public_key = api.public_key
             key_path = api.key_path
-            log_path = api.log_path
-            container = api.container
-            hosts = api.hosts
             remote_hdfs = api.remote_hdfs
-            swift_logdir = api.swift_logdir
             number_of_attempts = api.number_of_attempts
             master_ip = self.master
 
             # User Request Parameters
-            net_id = data['net_id']
-            master_ng = data['master_ng']
-            slave_ng = data['slave_ng']
-            op_slave_ng = data['opportunistic_slave_ng']
-            opportunism = str(data['opportunistic'])
-            plugin = data['openstack_plugin']
-            job_type = data['job_type']
-            version = data['version']
-            req_cluster_size = data['cluster_size']
-            cluster_size = data['cluster_size']
             args = data['args']
             main_class = data['main_class']
             dependencies = data['dependencies']
-            job_template_name = data['job_template_name']
-            job_binary_name = data['job_binary_name']
             job_binary_url = data['job_binary_url']
-            image_id = data['image_id']
-            plugin_app = data['plugin']
-            expected_time = data['expected_time']
-            collect_period = data['collect_period']
-            number_of_jobs = data['number_of_jobs']
-            image_id = data['image_id']
-            starting_cap = data['starting_cap']
 
-            self._log("%s | Master is %s" % 
-                     (time.strftime("%H:%M:%S"), master_ip))
+            self._log("%s | Master is %s" % (time.strftime("%H:%M:%S"),
+                                             master_ip))
 
             job_status = self._hdfs_spark_execution(
                 master_ip, remote_hdfs, key_path, args, job_binary_url,
-                main_class, dependencies, spark_applications_ids, 
+                main_class, dependencies, spark_applications_ids,
                 number_of_attempts)
 
-            self._log("%s | Finished application execution" % 
-                (time.strftime("%H:%M:%S")))
+            self._log("%s | Finished application execution" %
+                      time.strftime("%H:%M:%S"))
 
             return job_status
 
         except KeyError as ke:
             self._log("%s | Parameter missing in submission: %s, "
                       "please check the config file" %
-                     (time.strftime("%H:%M:%S"), str(ke)))
+                      (time.strftime("%H:%M:%S"), str(ke)))
 
             self._log("%s | Finished application execution with error" %
-                (time.strftime("%H:%M:%S")))
+                      (time.strftime("%H:%M:%S")))
 
             self.update_application_state("Error")
 
-        except Exception as e:
+        except Exception:
             self._log("%s | Unknown error, please report to administrators "
                       "of WP3 infrastructure" % (time.strftime("%H:%M:%S")))
 
             self._log("%s | Finished application execution with error" %
-                (time.strftime("%H:%M:%S")))
+                      (time.strftime("%H:%M:%S")))
 
             self.update_application_state("Error")
-
 
     def get_application_time(self):
         return self.application_time
 
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
-                              job_bin_url, main_class, dependencies, 
+                              job_bin_url, main_class, dependencies,
                               spark_applications_ids, number_of_attempts):
 
         job_exec_id = str(uuid.uuid4())[0:7]
         self._log("%s | Job execution ID: %s" %
-            (time.strftime("%H:%M:%S"), job_exec_id))
+                  (time.strftime("%H:%M:%S"), job_exec_id))
 
         # Defining params
         local_path = '/tmp/spark-jobs/' + job_exec_id + '/'
-        remote_path = 'ubuntu@' + master + ':' + local_path
 
         job_binary_path = hdfs.get_path(job_bin_url)
-        
+
         # Create temporary job directories
         self._log("%s | Create temporary job directories" %
-                      (time.strftime("%H:%M:%S")))
+                  time.strftime("%H:%M:%S"))
         self._mkdir(local_path)
 
         # Create cluster directories
         self._log("%s | Creating cluster directories" %
-                (time.strftime("%H:%M:%S")))
+                  time.strftime("%H:%M:%S"))
         remote.execute_command(master, key_path,
                                'mkdir -p %s' % local_path)
 
         # Get job binary from hdfs
         self._log("%s | Get job binary from hdfs" %
-                (time.strftime("%H:%M:%S")))
+                  time.strftime("%H:%M:%S"))
         remote.copy_from_hdfs(master, key_path, remote_hdfs,
                               job_binary_path, local_path)
 
         # Enabling event log on cluster
         self._log("%s | Enabling event log on cluster" %
-               (time.strftime("%H:%M:%S")))
+                  time.strftime("%H:%M:%S"))
         self._enable_event_log(master, key_path, local_path)
 
         # Submit job
-        self._log("%s | Starting job" % 
-                      (time.strftime("%H:%M:%S")))
+        self._log("%s | Starting job" %
+                  time.strftime("%H:%M:%S"))
 
-        local_binary_file = (local_path + remote.list_directory(key_path, 
-                                                                master, 
+        local_binary_file = (local_path + remote.list_directory(key_path,
+                                                                master,
                                                                 local_path))
 
-        spark_job = self._submit_job(master, key_path, main_class, 
+        spark_job = self._submit_job(master, key_path, main_class,
                                      dependencies, local_binary_file, args)
 
-        spark_app_id = spark.get_running_app(master, 
+        spark_app_id = spark.get_running_app(master,
                                              spark_applications_ids,
                                              number_of_attempts)
 
-        if spark_app_id == None:
+        if spark_app_id is None:
             self._log("%s | Error on submission of application, "
                       "please check the config file" %
-                      (time.strftime("%H:%M:%S")))
+                      time.strftime("%H:%M:%S"))
 
             (output, err) = spark_job.communicate()
             self.stdout.log(output)
@@ -254,11 +216,11 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
                         '--class %(main_class)s '
                         '--master spark://%(master)s:7077 '
                         '%(job_binary_file)s %(args)s ' %
-                              {'dependencies': dependencies,
-                               'main_class': main_class,
-                               'master': remote_instance,
-                               'job_binary_file': 'file://'+job_binary_file,
-                               'args': args_line})
+                        {'dependencies': dependencies,
+                         'main_class': main_class,
+                         'master': remote_instance,
+                         'job_binary_file': 'file://'+job_binary_file,
+                         'args': args_line})
 
         if main_class == '':
             spark_submit = spark_submit.replace('--class', '')
@@ -266,19 +228,21 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
         if dependencies == '':
             spark_submit = spark_submit.replace('--packages', '')
 
-        job = remote.execute_command_popen(remote_instance, 
-                                           key_path, 
+        job = remote.execute_command_popen(remote_instance,
+                                           key_path,
                                            spark_submit)
 
         return job
 
     def _enable_event_log(self, master, key_path, path):
-        enable_event_log_command = ("echo -e 'spark.executor.extraClassPath "
-             "/usr/lib/hadoop-mapreduce/hadoop-openstack.jar\n"
-             "spark.eventLog.enabled true\n"
-             "spark.eventLog.dir "
-             "file://%(path)s' > "
-             "/opt/spark/conf/spark-defaults.conf" % {'path': path})
+        enable_event_log_command = (
+            "echo -e 'spark.executor.extraClassPath "
+            "/usr/lib/hadoop-mapreduce/hadoop-openstack.jar\n"
+            "spark.eventLog.enabled true\n"
+            "spark.eventLog.dir "
+            "file://%(path)s' > "
+            "/opt/spark/conf/spark-defaults.conf" % {'path': path}
+        )
 
         remote.execute_command(master, key_path, enable_event_log_command)
 
@@ -295,21 +259,21 @@ class SparkGenericApplicationExecutor(GenericApplicationExecutor):
             os.mkdir('logs/apps/%s' % app_id)
 
     def _clean_log_files(self, app_id):
-        running_log_file = open("logs/apps/%s/execution" % app_id, "w").close()
-        stdout_file = open("logs/apps/%s/stdout" % app_id, "w").close()
-        stderr_file = open("logs/apps/%s/stderr" % app_id, "w").close()
+        open("logs/apps/%s/execution" % app_id, "w").close()
+        open("logs/apps/%s/stdout" % app_id, "w").close()
+        open("logs/apps/%s/stderr" % app_id, "w").close()
 
     def _mkdir(self, path):
-        subprocess.call('mkdir -p %s' % path, shell=True) 
+        subprocess.call('mkdir -p %s' % path, shell=True)
 
- 
+
 class SparkGenericProvider(base.PluginInterface):
 
     def __init__(self):
         self.applications = []
         self.spark_applications_ids = []
         self.id_generator = ID_Generator()
-        self.masters = {ip : False for ip in api.masters_ips}
+        self.masters = {ip: False for ip in api.masters_ips}
 
     def get_title(self):
         return 'Spark Generic'
@@ -334,25 +298,30 @@ class SparkGenericProvider(base.PluginInterface):
 
     def execute(self, data):
         self.update_running_clusters()
-        if not False in self.masters.values():
-            plugin_log.log("%s | All clusters busy" % 
-                          (time.strftime("%H:%M:%S")))
+
+        set_masters = set(self.masters.values())
+        if len(set_masters) == 1 and True in set_masters:
+            plugin_log.log("%s | All clusters busy" %
+                           time.strftime("%H:%M:%S"))
             return ('', None)
 
         else:
             for master, status in self.masters.iteritems():
-                if not status: 
+                if not status:
                     master_ip = master
                     self.masters[master] = True
                     break
-            
+
             app_id = str(uuid.uuid4())[0:7]
             executor = SparkGenericApplicationExecutor(app_id, master_ip)
 
-            handling_thread = threading.Thread(target=executor.\
-                                               start_application, args=(data,
-                                               self.spark_applications_ids,
-                                               app_id))
+            handling_thread = threading.Thread(
+                        target=executor.start_application,
+                        args=(data,
+                              self.spark_applications_ids,
+                              app_id)
+            )
+
             handling_thread.start()
 
             self.applications.append(executor)
