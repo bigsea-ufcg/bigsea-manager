@@ -15,6 +15,21 @@ auth_ip =
 project_id =
 user_domain_name =
 
+[spark-generic]
+swift_container =
+swift_logdir = 
+remote_hdfs = 
+number_of_attempts = 
+public_key = 
+key_path = 
+log_path = 
+user = 
+password = 
+auth_ip = 
+project_id = 
+user_domain_name = 
+masters_ips = 
+
 [spark-sahara]
 swift_container =
 swift_logdir =

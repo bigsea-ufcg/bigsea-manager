@@ -24,7 +24,7 @@ controller_url = config.get('services', 'controller_url')
 authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').replace(' ', '').split(',')
-
+hosts = config.get('infra', 'hosts').split(' ')
 
 if 'os_generic' in plugins:
     public_key = config.get('os-generic', 'public_key')
@@ -53,7 +53,22 @@ if 'sahara' in plugins:
     remote_hdfs = config.get('spark-sahara', 'remote_hdfs')
     number_of_attempts = config.getint('spark-sahara', 'number_of_attempts')
 
-hosts = config.get('infra', 'hosts').split(' ')
+if 'spark_generic' in plugins:
+    log_path = config.get('os-generic', 'log_path')
+    public_key = config.get('spark-generic', 'public_key')
+    key_path = config.get('spark-generic', 'key_path')
+    container = config.get('spark-generic', 'swift_container')
+    user_domain_name = config.get('spark-generic', 'user_domain_name')
+    project_id = config.get('spark-generic', 'project_id')
+    auth_ip = config.get('spark-generic', 'auth_ip')
+    user = config.get('spark-generic', 'user')
+    password = config.get('spark-generic', 'password')
+    domain = config.get('spark-generic', 'user_domain_name')
+    number_of_attempts = config.getint('spark-generic', 'number_of_attempts')
+    swift_logdir = config.get('spark-generic', 'swift_logdir')
+    remote_hdfs = config.get('spark-generic', 'remote_hdfs')
+    number_of_attempts = config.getint('spark-generic', 'number_of_attempts')
+    masters_ips = config.get('spark-generic', 'masters_ips').split(' ')
 
 if 'spark_mesos' in plugins:
     mesos_url = config.get('spark-mesos', 'mesos_url')

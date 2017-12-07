@@ -15,6 +15,21 @@ auth_ip = https://cloud.lsd.ufcg.edu.br
 project_id = 5054ee14b2c54982a322e6367e1055c3 
 user_domain_name = geral
 
+[spark-generic]
+swift_container = bigsea
+swift_logdir = BULMA/eventlogs/
+remote_hdfs = 10.9.8.7
+number_of_attempts = 30
+public_key = bigsea
+key_path = /home/ubuntu/.ssh/key
+log_path = /home/ubuntu/bigsea-manager
+user = username 
+password = password 
+auth_ip = https://cloud.lsd.ufcg.edu.br
+project_id = 5054ee14b2c54982a322e6367e1055c3 
+user_domain_name = geral
+masters_ips = ip1 ip2 ip3 ip4 ip5 ip6 ip7 ip8 
+
 [spark-sahara]
 swift_container = bigsea-ex
 swift_logdir = BULMA/eventlogs/
