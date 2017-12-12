@@ -123,6 +123,10 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             image_id = data['image_id']
             starting_cap = data['starting_cap']
 
+            # Optimizer Parameters
+            app_name = data['app_name']
+            days = data['days']
+
             # Openstack Components
             connector = os_connector.OpenStackConnector(plugin_log)
 
@@ -131,6 +135,23 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             swift = connector.get_swift_client(user, password, project_id,
                                                auth_ip, domain)
+
+            nova = connector.get_nova_client(user, password, project_id,
+                                             auth_ip, domain)
+
+            # Optimizer gets the vcpu size of flavor
+            cores_per_slave = connector.get_vcpus_by_nodegroup(nova,
+                                                               sahara,
+                                                               slave_ng)
+
+            cores, vms = optimizer.get_info(api.optimizer_url,
+                                            expected_time,
+                                            app_name,
+                                            days)
+
+            if cores > 0:
+                req_cluster_size = ((cores / cores_per_slave) +
+                                    (cores % cores_per_slave))
 
             # Check Oportunism
             if opportunism == "True":
