@@ -19,6 +19,7 @@ import subprocess
 import time
 import threading
 import uuid
+import math
 
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
@@ -150,8 +151,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                             days)
 
             if cores > 0:
-                req_cluster_size = ((cores / cores_per_slave) +
-                                    (cores % cores_per_slave))
+                req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
 
             # Check Oportunism
             if opportunism == "True":
