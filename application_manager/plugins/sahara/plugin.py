@@ -124,11 +124,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             # Optimizer Parameters
             app_name = data['app_name']
+            days = 0
 
             if app_name.lower() == 'bulma':
                 if 'days' in data.keys():
                     days = data['days']
                 else:
+                    self._log("""%s | 'days' parameter missing""" 
+                              % (time.strftime("%H:%M:%S")))
                     raise ex.ConfigurationError()
 
             # Openstack Components
@@ -157,6 +160,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 if 'cluster_size' in data.keys():
                     req_cluster_size = data['cluster_size']
                 else:
+                    self._log("""%s | 'cluster_size' parameter missing""" 
+                              % (time.strftime("%H:%M:%S")))
                     raise ex.ConfigurationError()
             else:
                 req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
@@ -251,6 +256,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                       "please check the config file" %
                      (time.strftime("%H:%M:%S"), str(ke)))
 
+            self._log("%s | Finished application execution with error" %
+                (time.strftime("%H:%M:%S")))
+
+            self.update_application_state("Error")
+
+        except ex.ConfigurationError as ce:
             self._log("%s | Finished application execution with error" %
                 (time.strftime("%H:%M:%S")))
 
