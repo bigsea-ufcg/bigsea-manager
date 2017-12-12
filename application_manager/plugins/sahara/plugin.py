@@ -108,8 +108,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             percentage = int(data['percentage'])
             job_type = data['job_type']
             version = data['version']
-            req_cluster_size = data['cluster_size']
-            cluster_size = data['cluster_size']
             args = data['args']
             main_class = data['main_class']
             dependencies = data['dependencies']
@@ -126,7 +124,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             # Optimizer Parameters
             app_name = data['app_name']
-            days = data['days']
+
+            if app_name.lower() == 'bulma':
+                if 'days' in data.keys():
+                    days = data['days']
+                else:
+                    raise ex.ConfigurationError()
 
             # Openstack Components
             connector = os_connector.OpenStackConnector(plugin_log)
@@ -150,7 +153,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                             app_name,
                                             days)
 
-            if cores > 0:
+            if cores <= 0:
+                if 'cluster_size' in data.keys():
+                    req_cluster_size = data['cluster_size']
+                else:
+                    raise ex.ConfigurationError()
+            else:
                 req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
 
             # Check Oportunism
