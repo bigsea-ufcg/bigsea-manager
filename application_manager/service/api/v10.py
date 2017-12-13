@@ -37,13 +37,16 @@ def execute(data):
 
     return app_id
 
+
 def stop_app(app_id):
     # stop monitoring
     # stop scaling
     return 'App %(app_id)s stopped' % {'app_id': app_id}
 
+
 def kill_all():
     return 'Apps killed'
+
 
 def status():
     applications_status = {}
@@ -68,16 +71,18 @@ def status():
     
     return applications_status
 
+
 def execution_log(app_id):
     if app_id not in applications:
-        return "App %(app_id)s doesn't exist" % {'app_id': app_id} 
+        return "App %(app_id)s doesn't exist" % {'app_id': app_id}
 
     log = open("logs/apps/%s/execution" % app_id, "r")
     str_log = map(_remove_newline, log.readlines())
-    
+
     log.close()
 
     return str_log
+
 
 def std_log(app_id):
     if app_id not in applications:
@@ -94,8 +99,10 @@ def std_log(app_id):
 
     return out, err
 
+
 def _get_new_cluster_size(hosts):
     return optimizer.get_cluster_size(api.optimizer_url, hosts)
+
 
 def _remove_newline(string):
     return string.replace("\n", "")

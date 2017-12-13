@@ -1,0 +1,26 @@
+{
+  "bigsea_username":"user",
+  "bigsea_password":"pass",
+  "plugin":"spark_mesos",
+  "binary_url":"https://owncloud.lsd.ufcg.edu.br/index.php/s/W7tteBFpC2fbuwW/download",
+  "execution_class":"BULMA.MatchingRoutesShapeGPS",
+  "execution_parameters":"shapes_url gps_url output_path partitions",
+  "expected_time":800,
+  "number_of_jobs":10,
+  "scaling_parameters":{
+      "scaler_plugin":"progress-error",
+      "application_type":"os_generic",
+      "metric_rounding":2,
+      "trigger_up":10,
+      "trigger_down":10,
+      "actuation_size":15,
+      "max_cap":100,
+      "check_interval":10,
+      "metric_source":"monasca",
+      "actuator":"kvm-upv",
+      "min_cap":20
+   },
+  "scaler_plugin":"progress-error",
+  "actuator":"kvm-upv",
+  "starting_cap": 80
+}

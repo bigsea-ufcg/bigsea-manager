@@ -36,3 +36,17 @@ def get_cluster_size(optimizer_url, hosts, percentage):
 
     return data['cluster_size']
 
+
+def get_info(optimizer_url, expected_time, app_name, days=0):
+    expected_ms_time = expected_time * 1000
+    request_url = optimizer_url + ('/bigsea/rest/ws/resopt/%s/%s/%s' % 
+                                  (app_name, days, expected_ms_time))
+
+    headers = {'Content-type': 'application/json'}
+    request = requests.get(request_url, headers=headers)
+
+    data = request.text.split()
+    cores = int(data[0])
+    vms = int(data[1])
+
+    return cores, vms

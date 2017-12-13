@@ -42,8 +42,10 @@ setup(
         'application_manager.execution.plugins': [
             'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
             'fake=application_manager.plugins.fake.plugin:FakeProvider',
+            'spark_generic=application_manager.plugins.spark_generic.plugin:SparkGenericProvider',
             'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
-            'chronos=application_manager.plugins.chronos.plugin:ChronosGenericProvider'
+            'chronos=application_manager.plugins.chronos.plugin:ChronosGenericProvider',
+            'spark_mesos=application_manager.plugins.spark_mesos.plugin:SparkMesosProvider'
         ],
     },
 )

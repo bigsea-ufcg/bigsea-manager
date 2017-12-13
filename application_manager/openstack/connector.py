@@ -436,6 +436,8 @@ class OpenStackConnector(object):
         instance = nova.servers.get(instance_id)
         instance.delete()
 
+    def get_vcpus_by_nodegroup(self, nova, sahara, ng_id):
+        flavor_id = sahara.node_group_templates.get(ng_id).flavor_id
+        cores_per_ng = int(nova.flavors.get(flavor_id).vcpus)
 
-
-
+        return cores_per_ng
