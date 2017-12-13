@@ -19,6 +19,7 @@ import subprocess
 import time
 import threading
 import uuid
+import math
 
 from application_manager import exceptions as ex
 from application_manager.openstack import connector as os_connector
@@ -107,8 +108,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             percentage = int(data['percentage'])
             job_type = data['job_type']
             version = data['version']
-            req_cluster_size = data['cluster_size']
-            cluster_size = data['cluster_size']
             args = data['args']
             main_class = data['main_class']
             dependencies = data['dependencies']
@@ -123,6 +122,18 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             image_id = data['image_id']
             starting_cap = data['starting_cap']
 
+            # Optimizer Parameters
+            app_name = data['app_name']
+            days = 0
+
+            if app_name.lower() == 'bulma':
+                if 'days' in data.keys():
+                    days = data['days']
+                else:
+                    self._log("""%s | 'days' parameter missing""" 
+                              % (time.strftime("%H:%M:%S")))
+                    raise ex.ConfigurationError()
+
             # Openstack Components
             connector = os_connector.OpenStackConnector(plugin_log)
 
@@ -131,6 +142,29 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             swift = connector.get_swift_client(user, password, project_id,
                                                auth_ip, domain)
+
+            nova = connector.get_nova_client(user, password, project_id,
+                                             auth_ip, domain)
+
+            # Optimizer gets the vcpu size of flavor
+            cores_per_slave = connector.get_vcpus_by_nodegroup(nova,
+                                                               sahara,
+                                                               slave_ng)
+
+            cores, vms = optimizer.get_info(api.optimizer_url,
+                                            expected_time,
+                                            app_name,
+                                            days)
+
+            if cores <= 0:
+                if 'cluster_size' in data.keys():
+                    req_cluster_size = data['cluster_size']
+                else:
+                    self._log("""%s | 'cluster_size' parameter missing""" 
+                              % (time.strftime("%H:%M:%S")))
+                    raise ex.ConfigurationError()
+            else:
+                req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
 
             # Check Oportunism
             if opportunism == "True":
@@ -222,6 +256,12 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                       "please check the config file" %
                      (time.strftime("%H:%M:%S"), str(ke)))
 
+            self._log("%s | Finished application execution with error" %
+                (time.strftime("%H:%M:%S")))
+
+            self.update_application_state("Error")
+
+        except ex.ConfigurationError as ce:
             self._log("%s | Finished application execution with error" %
                 (time.strftime("%H:%M:%S")))
 
