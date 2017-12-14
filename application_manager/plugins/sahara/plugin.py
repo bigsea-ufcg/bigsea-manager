@@ -154,49 +154,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             nova = connector.get_nova_client(user, password, project_id,
                                              auth_ip, domain)
 
-            # Optimizer gets the vcpu size of flavor
-            cores_per_slave = connector.get_vcpus_by_nodegroup(nova,
-                                                               sahara,
-                                                               slave_ng)
 
-            cores, vms = optimizer.get_info(api.optimizer_url,
-                                            expected_time,
-                                            app_name,
-                                            days)
-
-            if cores <= 0:
-                if 'cluster_size' in data.keys():
-                    req_cluster_size = data['cluster_size']
-                else:
-                    self._log("""%s | 'cluster_size' parameter missing""" 
-                              % (time.strftime("%H:%M:%S")))
-                    raise ex.ConfigurationError()
-            else:
-                req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
-
-            # Check Oportunism
-            if opportunism == "True":
-                self._log("""%s | Checking if opportunistic instances
-                          are available""" % (time.strftime("%H:%M:%S")))
-
-                pred_cluster_size = optimizer.get_cluster_size(
-                    api.optimizer_url, hosts, percentage)
-            else:
-                pred_cluster_size = req_cluster_size
-
-            if pred_cluster_size > req_cluster_size:
-                cluster_size = pred_cluster_size
-            else:
-                cluster_size = req_cluster_size
-
+            cluster_size = data['cluster_size']
             self._log("%s | Cluster size: %s" %
                      (time.strftime("%H:%M:%S"), str(cluster_size)))
 
-            self._log("%s | Creating cluster..."
-                       % (time.strftime("%H:%M:%S")))
+            cluster_id = connector.get_existing_cluster_by_size(sahara, cluster_size)
 
-            cluster_id = connector.get_existing_cluster_by_size(sahara,
-                                                                cluster_size)
 
             if not cluster_id:
 
@@ -259,13 +223,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 self.update_application_state("Error")
                 raise ex.ClusterNotCreatedException()
 
-            # Delete cluster
-#             self._log("%s | Delete cluster: %s" % 
-#                 (time.strftime("%H:%M:%S"), cluster_id))
-
- 
-            #connector.delete_cluster(sahara, cluster_id)
-
             self._log("%s | Finished application execution" %
                 (time.strftime("%H:%M:%S")))
 
@@ -297,11 +254,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             self.update_application_state("Error")
 
         except Exception as e:
-            if cluster_id is not None:
-                self._log("%s | Delete cluster: %s" %
-                    (time.strftime("%H:%M:%S"), cluster_id))
-                connector.delete_cluster(sahara, cluster_id)
-
             self._log("%s | Unknown error, please report to administrators "
                       "of WP3 infrastructure" % (time.strftime("%H:%M:%S")))
 
@@ -580,19 +532,6 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         self.stdout.log(output)
         self.stderr.log(err)
-
-        self._log("%s | Copy log from cluster" % (time.strftime("%H:%M:%S")))
-        event_log_path = local_path + 'eventlog/'
-        self._mkdir(event_log_path)
-
-        remote_event_log_path = 'ubuntu@%s:%s%s' % (master, local_path,
-                                                    spark_app_id)
-
-        remote.copy(key_path, remote_event_log_path, event_log_path)
-
-        self._log("%s | Upload log to Swift" % (time.strftime("%H:%M:%S")))
-        connector.upload_directory(swift, event_log_path,
-                                   swift_logdir, container)
         
         spark_applications_ids.remove(spark_app_id)
 
