@@ -54,6 +54,7 @@ one_url = http://onecloud.domains:2111
 one_username = username
 one_password = password
 spark_path = /opt/spark/bin/spark-submit
+cores_per_slave=2
 
 [chronos]
 url = http://158.158.158.157:4040

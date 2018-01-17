@@ -54,6 +54,7 @@ one_url=
 one_username=
 one_password=
 spark_path=
+cores_per_slave=
 
 [chronos]
 url =

@@ -80,6 +80,7 @@ if 'spark_mesos' in plugins:
     one_password = config.get('spark-mesos', 'one_password')
     one_username = config.get('spark-mesos', 'one_username')
     spark_path = config.get('spark-mesos', 'spark_path')
+    cores_per_slave = config.get('spark-mesos', 'cores_per_slave')
 
 if 'chronos' in plugins:
     chronos_url = config.get('chronos', 'url')

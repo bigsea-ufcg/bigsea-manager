@@ -18,6 +18,7 @@ from application_manager.service import api
 from application_manager.utils import monitor
 from application_manager.utils import scaler
 from application_manager.utils import mesos
+from application_manager.utils import optimizer
 from application_manager.utils import ssh
 from application_manager.utils.logger import Log, configure_logging
 from application_manager.plugins.base import GenericApplicationExecutor
@@ -56,6 +57,14 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
     def get_application_start_time(self):
         return self.start_time
 
+    def _get_real_vm_cores(self, cores):
+        if cores == 0:
+            return ''
+        elif cores % api.cores_per_slave == 0:
+            return '--total-executor-cores %s ' % (cores / api.cores_per_slave)
+        else:
+            return '--total-executor-cores %s ' % ((cores / api.cores_per_slave) + 1)
+
     def start_application(self, data):
         try:
             self.update_application_state("Running")
@@ -69,18 +78,36 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             number_of_jobs = int(data['number_of_jobs'])
             starting_cap = int(data['starting_cap'])
 
+            app_name = data['app_name']
+            days = 0
+
+            if app_name.lower() == 'bulma':
+                if 'days' in data.keys():
+                    days = data['days']
+                else:
+                    self._log("""%s | 'days' parameter missing"""
+                              % (time.strftime("%H:%M:%S")))
+                    raise ex.ConfigurationError()
+
+            cores, vms = optimizer.get_info(api.optimizer_url,
+                                            expected_time,
+                                            app_name,
+                                            days)
+
+            total_cores = self._get_real_vm_cores(cores)
+
             plugin_log.log("%s | Submission id: %s" %
-                          (time.strftime("%H:%M:%S"), self.app_id))
+                           (time.strftime("%H:%M:%S"), self.app_id))
 
             plugin_log.log("%s | Connecting with Mesos cluster..." %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
 
             conn = ssh.get_connection(api.mesos_url, api.cluster_username,
                                       api.cluster_password,
                                       api.cluster_key_path)
 
             plugin_log.log("%s | Connected with Mesos cluster" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
 
             # Execute all the spark needed commands
             # to run an spark job from command line
@@ -89,11 +116,13 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                 # job binary is python
                 binary_path = '~/exec_bin.jar'
                 spark_run = ('sudo %s --name %s '
+                             + '%s'
                              + '--master mesos://%s:%s '
                              + '--class %s %s %s')
             else:
                 binary_path = '~/exec_bin.py'
                 spark_run = ('sudo %s --name %s '
+                             + '%s'
                              + '--master mesos://%s:%s '
                              + '%s %s %s')
 
@@ -102,25 +131,26 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
 
             try:
                 stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
-                                                         (binary_url,
-                                                          binary_path))
+                                                          (binary_url,
+                                                           binary_path))
 
                 plugin_log.log("%s | Waiting for download the binary..." %
-                              (time.strftime("%H:%M:%S")))
+                               (time.strftime("%H:%M:%S")))
 
                 # TODO: Fix possible wget error
                 stdout.read()
                 plugin_log.log("%s | Binary downloaded" %
-                              (time.strftime("%H:%M:%S")))
+                               (time.strftime("%H:%M:%S")))
 
             except Exception as e:
                 plugin_log.log("%s | Error downloading binary" %
-                              (time.strftime("%H:%M:%S")))
+                               (time.strftime("%H:%M:%S")))
                 self.update_application_state("Error")
                 return "Error"
 
             i, o, e = conn.exec_command(spark_run % (api.spark_path,
                                                      self.app_id,
+                                                     total_cores,
                                                      api.mesos_url,
                                                      api.mesos_port,
                                                      execution_class,
@@ -178,12 +208,12 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                            "number_of_jobs": number_of_jobs}
 
             plugin_log.log("%s | Starting monitor" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
             monitor.start_monitor(api.monitor_url, self.app_id,
                                   'spark-mesos', info_plugin, 2)
 
             plugin_log.log("%s | Starting scaler" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
             scaler.start_scaler(api.controller_url,
                                 self.app_id,
                                 executors_vms_ids,
@@ -194,19 +224,19 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             print o.read()
 
             plugin_log.log("%s | Stopping monitor" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
             monitor.stop_monitor(api.monitor_url, self.app_id)
 
             plugin_log.log("%s | Stopping scaler" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
             scaler.stop_scaler(api.controller_url, self.app_id)
 
             plugin_log.log("%s | Remove binaries" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
             conn.exec_command('rm -rf ~/exec_bin.*')
 
             plugin_log.log("%s | Finished application execution" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
 
             self.update_application_state("OK")
             return 'OK'
