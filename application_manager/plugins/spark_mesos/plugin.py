@@ -69,7 +69,7 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
         try:
             self.update_application_state("Running")
             plugin_log.log("%s | Starting application execution" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
 
             binary_url = str(data['binary_url'])
             execution_class = str(data['execution_class'])
@@ -77,6 +77,7 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             expected_time = int(data['expected_time'])
             number_of_jobs = int(data['number_of_jobs'])
             starting_cap = int(data['starting_cap'])
+            initial_cluster_size = int(data['cluster_size'])
 
             app_name = data['app_name']
             days = 0
@@ -89,10 +90,15 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                               % (time.strftime("%H:%M:%S")))
                     raise ex.ConfigurationError()
 
-            cores, vms = optimizer.get_info(api.optimizer_url,
-                                            expected_time,
-                                            app_name,
-                                            days)
+            try:
+                cores, vms = optimizer.get_info(api.optimizer_url,
+                                                expected_time,
+                                                app_name,
+                                                days)
+            except Exception as e:
+                self._log("%s | Optimizer service error: %s"
+                          % (time.strftime("%H:%M:%S"), e.message))
+                cores = initial_cluster_size
 
             total_cores = self._get_real_vm_cores(cores)
 
@@ -126,8 +132,11 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                              + '--master mesos://%s:%s '
                              + '%s %s %s')
 
+            if 'hdfs://' in binary_url[0:9]:
+                binary_path = binary_url
+
             plugin_log.log("%s | Download the binary to cluster" %
-                          (time.strftime("%H:%M:%S")))
+                           (time.strftime("%H:%M:%S")))
 
             try:
                 stdin, stdout, stderr = conn.exec_command('wget %s -O %s' %
@@ -197,7 +206,7 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                         break
 
             plugin_log.log("%s | Executors IDs: %s" %
-                          (time.strftime("%H:%M:%S"), executors_vms_ids))
+                           (time.strftime("%H:%M:%S"), executors_vms_ids))
 
             # Set up the initial configuration of cpu cap
             scaler.setup_environment(api.controller_url, executors_vms_ids,
@@ -285,7 +294,7 @@ class SparkMesosProvider(base.PluginInterface):
 
         else:
             plugin_log.log("%s | Cluster busy" % (time.strftime("%H:%M:%S")))
-            return ("", None)
+            return "", None
 
         self.running_application = executor
-        return (app_id, executor)
+        return app_id, executor
