@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from application_manager import exceptions as ex
 from application_manager.plugins import base
 from application_manager.service import api
+from application_manager.utils import optimizer
 from application_manager.utils import monitor
 from application_manager.utils import scaler
 from application_manager.utils import mesos
@@ -69,6 +71,26 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             number_of_jobs = int(data['number_of_jobs'])
             starting_cap = int(data['starting_cap'])
 
+            # Optimizer integration
+            app_name = data['app_name']
+            days = 0
+
+            if app_name.lower() == 'bulma':
+                if 'days' in data.keys():
+                    days = data['days']
+                else:
+                    self._log("""%s | 'days' parameter missing"""
+                              % (time.strftime("%H:%M:%S")))
+                    raise ex.ConfigurationError()
+
+            cores, vms = optimizer.get_info(api.optimizer_url,
+                                            expected_time,
+                                            app_name,
+                                            days)
+            optimizer_command = ''
+            if cores >= 0:
+                optimizer_command = ' --total-executor-cores %d ' % cores
+
             plugin_log.log("%s | Submission id: %s" %
                           (time.strftime("%H:%M:%S"), self.app_id))
 
@@ -90,11 +112,13 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                 binary_path = '~/exec_bin.jar'
                 spark_run = ('sudo %s --name %s '
                              + '--master mesos://%s:%s '
+                             + optimizer_command
                              + '--class %s %s %s')
             else:
                 binary_path = '~/exec_bin.py'
                 spark_run = ('sudo %s --name %s '
                              + '--master mesos://%s:%s '
+                             + optimizer_command
                              + '%s %s %s')
 
             plugin_log.log("%s | Download the binary to cluster" %
@@ -118,6 +142,9 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                               (time.strftime("%H:%M:%S")))
                 self.update_application_state("Error")
                 return "Error"
+
+            plugin_log.log("%s | spark-submit: %s" % (spark_run,
+                                                      time.strftime("%H:%M:%S")))
 
             i, o, e = conn.exec_command(spark_run % (api.spark_path,
                                                      self.app_id,
