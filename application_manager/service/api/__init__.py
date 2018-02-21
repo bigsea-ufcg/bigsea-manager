@@ -52,6 +52,8 @@ if 'sahara' in plugins:
     swift_logdir = config.get('spark-sahara', 'swift_logdir')
     remote_hdfs = config.get('spark-sahara', 'remote_hdfs')
     number_of_attempts = config.getint('spark-sahara', 'number_of_attempts')
+    dummy_opportunistic = config.getboolean('spark-sahara',
+                                            'dummy_opportunistic')
 
 if 'spark_generic' in plugins:
     log_path = config.get('os-generic', 'log_path')

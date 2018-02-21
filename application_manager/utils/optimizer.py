@@ -20,17 +20,18 @@ import requests
 def _get_optimizer_data(hosts, percentage):
     optimizer_dict = {
         'hosts': hosts,
-        'percentage': percentage
+        'percentage': percentage,
+        'dummy': dummy
     }
     optimizer_body = json.dumps(optimizer_dict)
 
     return optimizer_body
 
 
-def get_cluster_size(optimizer_url, hosts, percentage):
+def get_cluster_size(optimizer_url, hosts, percentage, dummy):
     request_url = optimizer_url + '/get_cluster_size'
     headers = {'Content-type': 'application/json'}
-    data = _get_optimizer_data(hosts, percentage)
+    data = _get_optimizer_data(hosts, percentage, dummy)
     request = requests.get(request_url, data=data, headers=headers)
     data = request.json()
 

@@ -56,8 +56,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         self._verify_existing_log_paths(app_id)
         self._clean_log_files(app_id)
-     
-        self.running_log = Log("Running_Application_%s" % app_id, 
+        self.running_log = Log("Running_Application_%s" % app_id,
                                "logs/apps/%s/execution" % app_id)
 
         self.stdout = Log("stdout_%s" % app_id, "logs/apps/%s/stdout" % app_id)
@@ -97,6 +96,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             remote_hdfs = api.remote_hdfs
             swift_logdir = api.swift_logdir
             number_of_attempts = api.number_of_attempts
+            dummy_opportunistic = api.dummy_opportunistic
 
             # User Request Parameters
             net_id = data['net_id']
@@ -172,7 +172,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                           are available""" % (time.strftime("%H:%M:%S")))
 
                 pred_cluster_size = optimizer.get_cluster_size(
-                    api.optimizer_url, hosts, percentage)
+                    api.optimizer_url, hosts, percentage, dummy_opportunistic)
             else:
                 pred_cluster_size = req_cluster_size
 
