@@ -39,8 +39,8 @@ class TableLog:
     def __init__(self, name, output_file_path):
         self.logger = Log(name, output_file_path)
         self.table = texttable.Texttable()
-        self.table.set_cols_align(["c", "c", "c"])
-        self.table.set_cols_width([8, 15, 32])
+        self.table.set_cols_align(["c", "c", "c", "c"])
+        self.table.set_cols_width([8, 15, 15, 32])
         
     def log(self, app_id, action):
 #       line = "%s %s %s %s %s %s %s" % (timestamp, app_id, job_progress, time_progress, previous_cap, current_cap, action)
@@ -52,7 +52,7 @@ class TableLog:
         self.logger.log(last_line)
 
     def header_log(self):
-        header_row = [["Time", "Execution ID", "Action"]]
+        header_row = [["Time", "Execution ID", "Plugin Name", "Action"]]
         self.table.add_rows(header_row)
         last_line = self.table.draw().split('\n')[:3]
         self.logger.log(last_line[0])
