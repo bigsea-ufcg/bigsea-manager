@@ -80,6 +80,7 @@ class PluginManager(object):
         self.plugins = {}
         self._load_plugins()
 
+
     def _load_plugins(self):
         config_plugins = api.plugins
         extension_manager = enabled.EnabledExtensionManager(

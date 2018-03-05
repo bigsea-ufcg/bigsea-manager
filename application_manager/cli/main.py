@@ -16,6 +16,8 @@
 from flask import Flask
 from application_manager.api.v10 import rest
 from application_manager.plugins import base as plugin_base
+import os
+
 
 def main():
     plugin_base.setup_plugins()

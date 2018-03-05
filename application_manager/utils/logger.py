@@ -15,6 +15,9 @@
 
 import logging
 import os
+import texttable
+import time
+from datetime import datetime
 
 
 class Log:
@@ -40,13 +43,12 @@ class TableLog:
         self.logger = Log(name, output_file_path)
         self.table = texttable.Texttable()
         self.table.set_cols_align(["c", "c", "c", "c"])
-        self.table.set_cols_width([8, 15, 15, 32])
+        self.table.set_cols_width([8, 15, 15, 60])
         
-    def log(self, app_id, action):
-#       line = "%s %s %s %s %s %s %s" % (timestamp, app_id, job_progress, time_progress, previous_cap, current_cap, action)
+    def log(self, app_id, plugin_name, action):
         timestamp = time.strftime("%H:%M:%S")
 
-        line = [timestamp, app_id, action]
+        line = [timestamp, app_id, plugin_name, action]
         self.table.add_row(line)
         last_line = self.table.draw().split('\n')[-2]
         self.logger.log(last_line)
