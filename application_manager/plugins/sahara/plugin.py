@@ -88,6 +88,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         try:
             self.update_application_state("Running")
             table_logger.log(self.app_id, "Spark-Sahara", "Start job execution")
+#           self._log("%s | (%s) Start job execution"
+#                      % (time.strftime("%H:%M:%S"), self.app_id))
+            self._log("--> Start job execution")
 
             # Broker Parameters
             cluster_id = None
@@ -133,7 +136,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             app_name = data['app_name']
             days = 0
 
-            if app_name.lower() == 'bulma':
+            if app_name.lower() == 'bulma' or app_name.lower() == 'bulma_br':
                 if 'days' in data.keys():
                     days = data['days']
                 else:
@@ -160,13 +163,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
             table_logger.log(self.app_id, "Spark-Sahara", "Checking optimizer service")
 
-            self._log("%s | (%s) Checking optimizer service"
-                       % (time.strftime("%H:%M:%S"), self.app_id))
+           #self._log("%s | (%s) Checking optimizer service"
+           #           % (time.strftime("%H:%M:%S"), self.app_id))
+            self._log("--> Checking optimizer service")
 
-            cores, vms = optimizer.get_info(api.optimizer_url,
-                                            expected_time,
-                                            app_name,
-                                            days)
+            cores, vms = optimizer.get_info(api.optimizer_url, expected_time, app_name, days)
 
             if cores <= 0:
                 if 'cluster_size' in data.keys():
@@ -177,11 +178,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                     raise ex.ConfigurationError()
             else:
                 req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
+                req_cluster_size = int(math.ceil(float((req_cluster_size * 100) / float(starting_cap))))
 
                 table_logger.log(self.app_id, "Spark-Sahara", ("Optimizer cluster size: %s" % req_cluster_size))
 
-                self._log("%s | (%s) Optimizer cluster size: %s"
-                           % (time.strftime("%H:%M:%S"), self.app_id, req_cluster_size))
+#               self._log("%s | (%s) Optimizer cluster size: %s"
+#                          % (time.strftime("%H:%M:%S"), self.app_id, req_cluster_size))
+                self._log("--> Optimizer cluster size: %s" % req_cluster_size)
 
             # Check Oportunism
             if opportunism == "True":
@@ -190,6 +193,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
                 pred_cluster_size = optimizer.get_cluster_size(
                     api.optimizer_url, hosts, percentage)
+
             else:
                 pred_cluster_size = req_cluster_size
 
@@ -198,9 +202,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             else:
                 cluster_size = req_cluster_size
 
-#            self._log("%s | (%s) Cluster size: %s" % (time.strftime("%H:%M:%S"), self.app_id, str(cluster_size)))
+#           self._log("%s | (%s) Cluster size: %s" % (time.strftime("%H:%M:%S"), self.app_id, str(cluster_size)))
 
-            avaliable_cluster_size = -500
+            avaliable_cluster_size = -1
             if req_cluster_size <= avaliable_cluster_size:
                 table_logger.log(self.app_id, "Spark-Sahara", "Creating cluster")
 
@@ -215,18 +219,18 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                   slave_ng, op_slave_ng)
 
             else:
-                table_logger.log(self.app_id, "Spark-Sahara", "There is not enough resource")
-                table_logger.log(self.app_id, "Spark-Sahara", "Use default cluster")
+#               table_logger.log(self.app_id, "Spark-Sahara", "There is not enough resource")
+#               table_logger.log(self.app_id, "Spark-Sahara", "Use default cluster")
 
-                self._log("%s | (%s) There is not enough resources to use "
-                          "optmizer size, using default cluster... "
-                          % (time.strftime("%H:%M:%S"), self.app_id))
+#                self._log("%s | (%s) There is not enough resources to use "
+#                          "optmizer size, using default cluster... "
+#                          % (time.strftime("%H:%M:%S"), self.app_id))
 
-                cluster_id = '724cc827-7652-441a-8d29-881f7185f77b'
+                cluster_id = '417b1aa3-1086-45e8-8497-84ea89f097f9'
  
             table_logger.log(self.app_id, "Spark-Sahara", ("Cluster ID: %s" % cluster_id))
-            self._log("%s | (%s) Cluster id: %s" % (time.strftime("%H:%M:%S"), self.app_id,
-                                                    cluster_id))
+#           self._log("%s | (%s) Cluster id: %s" % (time.strftime("%H:%M:%S"), self.app_id,
+#                                                   cluster_id))
 
             swift_path = self._is_swift_path(args)
 
@@ -236,8 +240,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
                 table_logger.log(self.app_id, "Spark-Sahara", ("Master IP: %s" % master))
 
-                self._log("%s | (%s) Master is %s" %
-                    (time.strftime("%H:%M:%S"), self.app_id, master))
+ #              self._log("%s | (%s) Master is %s" %
+ #                  (time.strftime("%H:%M:%S"), self.app_id, master))
+                self._log("--> Cluster IP: %s" % master)
 
                 workers = connector.get_worker_instances(sahara, cluster_id)
                 workers_id = []
@@ -245,8 +250,9 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 for worker in workers:
                     workers_id.append(worker['instance_id'])
 
-                self._log("%s | (%s) Configuring controller" %
-                    (time.strftime("%H:%M:%S"), self.app_id))
+#               self._log("%s | (%s) Configuring controller" %
+#                   (time.strftime("%H:%M:%S"), self.app_id))
+                self._log("--> Configuring controller")
 
                 table_logger.log(self.app_id, "Spark-Sahara", "Configuring controller")
 
@@ -276,13 +282,13 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 raise ex.ClusterNotCreatedException()
 
             # Delete cluster
-            self._log("%s | (%s) Delete cluster: %s" %
-                (time.strftime("%H:%M:%S"), self.app_id, cluster_id))
+#           self._log("%s | (%s) Delete cluster: %s" %
+#               (time.strftime("%H:%M:%S"), self.app_id, cluster_id))
  
 #           connector.delete_cluster(sahara, cluster_id)
 
-            self._log("%s | (%s) Finished application execution" %
-                (time.strftime("%H:%M:%S"), self.app_id))
+#           self._log("%s | (%s) Finished application execution" %
+#               (time.strftime("%H:%M:%S"), self.app_id))
 
             return job_status
 
@@ -484,7 +490,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         spark_applications_ids.remove(spark_app_id)
 
-        self._log("%s | (%s) Finished application execution"  % (time.strftime("%H:%M:%S"), self.app_id)) 
+#       self._log("%s | (%s) Finished application execution"  % (time.strftime("%H:%M:%S"), self.app_id)) 
 
         if connector.is_job_completed(job_status):
             self.update_application_state("OK")
@@ -502,8 +508,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                               swift_logdir, container, number_of_attempts):
 
         job_exec_id = str(uuid.uuid4())[0:7]
-        self._log("%s | (%s) Job execution ID: %s" %
-            (time.strftime("%H:%M:%S"), self.app_id, job_exec_id))
+#       self._log("%s | (%s) Job execution ID: %s" %
+#           (time.strftime("%H:%M:%S"), self.app_id, job_exec_id))
 
         # Defining params
         local_path = '/tmp/spark-jobs/' + job_exec_id + '/'
@@ -517,34 +523,35 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         
         # Create temporary job directories
         table_logger.log(self.app_id, "Spark-Sahara", "Creating temporary job directories")
-        self._log("%s | (%s) Create temporary job directories" %
-                      (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Create temporary job directories" %
+#                     (time.strftime("%H:%M:%S"), self.app_id))
         self._mkdir(local_path)
 
         # Create cluster directories
         table_logger.log(self.app_id, "Spark-Sahara", "Creating cluster directories")
-        self._log("%s | (%s) Creating cluster directories" %
-                (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Creating cluster directories" %
+#               (time.strftime("%H:%M:%S"), self.app_id))
         remote.execute_command(master, key_path,
                                'mkdir -p %s' % local_path)
 
         # Get job binary from hdfs
         table_logger.log(self.app_id, "Spark-Sahara", "Get job binary from hdfs")
-        self._log("%s | (%s) Get job binary from hdfs" %
-                (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Get job binary from hdfs" %
+#               (time.strftime("%H:%M:%S"), self.app_id))
         remote.copy_from_hdfs(master, key_path, remote_hdfs,
                               job_binary_path, local_path)
 
         # Enabling event log on cluster
         table_logger.log(self.app_id, "Spark-Sahara", "Enabling event log on cluster")
-        self._log("%s | (%s) Enabling event log on cluster" %
-               (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Enabling event log on cluster" %
+#              (time.strftime("%H:%M:%S"), self.app_id))
         self._enable_event_log(master, key_path, local_path)
 
         # Submit job
         table_logger.log(self.app_id, "Spark-Sahara", "Starting job")
-        self._log("%s | (%s) Starting job" % 
-                      (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Starting job" % 
+#                     (time.strftime("%H:%M:%S"), self.app_id))
+        self._log("--> Starting job")
 
         local_binary_file = (local_path + remote.list_directory(key_path,
                                                                 master,
@@ -575,30 +582,30 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                        "number_of_jobs": number_of_jobs}
 
         table_logger.log(self.app_id, "Spark-Sahara", "Starting monitor")
-        self._log("%s | (%s) Starting monitor" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Starting monitor" % (time.strftime("%H:%M:%S"), self.app_id))
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
 
         table_logger.log(self.app_id, "Spark-Sahara", "Starting controller")
-        self._log("%s | (%s) Starting scaler" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Starting scaler" % (time.strftime("%H:%M:%S"), self.app_id))
         scaler.start_scaler(api.controller_url, spark_app_id,
                             workers_id, data)
 
         (output, err) = spark_job.communicate()
 
         table_logger.log(self.app_id, "Spark-Sahara", "Stopping monitor")
-        self._log("%s | (%s) Stopping monitor" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Stopping monitor" % (time.strftime("%H:%M:%S"), self.app_id))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
 
         table_logger.log(self.app_id, "Spark-Sahara", "Stopping controller")
-        self._log("%s | (%s) Stopping scaler" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Stopping scaler" % (time.strftime("%H:%M:%S"), self.app_id))
         scaler.stop_scaler(api.controller_url, spark_app_id)
 
         self.stdout.log(output)
         self.stderr.log(err)
 
         table_logger.log(self.app_id, "Spark-Sahara", "Copy log from cluster")
-        self._log("%s | (%s) Copy log from cluster" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Copy log from cluster" % (time.strftime("%H:%M:%S"), self.app_id))
         event_log_path = local_path + 'eventlog/'
         self._mkdir(event_log_path)
 
@@ -608,7 +615,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         remote.copy(key_path, remote_event_log_path, event_log_path)
 
         table_logger.log(self.app_id, "Spark-Sahara", "Upload log to Swift")
-        self._log("%s | (%s) Upload log to Swift" % (time.strftime("%H:%M:%S"), self.app_id))
+#       self._log("%s | (%s) Upload log to Swift" % (time.strftime("%H:%M:%S"), self.app_id))
+        self._log("--> Upload log to Swift")
         connector.upload_directory(swift, event_log_path,
                                    swift_logdir, container)
         
@@ -617,6 +625,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self.update_application_state("OK")
 
         table_logger.log(self.app_id, "Spark-Sahara", "End job execution")
+#       self._log("%s | (%s) End job execution" % (time.strftime("%H:%M:%S"), self.app_id))
+        self._log("--> End job execution")
 
         return 'OK'
 
