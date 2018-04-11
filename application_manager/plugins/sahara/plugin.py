@@ -161,7 +161,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                                                sahara,
                                                                slave_ng)
 
-            table_logger.log(self.app_id, "Spark-Sahara", "Checking optimizer service")
+            table_logger.log(self.app_id, "Spark-Sahara", "Getting cluster size from OPT_IC service")
 
            #self._log("%s | (%s) Checking optimizer service"
            #           % (time.strftime("%H:%M:%S"), self.app_id))
@@ -178,13 +178,16 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                     raise ex.ConfigurationError()
             else:
                 req_cluster_size = int(math.ceil(cores/float(cores_per_slave)))
-                req_cluster_size = int(math.ceil(float((req_cluster_size * 100) / float(starting_cap))))
+                table_logger.log(self.app_id, "Spark-Sahara", "OPT_IC service: suggested cluster size is %s" % req_cluster_size)
 
-                table_logger.log(self.app_id, "Spark-Sahara", ("Optimizer cluster size: %s" % req_cluster_size))
+                table_logger.log(self.app_id, "Spark-Sahara", "Recalculating cluster size considering initial cap")
+
+                req_cluster_size = int(math.ceil(float((req_cluster_size * 100) / float(starting_cap))))
+                table_logger.log(self.app_id, "Spark-Sahara", ("New cluster size: %s" % req_cluster_size))
 
 #               self._log("%s | (%s) Optimizer cluster size: %s"
 #                          % (time.strftime("%H:%M:%S"), self.app_id, req_cluster_size))
-                self._log("--> Optimizer cluster size: %s" % req_cluster_size)
+                self._log("--> Cluster size: %s" % req_cluster_size)
 
             # Check Oportunism
             if opportunism == "True":
@@ -226,7 +229,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 #                          "optmizer size, using default cluster... "
 #                          % (time.strftime("%H:%M:%S"), self.app_id))
 
-                cluster_id = '417b1aa3-1086-45e8-8497-84ea89f097f9'
+                cluster_id = 'a53d22f7-3d1b-4b6e-b6cc-a3d16a67d8a5'
  
             table_logger.log(self.app_id, "Spark-Sahara", ("Cluster ID: %s" % cluster_id))
 #           self._log("%s | (%s) Cluster id: %s" % (time.strftime("%H:%M:%S"), self.app_id,
