@@ -17,6 +17,7 @@ import subprocess
 import redis
 import threading
 import time
+import datetime
 import uuid
 
 from application_manager.plugins.base import GenericApplicationExecutor
@@ -24,6 +25,8 @@ from application_manager.plugins import base
 from application_manager.utils.ids import ID_Generator
 from application_manager.utils.logger import Log
 from application_manager.utils import k8s
+from application_manager.utils import monitor
+from application_manager.utils import scaler
 from application_manager.service import api
 
 LOG = Log("ChronosPlugin", "logs/chronos_plugin.log")
@@ -40,12 +43,8 @@ class KubeJobsExecutor(GenericApplicationExecutor):
         try:
 
             # Download files that contains the items
-            dwnld_cmd = 'wget %s -O %s' % (data['redis_file'],
-                                           api.redis_workload_path)
-
-            subprocess.call(dwnld_cmd, shell=True)
-            redis_file = open(api.redis_workload_path, "r").read()
-            jobs = redis_file.split('\n')
+            jobs = requests.get(data['redis_workload']).text.\
+                split('\n')[:-1]
 
             rds = redis.StrictRedis(host=api.redis_ip,
                                     port=api.redis_port)
@@ -53,7 +52,7 @@ class KubeJobsExecutor(GenericApplicationExecutor):
 
             print "Creating Redis queue"
             for job in jobs:
-                rds.rpush("job", job)
+                rds.rpush(self.app_id, job)
 
             print "Creating Job"
             k8s.create_job(self.app_id, data['env_name'],
@@ -61,13 +60,39 @@ class KubeJobsExecutor(GenericApplicationExecutor):
                            data['cmd'], data['img'],
                            data['working_dir'], data['init_size'])
 
-            jobs_completed = requests.get(api.count_queue).json()
+            starting_time = datetime.datetime.now().\
+                strftime('%Y-%m-%dT%H:%M:%S.%fGMT')
+            # Starting monitor
+            data['monitor_info'].update({'count_jobs_url': api.count_queue,
+                                         'number_of_jobs': queue_size,
+                                         'submission_time': starting_time})
 
-            while jobs_completed < queue_size:
-                jobs_completed = requests.get(api.count_queue).json()
+            monitor.start_monitor(api.monitor_url, self.app_id,
+                                  data['monitor_plugin'],
+                                  data['monitor_info'], 2)
+
+            # Starting controller
+
+            scaler.start_scaler(api.controller_url,
+                                self.app_id, data)
+
+
+            jobs_completed = requests.get(api.count_queue +
+                                          '/%s:results/count' % self.app_id).json()
+
+            while jobs_completed < queue_size - 1:
+                jobs_completed = requests.get(api.count_queue +
+                                              '/%s:results/count' % self.app_id).json()
+                time.sleep(1)
+
+            # Stop monitor and controller
+
+            monitor.stop_monitor(api.monitor_url, self.app_id)
 
         except Exception as ex:
             print "ERROR: %s" % ex
+
+        print "Application finished."
 
 
 class KubeJobsProvider(base.PluginInterface):
