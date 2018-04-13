@@ -33,7 +33,6 @@ if 'kubejobs' in plugins:
     redis_workload_path = config.get('kubejobs', 'redis_workload_path')
     count_queue = config.get('kubejobs', 'count_queue')
 
-
 if 'os_generic' in plugins:
     public_key = config.get('os-generic', 'public_key')
     key_path = config.get('os-generic', 'key_path')

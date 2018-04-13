@@ -26,13 +26,16 @@ def create_job(app_id, env_name, env_value,
 
     obj_meta = kube.client.V1ObjectMeta(
         name=app_id)
+    queue = kube.client.V1EnvVar(
+        name="STD_QUEUE",
+        value=app_id)
     env = kube.client.V1EnvVar(
         name=env_name,
         value=env_value)
     container_spec = kube.client.V1Container(
         args=args,
         command=cmd,
-        env=[env],
+        env=[env, queue],
         image=img,
         image_pull_policy="Always",
         name=app_id,
