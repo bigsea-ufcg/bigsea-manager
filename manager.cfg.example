@@ -63,3 +63,11 @@ supervisor_ip = http://152.152.152.152:20000
 
 [infra]
 hosts = host1 host2 host3 host4 host5 host6
+
+[kubejobs]
+k8s_conf_path = config.get('kubjobs', 'k8s_conf_path')
+manifest_path = config.get('kubjobs', 'manifest_path')
+redis_file_path = config.get('kubjobs', 'redis_file_path')
+redis_ip = config.get('kubjobs', 'redis_ip')
+redis_port = config.get('kubjobs', 'redis_port')
+count_queue = config.get('kubjobs', 'count_queue')

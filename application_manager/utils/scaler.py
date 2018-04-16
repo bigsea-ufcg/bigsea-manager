@@ -27,6 +27,14 @@ def start_scaler(controller_url, app_id, workers, data):
     data = _get_scaler_data(workers, data)
     requests.post(request_url, data=data, headers=headers)
 
+def start_scaler(controller_url, app_id, data):
+    request_url = controller_url + '/controller/start_scaling/' + app_id
+    headers = {'Content-type': 'application/json'}
+    data.update({"app_id": app_id})
+    data = json.dumps(data)
+    requests.post(request_url, data=data, headers=headers)
+
+
 def stop_scaler(controller_url, app_id):
     stop_scaling_url = controller_url + '/controller/stop_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
