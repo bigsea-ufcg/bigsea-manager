@@ -26,13 +26,6 @@ optimizer_url = config.get('services', 'optimizer_url')
 plugins = config.get('services', 'plugins').replace(' ', '').split(',')
 hosts = config.get('infra', 'hosts').split(' ')
 
-if 'kubejobs' in plugins:
-    k8s_conf_path = config.get('kubejobs', 'k8s_conf_path')
-    redis_ip = config.get('kubejobs', 'redis_ip')
-    redis_port = config.get('kubejobs', 'redis_port')
-    redis_workload_path = config.get('kubejobs', 'redis_workload_path')
-    count_queue = config.get('kubejobs', 'count_queue')
-
 if 'os_generic' in plugins:
     public_key = config.get('os-generic', 'public_key')
     key_path = config.get('os-generic', 'key_path')
@@ -77,7 +70,7 @@ if 'spark_generic' in plugins:
     swift_logdir = config.get('spark-generic', 'swift_logdir')
     remote_hdfs = config.get('spark-generic', 'remote_hdfs')
     number_of_attempts = config.getint('spark-generic', 'number_of_attempts')
-#   masters_ips = config.get('spark-generic', 'masters_ips').split(' ')
+    masters_ips = config.get('spark-generic', 'masters_ips').split(' ')
 
 if 'spark_mesos' in plugins:
     mesos_url = config.get('spark-mesos', 'mesos_url')
