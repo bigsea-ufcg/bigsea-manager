@@ -1,11 +1,18 @@
-Flask!=0.11,<1.0,>=0.10 # BSD
+virtualenv
+setuptools
+six
+werkzeug
 ConfigParser
-pytz
-pytest
-cryptography==1.9
+Flask
+stevedore
+httplib2
+PrettyTable
+paramiko
+python-keystoneclient
+python-novaclient
+python-saharaclient
 python-swiftclient
 python-monascaclient
-python-saharaclient
 keystoneauth1
-python-novaclient
-paramiko
+pytz
+pytest
