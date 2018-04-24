@@ -1,5 +1,4 @@
 virtualenv
-setuptools
 six
 werkzeug
 ConfigParser
