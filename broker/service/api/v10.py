@@ -19,11 +19,66 @@ from broker.utils.logger import Log
 from broker.utils import authorizer
 from broker.utils import optimizer
 
+
 LOG = Log("Servicev10", "logs/serviceAPIv10.log")
 
 applications = {}
 
 
+def submit(data):
+    username = data['username']
+    password = data['password']
+
+    authorization = authorizer.get_authorization(api.authorization_url,
+                                                 username, password)
+
+    if not authorization['success']:
+        return 'Error: Authentication failed. User not authorized'
+
+    else:
+        plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
+        submission_id, executor = plugin.execute(data)
+        applications[submission_id] = executor
+
+        return submission_id
+
+
+def stop(data):
+    username = data['username']
+    password = data['password']
+
+    authorization = authorizer.get_authorization(api.authorization_url,
+                                                 username, password)
+
+    if not authorization['success']:
+        return 'Error: Authentication failed. User not authorized'
+
+    else:
+        submission_id = data['id']
+
+        return applications[submission_id].stop()
+
+
+def submissions():
+    applications_status = {}
+
+    for app_id in applications.keys():
+        application_stat = {}
+        applications_status[app_id] = application_stat
+        application_stat["status"] = (applications[app_id].
+                                      get_application_state())
+
+        application_stat["time"] = (applications[app_id].
+                                    get_application_execution_time())
+
+        application_stat["start_time"] = (applications[app_id].
+                                          get_application_start_time())
+
+    return applications_status
+
+
+
+# ---------------------
 def execute(data):
     authorization = authorizer.get_authorization(api.authorization_url,
                                                  data['bigsea_username'],

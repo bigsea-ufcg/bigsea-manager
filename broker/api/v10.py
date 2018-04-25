@@ -16,8 +16,41 @@
 from broker.utils import api as u
 from broker.service.api import v10 as api
 
+
 rest = u.Rest('v10', __name__)
 
+
+@rest.post('/submit')
+def submit(data):
+    return u.render(api.submit(data)) 
+
+
+@rest.post('/stop')
+def stop(data):
+    return u.render(api.stop(data))
+
+
+@rest.get('/submissions')
+def submissions():
+    return u.render(api.submissions())
+
+
+@rest.get('/submissions/<id>')
+def submission():
+    return u.render(api.submission())
+
+
+@rest.post('/log/submission/<id>')
+def log_submission(data):
+    return u.render(api.log_submission(data))
+
+
+@rest.post('/log/execution/<id>')
+def log_execution(data):
+    return u.render(api.log_execution(data))
+
+
+#-------------
 
 @rest.post('/manager/execute')
 def execute(data):

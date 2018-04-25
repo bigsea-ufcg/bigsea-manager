@@ -17,8 +17,9 @@ import string
 import six
 import uuid
 
+
 class SaharaException(Exception):
-    """Base Exception for the project
+    """Base Exception for the Sahara Plugin
 
     To correctly use this class, inherit from it and define
     a 'message' and 'code' properties.
@@ -64,7 +65,6 @@ class NotFoundException(SaharaException):
 class RemoteCommandException(SaharaException):
     code = "REMOTE_COMMAND_FAILED"
     message_template = "Error during command execution: \"%s\""
-
     def __init__(self, cmd, ret_code=None, stdout=None,
                  stderr=None):
         self.cmd = cmd
@@ -139,6 +139,7 @@ class MaxRetriesExceeded(SaharaException):
 
         super(MaxRetriesExceeded, self).__init__(formatted_message)
 
+
 class ClusterNotCreatedException(SaharaException):
     code = "CLUSTER_NOT_CREATED"
     message = "Cluster could not be created"
@@ -147,4 +148,3 @@ class ClusterNotCreatedException(SaharaException):
 class ConfigurationError(SaharaException):
     code = "CONFIGURATION_ERROR"
     message = "The configuration has failed"
-
