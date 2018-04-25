@@ -16,12 +16,12 @@ import time
 import json
 import requests
 
-from application_manager.utils.ManagerChronos import ManagerChronos
-from application_manager.plugins.base import GenericApplicationExecutor
-from application_manager.plugins import base
-from application_manager.utils.ids import ID_Generator
-from application_manager.utils.logger import Log
-from application_manager.service import api
+from broker.utils.ManagerChronos import ManagerChronos
+from broker.plugins.base import GenericApplicationExecutor
+from broker.plugins import base
+from broker.utils.ids import ID_Generator
+from broker.utils.logger import Log
+from broker.service import api
 
 
 LOG = Log("ChronosPlugin", "logs/chronos_plugin.log")

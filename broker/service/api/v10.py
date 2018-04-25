@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from application_manager.plugins import base as plugin_base
-from application_manager.service import api
-from application_manager.utils.logger import Log
-from application_manager.utils import authorizer
-from application_manager.utils import optimizer
+from broker.plugins import base as plugin_base
+from broker.service import api
+from broker.utils.logger import Log
+from broker.utils import authorizer
+from broker.utils import optimizer
 
 LOG = Log("Servicev10", "logs/serviceAPIv10.log")
 

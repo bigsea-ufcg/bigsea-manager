@@ -15,7 +15,7 @@
 
 import requests
 import time
-from application_manager.utils.logger import Log
+from broker.utils.logger import Log
 
 spark_log = Log("Spark Log", "logs/spark.log")
 

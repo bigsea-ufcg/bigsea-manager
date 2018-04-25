@@ -1,4 +1,4 @@
-# Copyright (c) 2017 UFCG-LSD.
+# Copyright (c) 2017 LSD - UFCG.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,23 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from flask import Flask
+from broker.api.v10 import rest
+from broker.plugins import base as plugin_base
 
-from application_manager.plugins import base
-
-
-class FakeProvider(base.PluginInterface):
-
-    def get_title(self):
-        return 'Fake Plugin '
-
-    def get_description(self):
-        return 'Fake Plugin'
-
-    def to_dict(self):
-        return {
-            'name': self.name,
-            'title': self.get_title(),
-            'description': self.get_description(),
-        }
-    def execute(self, data):
-        return True
+def main():
+    plugin_base.setup_plugins()
+    app = Flask(__name__)
+    app.register_blueprint(rest)
+    app.run(host='0.0.0.0', port=1514, debug=True)

@@ -18,9 +18,9 @@ import abc
 import six
 from stevedore import enabled
 
-from application_manager import exceptions as ex
-from application_manager.service import api
-from application_manager.utils.logger import Log
+from broker import exceptions as ex
+from broker.service import api
+from broker.utils.logger import Log
 import threading
 
 LOG = Log("Servicev10", "logs/serviceAPIv10.log")
@@ -84,7 +84,7 @@ class PluginManager(object):
         config_plugins = api.plugins
         extension_manager = enabled.EnabledExtensionManager(
             check_func=lambda ext: ext.name in config_plugins,
-            namespace='application_manager.execution.plugins',
+            namespace='broker.execution.plugins',
             invoke_on_load=True
         )
 

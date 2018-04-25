@@ -13,16 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from application_manager import exceptions as ex
-from application_manager.plugins import base
-from application_manager.service import api
-from application_manager.utils import optimizer
-from application_manager.utils import monitor
-from application_manager.utils import scaler
-from application_manager.utils import mesos
-from application_manager.utils import ssh
-from application_manager.utils.logger import Log, configure_logging
-from application_manager.plugins.base import GenericApplicationExecutor
+from broker import exceptions as ex
+from broker.plugins import base
+from broker.service import api
+from broker.utils import optimizer
+from broker.utils import monitor
+from broker.utils import scaler
+from broker.utils import mesos
+from broker.utils import ssh
+from broker.utils.logger import Log, configure_logging
+from broker.plugins.base import GenericApplicationExecutor
 
 from uuid import uuid4
 

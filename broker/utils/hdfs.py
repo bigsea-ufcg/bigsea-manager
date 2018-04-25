@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import subprocess
-from application_manager.utils import remote
+from broker.utils import remote
 
 
 def create_hdfs_path(hdfs_address, user, hdfs_path):

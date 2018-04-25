@@ -17,14 +17,14 @@ import paramiko
 import time
 import threading
 
-from application_manager.openstack import connector as os_connector
-from application_manager.plugins import base
-from application_manager.utils import monitor
-from application_manager.utils import scaler
-from application_manager.service import api
-from application_manager.utils.logger import *
-from application_manager.utils.ids import ID_Generator
-from application_manager.plugins.base import GenericApplicationExecutor
+from broker.openstack import connector as os_connector
+from broker.plugins import base
+from broker.utils import monitor
+from broker.utils import scaler
+from broker.service import api
+from broker.utils.logger import *
+from broker.utils.ids import ID_Generator
+from broker.plugins.base import GenericApplicationExecutor
 
 LOG = Log("OpenStackGenericPlugin", "logs/openstack_generic_plugin.log")
 application_time_log = Log("Application_time", "logs/application_time.log")

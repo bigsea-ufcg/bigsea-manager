@@ -18,9 +18,9 @@ import traceback
 import flask
 from werkzeug import datastructures
 
-from application_manager import exceptions as ex
-from application_manager.utils import serializer as u_serializer
-from application_manager.utils.logger import *
+from broker import exceptions as ex
+from broker.utils import serializer as u_serializer
+from broker.utils.logger import *
 
 LOG = Log("UtilsAPI", "logs/utilsapi.log")
 

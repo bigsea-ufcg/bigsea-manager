@@ -26,7 +26,7 @@ from saharaclient.api.client import Client as saharaclient
 from swiftclient.client import Connection as swiftclient
 from subprocess import *
 
-from application_manager.utils import shell
+from broker.utils import shell
 
 class OpenStackConnector(object):
     def __init__(self, logger):

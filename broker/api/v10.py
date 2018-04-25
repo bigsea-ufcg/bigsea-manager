@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from application_manager.utils import api as u
-from application_manager.service.api import v10 as api
+from broker.utils import api as u
+from broker.service.api import v10 as api
 
 rest = u.Rest('v10', __name__)
 

@@ -17,7 +17,7 @@ import datetime
 import json
 import six
 
-from application_manager import exceptions
+from broker import exceptions
 
 
 class ActionDispatcher(object):

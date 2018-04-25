@@ -37,15 +37,15 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'application_manager=application_manager.cli.main:main',
+            'broker=broker.cli.main:main',
         ],
-        'application_manager.execution.plugins': [
-            'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
-            'fake=application_manager.plugins.fake.plugin:FakeProvider',
-            'spark_generic=application_manager.plugins.spark_generic.plugin:SparkGenericProvider',
-            'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
-            'chronos=application_manager.plugins.chronos.plugin:ChronosGenericProvider',
-            'spark_mesos=application_manager.plugins.spark_mesos.plugin:SparkMesosProvider'
+        'broker.execution.plugins': [
+            'sahara=broker.plugins.sahara.plugin:SaharaProvider',
+            'fake=broker.plugins.fake.plugin:FakeProvider',
+            'spark_generic=broker.plugins.spark_generic.plugin:SparkGenericProvider',
+            'os_generic=broker.plugins.openstack_generic.plugin:OpenStackGenericProvider',
+            'chronos=broker.plugins.chronos.plugin:ChronosGenericProvider',
+            'spark_mesos=broker.plugins.spark_mesos.plugin:SparkMesosProvider'
         ],
     },
 )

@@ -19,16 +19,16 @@ import time
 import threading
 import uuid
 
-from application_manager import exceptions as ex
-from application_manager.plugins import base
-from application_manager.service import api
-from application_manager.utils import hdfs
-from application_manager.utils import remote
-from application_manager.utils import spark
-from application_manager.utils.logger import Log, configure_logging
+from broker import exceptions as ex
+from broker.plugins import base
+from broker.service import api
+from broker.utils import hdfs
+from broker.utils import remote
+from broker.utils import spark
+from broker.utils.logger import Log, configure_logging
 
-from application_manager.utils.ids import ID_Generator
-from application_manager.plugins.base import GenericApplicationExecutor
+from broker.utils.ids import ID_Generator
+from broker.plugins.base import GenericApplicationExecutor
 
 plugin_log = Log("SparkGeneric_Plugin", "logs/sparkgeneric_plugin.log")
 application_time_log = Log("Application_Time", "logs/application_time.log")
