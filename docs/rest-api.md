@@ -1,0 +1,114 @@
+#  Endpoints
+
+This section provides a detailed list of avaliable endpoints in Broker API.
+
+## Submit and run
+  Run a submission and returns json data with id of submission.
+
+* **URL**: /submissions
+* **Method:** `POST`
+
+* **JSON Request:**
+	* ```json
+		{
+			username : [string],
+			password : [string],
+			plugin: [string],
+			plugin_info : {
+				...
+			}
+		}
+	  ```
+* **Success Response:**
+  * **Code:** `202` <br /> **Content:** 
+	  * ```json
+		{
+		  id : [string]
+		}
+		```
+		
+* **Error Response:**
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+
+  * **Code:** `401 UNAUTHORIZED` <br /> **Content:** ```{ error : "Parameters missing" } ```
+
+
+## Stop submission
+  Stop a running submission.
+
+* **URL**: /submissions/*:id*/stop
+* **Method:** `PUT`
+
+* **JSON Request:**
+	* ```json
+		{
+			username : [string],
+			password : [string]
+		}
+	  ```
+* **Success Response:**
+  * **Code:** `204` <br />
+		
+* **Error Response:**
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+
+  * **Code:** `401 UNAUTHORIZED` <br /> **Content:** ```{ error : "Parameters missing" } ```
+
+## List submissions
+  List all submissions.
+
+* **URL**: /submissions
+* **Method:** `GET`
+* **Success Response:**
+* **Success Response:**
+  * **Code:** `200` <br /> **Content:** 
+	  * ```json
+		{
+		  submission1 : {
+		    status: [string]
+		  },
+     	  ...
+		  submissionN : {
+		    status: [string]
+		  }		 
+		}
+		```
+		
+* **Error Response:**
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+
+## Submission status
+  Returns json data with detailed status of submission.
+
+* **URL**: /submissions/*:id*
+* **Method:** `GET`
+* **Success Response:**
+  * **Code:** `200` <br /> **Content:** 
+	  * ```json
+		{
+		  status : [string],
+		  execution_time : [string],
+		  start_time : [string]
+		}
+		```
+		
+* **Error Response:**
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+
+## Submission log
+  Returns json data with log of submission.
+
+* **URL**: /submissions/*:id*/log
+* **Method:** `GET`
+* **Success Response:**
+  * **Code:** `200` <br /> **Content:** 
+	  * ```json
+		{
+		  execution : [string],
+  		  stderr : [string],
+  		  stdout : [string]
+		}
+		```
+		
+* **Error Response:**
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` {error : "Parameters missing" } ```
