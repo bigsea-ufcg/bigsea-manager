@@ -9,22 +9,22 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 * **Method:** `POST`
 
 * **JSON Request:**
-	* ```json
-		{
-			username : [string],
-			password : [string],
-			plugin: [string],
-			plugin_info : {
-				...
-			}
-		}
+	* ```javascript
+	  {
+	     username : [string],
+	     password : [string],
+	     plugin: [string],
+	     plugin_info : {
+	         ...
+	     }
+	  }
 	  ```
 * **Success Response:**
   * **Code:** `202` <br /> **Content:** 
-	  * ```json
-		{
-		  id : [string]
-		}
+	  * ```javascript
+	    {
+	       id : [string]
+	    }
 		```
 		
 * **Error Response:**
@@ -40,11 +40,11 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 * **Method:** `PUT`
 
 * **JSON Request:**
-	* ```json
-		{
-			username : [string],
-			password : [string]
-		}
+	* ```javascript
+	  {
+	     username : [string],
+	     password : [string]
+	  }
 	  ```
 * **Success Response:**
   * **Code:** `204` <br />
@@ -62,16 +62,16 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 * **Success Response:**
 * **Success Response:**
   * **Code:** `200` <br /> **Content:** 
-	  * ```json
-		{
-		  submission1 : {
-		    status: [string]
-		  },
-     	  ...
-		  submissionN : {
-		    status: [string]
-		  }		 
-		}
+	  * ```javascript
+	    {
+	       submission1 : {
+	          status: [string]
+	       },
+     	       ...
+	       submissionN : {
+	          status: [string]
+	       }		 
+	    }
 		```
 		
 * **Error Response:**
@@ -84,12 +84,12 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 * **Method:** `GET`
 * **Success Response:**
   * **Code:** `200` <br /> **Content:** 
-	  * ```json
-		{
-		  status : [string],
-		  execution_time : [string],
-		  start_time : [string]
-		}
+	  * ```javascript
+	    {
+	       status : [string],
+	       execution_time : [string],
+	       start_time : [string]
+	    }
 		```
 		
 * **Error Response:**
@@ -102,12 +102,12 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 * **Method:** `GET`
 * **Success Response:**
   * **Code:** `200` <br /> **Content:** 
-	  * ```json
-		{
-		  execution : [string],
-  		  stderr : [string],
-  		  stdout : [string]
-		}
+	  * ```javascript
+	    {
+	       execution : [string],
+  	       stderr : [string],
+  	       stdout : [string]
+	    }
 		```
 		
 * **Error Response:**
