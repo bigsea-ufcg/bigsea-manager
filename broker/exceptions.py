@@ -119,6 +119,16 @@ class Forbidden(SaharaException):
     message = ("You are not authorized to complete this action")
 
 
+class UnauthorizedException(Exception):
+    code = "UNAUTHORIZED"
+    message = ("You are not authorized to complete this action")
+
+
+class BadRequestException(Exception):
+    code = "BAD_REQUEST"
+    message = ("Malformed message body")
+
+
 class MalformedRequestBody(SaharaException):
     code = "MALFORMED_REQUEST_BODY"
     message_template = ("Malformed message body: %(reason)s")

@@ -35,7 +35,7 @@ class Rest(flask.Blueprint):
     def post_file(self, rule, status_code=202):
         return self._mroute('POST', rule, status_code, file_upload=True)
 
-    def put(self, rule, status_code=202):
+    def put(self, rule, status_code=204):
         return self._mroute('PUT', rule, status_code)
 
     def put_file(self, rule, status_code=202):
@@ -73,8 +73,12 @@ class Rest(flask.Blueprint):
                     if flask.request.method in ['POST', 'PUT', 'PATCH']:
                         kwargs['data'] = request_data()
                     return func(**kwargs)
+                except ex.UnauthorizedException as e:
+                    return unauthorized(e)
                 except ex.Forbidden as e:
                     return access_denied(e)
+                except ex.BadRequestException as e:
+                    return bad_request(e)
                 except ex.SaharaException as e:
                     return bad_request(e)
                 except Exception as e:
@@ -214,6 +218,18 @@ def bad_request(error):
     error_code = 400
 
     LOG.log("Validation Error occurred: "
+            "error_code={code}, error_message={message}, "
+            "error_name={name}".format(code=error_code,
+                                       message=error.message,
+                                       name=error.code))
+
+    return render_error_message(error_code, error.message, error.code)
+
+
+def unauthorized(error):
+    error_code = 401
+
+    LOG.log("Authorization Error occurred: "
             "error_code={code}, error_message={message}, "
             "error_name={name}".format(code=error_code,
                                        message=error.message,

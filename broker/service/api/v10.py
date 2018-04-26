@@ -18,14 +18,20 @@ from broker.service import api
 from broker.utils.logger import Log
 from broker.utils import authorizer
 from broker.utils import optimizer
+from broker import exceptions as ex
 
 
-LOG = Log("Servicev10", "logs/serviceAPIv10.log")
+API_LOG = Log("APIv10", "logs/APIv10.log")
 
-applications = {}
+submissions = {}
 
 
-def submit(data):
+def run_submission(data):
+    if ('username' not in data.keys() or 'password' not in data.keys()
+        or 'plugin' not in data.keys()):
+        API_LOG.log("Missing parameters in request")
+        raise ex.BadRequestException()
+    
     username = data['username']
     password = data['password']
 
@@ -33,17 +39,22 @@ def submit(data):
                                                  username, password)
 
     if not authorization['success']:
-        return 'Error: Authentication failed. User not authorized'
+        API_LOG.log("Unauthorized request")
+        raise ex.UnauthorizedException()
 
     else:
         plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
         submission_id, executor = plugin.execute(data)
-        applications[submission_id] = executor
+        submissions[submission_id] = executor
 
         return submission_id
 
 
-def stop(data):
+def stop_submission(submission_id, data):
+    if 'username' not in data.keys() or 'password' not in data.keys():
+        API_LOG.log("Missing parameters in request")
+        raise ex.BadRequestException()
+    
     username = data['username']
     password = data['password']
 
@@ -51,112 +62,69 @@ def stop(data):
                                                  username, password)
 
     if not authorization['success']:
-        return 'Error: Authentication failed. User not authorized'
+        API_LOG.log("Unauthorized request")
+        raise ex.UnauthorizedException()
 
     else:
-        submission_id = data['id']
+        if submission_id not in submissions.keys():
+            raise ex.BadRequestException()
 
-        return applications[submission_id].stop()
+        # TODO: Call the executor by submission_id and stop the execution.
 
-
-def submissions():
-    applications_status = {}
-
-    for app_id in applications.keys():
-        application_stat = {}
-        applications_status[app_id] = application_stat
-        application_stat["status"] = (applications[app_id].
-                                      get_application_state())
-
-        application_stat["time"] = (applications[app_id].
-                                    get_application_execution_time())
-
-        application_stat["start_time"] = (applications[app_id].
-                                          get_application_start_time())
-
-    return applications_status
+        return submissions[submission_id]
 
 
+def list_submissions():
+    submissions_status = {}
 
-# ---------------------
-def execute(data):
-    authorization = authorizer.get_authorization(api.authorization_url,
-                                                 data['bigsea_username'],
-                                                 data['bigsea_password'])
-    if not authorization['success']:
-        return 'Error: Authentication failed. User not authorized'
+    for id in submissions.keys():
+        this_status = {}
+        submissions_status[id] = this_status
 
-    plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
-    app_id, executor = plugin.execute(data)
-    applications[app_id] = executor
+        this_status['status'] = (submissions[id].
+                                 get_application_state())
 
-    return app_id
+    return submissions_status
 
 
-def stop_app(app_id):
-    # stop monitoring
-    # stop scaling
-    return 'App %(app_id)s stopped' % {'app_id': app_id}
+def submission_status(submission_id):
+    if submission_id not in submissions.keys():
+        API_LOG.log("Wrong request")
+        raise ex.BadRequestException()
+
+    # TODO: Update status of application with more informations
+
+    this_status = {}
+    this_status['status'] = (submissions[submission_id].
+                             get_application_state())
+
+    this_status['execution_time'] = (submissions[submission_id].
+                                     get_application_execution_time())
+
+    this_status['start_time'] = (submissions[submission_id].
+                                 get_application_start_time())
+
+    return this_status
 
 
-def kill_all():
-    return 'Apps killed'
+def submission_log(submission_id):
+    if submission_id not in submissions.keys():
+        API_LOG.log("Wrong request")
+        raise ex.BadRequestException()
 
+    logs = {'execution':'', 'stderr':'', 'stdout': ''}
 
-def status():
-    applications_status = {}
+    exec_log = open("logs/apps/%s/execution" % submission_id, "r")
+    stderr = open("logs/apps/%s/stderr" % submission_id, "r")
+    stdout = open("logs/apps/%s/stdout" % submission_id, "r")
 
-    for app_id in applications.keys():
-        application_stat = {}
-        applications_status[app_id] = application_stat
-        application_stat["status"] = (applications[app_id].
-                                      get_application_state())
+    remove_newline = lambda x: x.replace("\n","")
+    logs['execution'] = map(remove_newline, exec_log.readlines())
+    logs['stderr'] = map(remove_newline, stderr.readlines())
+    logs['stdout'] = map(remove_newline, stdout.readlines())
 
-        application_stat["time"] = (applications[app_id].
-                                    get_application_execution_time())
-
-        application_stat["start_time"] = (applications[app_id].
-                                          get_application_start_time())
-
-    return applications_status
-
-
-def execution_log(app_id):
-    if app_id not in applications:
-        return "App %(app_id)s doesn't exist" % {'app_id': app_id}
-
-    log = open("logs/apps/%s/execution" % app_id, "r")
-    str_log = map(_remove_newline, log.readlines())
-
-    log.close()
-
-    return str_log
-
-
-def std_log(app_id):
-    if app_id not in applications:
-        return "App %(app_id)s doesn't exist" % {'app_id': app_id}
-
-    stderr = open("logs/apps/%s/stderr" % app_id, "r")
-    stdout = open("logs/apps/%s/stdout" % app_id, "r")
-
-    err = stderr.read()
-    out = stdout.read()
-
+    exec_log.close()
     stderr.close()
     stdout.close()
 
-    return out, err
-
-
-def _get_new_cluster_size(hosts):
-    return optimizer.get_cluster_size(api.optimizer_url, hosts)
-
-
-def _remove_newline(string):
-    return string.replace("\n", "")
-
-
-if __name__ == "__main__":
-    data = {'cluster_size': 3}
-    execute(data)
+    return logs

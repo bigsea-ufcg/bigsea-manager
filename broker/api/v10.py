@@ -20,60 +20,51 @@ from broker.service.api import v10 as api
 rest = u.Rest('v10', __name__)
 
 
-@rest.post('/submit')
-def submit(data):
-    return u.render(api.submit(data)) 
+""" Run a new submission.
+
+    Normal response codes: 202
+    Error response codes: 400, 401
+"""
+@rest.post('/submissions')
+def run_submission(data):
+    return u.render(api.run_submission(data)) 
 
 
-@rest.post('/stop')
-def stop(data):
-    return u.render(api.stop(data))
+""" Stop a submission.
+
+    Normal response codes: 204
+    Error response codes: 400, 401
+"""
+@rest.put('/submissions/<submission_id>/stop')
+def stop_submission(submission_id, data):
+    return u.render(api.stop_submission(submission_id, data))
 
 
+""" List all submissions.
+
+    Normal response codes: 200
+    Error response codes: 400, 401
+"""
 @rest.get('/submissions')
-def submissions():
-    return u.render(api.submissions())
+def list_submissions():
+    return u.render(api.list_submissions())
 
 
-@rest.get('/submissions/<id>')
-def submission():
-    return u.render(api.submission())
+""" Show status of a submission.
+
+    Normal response codes: 200
+    Error response codes: 400
+"""
+@rest.get('/submissions/<submission_id>')
+def submission_status(submission_id):
+    return u.render(api.submission_status(submission_id))
 
 
-@rest.post('/log/submission/<id>')
-def log_submission(data):
-    return u.render(api.log_submission(data))
-
-
-@rest.post('/log/execution/<id>')
-def log_execution(data):
-    return u.render(api.log_execution(data))
-
-
-#-------------
-
-@rest.post('/manager/execute')
-def execute(data):
-    return u.render(api.execute(data))
-
-@rest.post('/manager/stop_app/<app_id>')
-def stop_app(app_id, data):
-    api.stop_app(app_id)
-    return u.render()
-
-@rest.post('/manager/kill_all')
-def kill_all(data):
-    api.kill_all()
-    return u.render()
-
-@rest.get('/manager/status')
-def status():
-    return u.render(api.status())
-
-@rest.get('/manager/logs/execution/<app_id>')
-def execution_log(app_id):
-    return u.render(api.execution_log(app_id))
-
-@rest.get('/manager/logs/std/<app_id>')
-def std_log(app_id):
-    return u.render(api.std_log(app_id))
+""" Show log of a submission.
+                                                                              
+    Normal response codes: 200
+    Error response codes: 400
+"""
+@rest.get('/submissions/<submission_id>/log')
+def submission_log(submission_id):
+    return u.render(api.submission_log(submission_id))
