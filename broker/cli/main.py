@@ -16,9 +16,10 @@
 from flask import Flask
 from broker.api.v10 import rest
 from broker.plugins import base as plugin_base
+from broker.service import api
 
 def main():
     plugin_base.setup_plugins()
     app = Flask(__name__)
     app.register_blueprint(rest)
-    app.run(host='0.0.0.0', port=1514, debug=True)
+    app.run(host='0.0.0.0', port=api.port, debug=True)

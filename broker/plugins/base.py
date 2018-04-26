@@ -23,7 +23,9 @@ from broker.service import api
 from broker.utils.logger import Log
 import threading
 
+
 LOG = Log("Servicev10", "logs/serviceAPIv10.log")
+
 
 def required(fun):
     return abc.abstractmethod(fun)

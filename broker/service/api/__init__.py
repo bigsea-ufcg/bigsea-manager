@@ -15,16 +15,21 @@
 
 import ConfigParser
 
+
 # Conf reading
 config = ConfigParser.RawConfigParser()
 config.read('./manager.cfg')
 
+""" Services configuration """
 monitor_url = config.get('services', 'monitor_url')
 controller_url = config.get('services', 'controller_url')
 authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
-plugins = config.get('services', 'plugins').replace(' ', '').split(',')
-hosts = config.get('infra', 'hosts').split(' ')
+
+""" General configuration """
+plugins = config.get('general', 'plugins').split(',')
+hosts = config.get('general', 'hosts').split(',')
+port = config.getint('general', 'port')
 
 if 'os_generic' in plugins:
     public_key = config.get('os-generic', 'public_key')
