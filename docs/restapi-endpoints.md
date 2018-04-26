@@ -1,6 +1,6 @@
-#  Endpoints
+#  REST API Endpoints
 
-This section provides a detailed list of avaliable endpoints in Broker API.
+This section provides a detailed list of avaliable endpoints in Broker REST API.
 
 ## Submit and run
   Run a submission and returns json data with id of submission.
@@ -111,4 +111,4 @@ This section provides a detailed list of avaliable endpoints in Broker API.
 		```
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` {error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
