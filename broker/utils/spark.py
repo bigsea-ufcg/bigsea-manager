@@ -19,6 +19,7 @@ from broker.utils.logger import Log
 
 spark_log = Log("Spark Log", "logs/spark.log")
 
+
 def get_running_app(submission_url, applications, number_of_attempts):
     app_id = None
     attempts = 0

@@ -50,6 +50,7 @@ def execute_command(remote, key_path, command):
 
     subprocess.call(command, shell=True)
 
+
 def execute_command_popen(remote, key_path, command):
     command = ('ssh -o "StrictHostKeyChecking no" '
                '-o "UserKnownHostsFile=/dev/null" '
@@ -61,12 +62,14 @@ def execute_command_popen(remote, key_path, command):
 
     return p
 
+
 def copy_to_remote(remote, key_path, source, destination):
     command = ('scp -i %(key_path)s -r %(source)s %(destination)s' %
                {'key_path': key_path, 'source': source,
                 'destination': destination})
 
     subprocess.call(command, shell=True)
+
 
 def copy(key_path, source, destination):
     command = ('scp -o "StrictHostKeyChecking no" '
@@ -76,6 +79,7 @@ def copy(key_path, source, destination):
                 'destination': destination})
 
     subprocess.call(command, shell=True)
+
 
 def copy_from_hdfs(remote, key_path, hdfs_address, hdfs_path, local_path):
     command = (
@@ -94,6 +98,7 @@ def copy_from_hdfs(remote, key_path, hdfs_address, hdfs_path, local_path):
                                              'remote': remote,
                                              'command': command},
                                                       shell=True)
+
 
 def list_directory(key_path, remote, file_path):
     command = 'ls %s' % file_path
@@ -115,6 +120,7 @@ def list_directory(key_path, remote, file_path):
     output = output.replace('\n', '')
 
     return output
+
 
 def check_file_exists(key_path, hdfs_url, file_path):
     command = (
@@ -139,4 +145,3 @@ def check_file_exists(key_path, hdfs_url, file_path):
     output, err = process.communicate()
 
     return True if output else False
-

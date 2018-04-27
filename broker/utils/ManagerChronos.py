@@ -17,6 +17,7 @@ import json
 import requests
 from requests.auth import HTTPBasicAuth
 
+
 class ManagerChronos():
 
     def __init__ (self, url, user, passwd ):

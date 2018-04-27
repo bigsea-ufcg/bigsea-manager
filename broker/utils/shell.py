@@ -41,4 +41,3 @@ def append_to_file(outfile, line):
 def write_to_file(outfile, line):
     with open(outfile, 'w') as f:
         f.write(line)
-
