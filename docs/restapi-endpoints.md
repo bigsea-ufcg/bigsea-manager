@@ -1,5 +1,4 @@
 #  REST API Endpoints
-
 This section provides a detailed list of avaliable endpoints in Broker REST API.
 
 ## Submit and run

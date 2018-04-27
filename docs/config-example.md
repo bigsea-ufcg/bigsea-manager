@@ -1,6 +1,6 @@
-# Configuration
+# Config example
 
-## Example: 
+## broker.cfg: 
 ```
 [services]
 controller_url =
