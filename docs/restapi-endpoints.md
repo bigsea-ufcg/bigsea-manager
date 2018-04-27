@@ -5,7 +5,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 ## Submit and run
   Run a submission and returns json data with id of submission.
 
-* **URL**: /submissions
+* **URL**: `/submissions`
 * **Method:** `POST`
 
 * **JSON Request:**
@@ -36,7 +36,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 ## Stop submission
   Stop a running submission.
 
-* **URL**: /submissions/*:id*/stop
+* **URL**: `/submissions/*:id*/stop`
 * **Method:** `PUT`
 
 * **JSON Request:**
@@ -57,7 +57,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 ## List submissions
   List all submissions.
 
-* **URL**: /submissions
+* **URL**: `/submissions`
 * **Method:** `GET`
 * **Success Response:**
 * **Success Response:**
@@ -80,7 +80,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 ## Submission status
   Returns json data with detailed status of submission.
 
-* **URL**: /submissions/*:id*
+* **URL**: `/submissions/*:id*`
 * **Method:** `GET`
 * **Success Response:**
   * **Code:** `200` <br /> **Content:** 
@@ -98,7 +98,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 ## Submission log
   Returns json data with log of submission.
 
-* **URL**: /submissions/*:id*/log
+* **URL**: `/submissions/*:id*/log`
 * **Method:** `GET`
 * **Success Response:**
   * **Code:** `200` <br /> **Content:** 
