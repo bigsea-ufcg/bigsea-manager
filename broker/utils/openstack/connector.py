@@ -28,6 +28,7 @@ from subprocess import *
 
 from broker.utils import shell
 
+
 class OpenStackConnector(object):
     def __init__(self, logger):
         self.logger = logger
