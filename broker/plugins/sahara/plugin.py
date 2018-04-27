@@ -22,15 +22,14 @@ import uuid
 import math
 
 from broker import exceptions as ex
-from broker.openstack import connector as os_connector
-from broker.openstack import utils as os_utils
+from broker.utils.openstack import connector as os_connector
 from broker.plugins import base
 from broker.service import api
 from broker.utils import hdfs
-from broker.utils import monitor
-from broker.utils import optimizer
+from broker.utils.framework import monitor
+from broker.utils.framework import optimizer
 from broker.utils import remote
-from broker.utils import scaler
+from broker.utils.framework import controller
 from broker.utils import spark
 from broker.utils.logger import Log, configure_logging
 
@@ -215,7 +214,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                 self._log("%s | Configuring controller" %
                     (time.strftime("%H:%M:%S")))
 
-                scaler.setup_environment(api.controller_url, workers_id,
+                controller.setup_environment(api.controller_url, workers_id,
                                          starting_cap, data)
 
                 if swift_path:
@@ -435,8 +434,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
-        self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-        scaler.start_scaler(api.controller_url, spark_app_id, 
+        self._log("%s | Starting controller" % (time.strftime("%H:%M:%S")))
+        controller.start_controller(api.controller_url, spark_app_id, 
                             workers_id, data)
  
         job_status = self._wait_on_job_finish(sahara, connector,
@@ -444,8 +443,8 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
  
         self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
-        self._log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
-        scaler.stop_scaler(api.controller_url, spark_app_id)
+        self._log("%s | Stopping controller" % (time.strftime("%H:%M:%S")))
+        controller.stop_controller(api.controller_url, spark_app_id)
 
         spark_applications_ids.remove(spark_app_id)
 
@@ -536,16 +535,16 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
         self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
                               plugin_app, info_plugin, collect_period)
-        self._log("%s | Starting scaler" % (time.strftime("%H:%M:%S")))
-        scaler.start_scaler(api.controller_url, spark_app_id,
+        self._log("%s | Starting controller" % (time.strftime("%H:%M:%S")))
+        controller.start_controller(api.controller_url, spark_app_id,
                             workers_id, data)
 
         (output, err) = spark_job.communicate()
 
         self._log("%s | Stopping monitor" % (time.strftime("%H:%M:%S")))
         monitor.stop_monitor(api.monitor_url, spark_app_id)
-        self._log("%s | Stopping scaler" % (time.strftime("%H:%M:%S")))
-        scaler.stop_scaler(api.controller_url, spark_app_id)
+        self._log("%s | Stopping controller" % (time.strftime("%H:%M:%S")))
+        controller.stop_controller(api.controller_url, spark_app_id)
 
         self.stdout.log(output)
         self.stderr.log(err)
