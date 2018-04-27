@@ -12,15 +12,16 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import uuid
 import paramiko
 import time
 import threading
 
-from broker.openstack import connector as os_connector
+from broker.utils.openstack import connector as os_connector
 from broker.plugins import base
 from broker.utils import monitor
-from broker.utils import scaler
+from broker.utils import controller
 from broker.service import api
 from broker.utils.logger import *
 from broker.utils.ids import ID_Generator
@@ -29,6 +30,7 @@ from broker.plugins.base import GenericApplicationExecutor
 LOG = Log("OpenStackGenericPlugin", "logs/openstack_generic_plugin.log")
 application_time_log = Log("Application_time", "logs/application_time.log")
 configure_logging()
+
 
 class OpenStackApplicationExecutor(GenericApplicationExecutor):
 
@@ -138,13 +140,13 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
             LOG.log("Setting up environment")
             print "Setting up environment"
             # Set CPU cap in all instances
-            #scaler.setup_environment(api.controller_url, instances,
+            #controller.setup_environment(api.controller_url, instances,
             #                         starting_cap, actuator)
             
-            scaler.setup_environment(api.controller_url, instances,
+            controller.setup_environment(api.controller_url, instances,
                                          starting_cap, data)
 
-            # Execute application and start monitor and scaler service.
+            # Execute application and start monitor and controller service.
             applications = []
             for ip in instances_ips:
                 LOG.log("Executing commands into the instance")
@@ -176,14 +178,14 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                     LOG.log("Starting scaling")
                     print "Starting scaling"
                     
-                    scaler.start_scaler(api.controller_url, app_id, instances,
+                    controller.start_controller(api.controller_url, app_id, instances,
                                             data)
 
                 except Exception as e:
                     LOG.log(e.message)
                     print e.message
 
-            # Stop monitor and scaler when each application stops
+            # Stop monitor and controller when each application stops
             application_running = True
             while application_running:
                 status_instances = []
@@ -205,7 +207,7 @@ class OpenStackApplicationExecutor(GenericApplicationExecutor):
                         monitor.stop_monitor(api.monitor_url, app_id)
                         LOG.log("Stopping scaling")
                         print "Stopping scaling"
-                        scaler.stop_scaler(api.controller_url, app_id)
+                        controller.stop_controller(api.controller_url, app_id)
                 else:
                     instance_status = []
 

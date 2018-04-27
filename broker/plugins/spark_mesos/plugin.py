@@ -18,7 +18,7 @@ from broker.plugins import base
 from broker.service import api
 from broker.utils import optimizer
 from broker.utils import monitor
-from broker.utils import scaler
+from broker.utils import controller
 from broker.utils import mesos
 from broker.utils import ssh
 from broker.utils.logger import Log, configure_logging
@@ -194,7 +194,7 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                           (time.strftime("%H:%M:%S"), executors_vms_ids))
 
             # Set up the initial configuration of cpu cap
-            scaler.setup_environment(api.controller_url, executors_vms_ids,
+            controller.setup_environment(api.controller_url, executors_vms_ids,
                                      starting_cap, data)
 
             info_plugin = {"spark_submisson_url": master,
@@ -206,9 +206,9 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
             monitor.start_monitor(api.monitor_url, self.app_id,
                                   'spark-mesos', info_plugin, 2)
 
-            plugin_log.log("%s | Starting scaler" %
+            plugin_log.log("%s | Starting controller" %
                           (time.strftime("%H:%M:%S")))
-            scaler.start_scaler(api.controller_url,
+            controller.start_controller(api.controller_url,
                                 self.app_id,
                                 executors_vms_ids,
                                 data)
@@ -221,9 +221,9 @@ class SparkMesosApplicationExecutor(GenericApplicationExecutor):
                           (time.strftime("%H:%M:%S")))
             monitor.stop_monitor(api.monitor_url, self.app_id)
 
-            plugin_log.log("%s | Stopping scaler" %
+            plugin_log.log("%s | Stopping controller" %
                           (time.strftime("%H:%M:%S")))
-            scaler.stop_scaler(api.controller_url, self.app_id)
+            controller.stop_controller(api.controller_url, self.app_id)
 
             plugin_log.log("%s | Remove binaries" %
                           (time.strftime("%H:%M:%S")))
