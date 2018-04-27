@@ -31,19 +31,19 @@ plugins = config.get('general', 'plugins').split(',')
 hosts = config.get('general', 'hosts').split(',')
 port = config.getint('general', 'port')
 
-if 'os_generic' in plugins:
-    public_key = config.get('os-generic', 'public_key')
-    key_path = config.get('os-generic', 'key_path')
-    user_domain_name = config.get('os-generic', 'user_domain_name')
-    project_id = config.get('os-generic', 'project_id')
-    auth_ip = config.get('os-generic', 'auth_ip')
-    user = config.get('os-generic', 'user')
-    password = config.get('os-generic', 'password')
-    domain = config.get('os-generic', 'user_domain_name')
-    log_path = config.get('os-generic', 'log_path')
+if 'openstack_generic' in plugins:
+    public_key = config.get('openstack-generic', 'public_key')
+    key_path = config.get('openstack-generic', 'key_path')
+    user_domain_name = config.get('openstack-generic', 'user_domain_name')
+    project_id = config.get('openstack-generic', 'project_id')
+    auth_ip = config.get('openstack-generic', 'auth_ip')
+    user = config.get('openstack-generic', 'user')
+    password = config.get('openstack-generic', 'password')
+    domain = config.get('openstack-generic', 'user_domain_name')
+    log_path = config.get('openstack-generic', 'log_path')
 
-if 'sahara' in plugins:
-    log_path = config.get('os-generic', 'log_path')
+if 'spark_sahara' in plugins:
+    log_path = config.get('openstack-generic', 'log_path')
     public_key = config.get('spark-sahara', 'public_key')
     key_path = config.get('spark-sahara', 'key_path')
     container = config.get('spark-sahara', 'swift_container')
@@ -61,7 +61,7 @@ if 'sahara' in plugins:
                                             'dummy_opportunistic')
 
 if 'spark_generic' in plugins:
-    log_path = config.get('os-generic', 'log_path')
+    log_path = config.get('openstack-generic', 'log_path')
     public_key = config.get('spark-generic', 'public_key')
     key_path = config.get('spark-generic', 'key_path')
     container = config.get('spark-generic', 'swift_container')

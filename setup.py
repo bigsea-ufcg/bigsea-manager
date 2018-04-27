@@ -4,11 +4,11 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='Application Manager',
+    name='Broker',
 
     version='0.1.0',
 
-    description='Python framework to control application progress on sahara',
+    description='This component is the framework entry point for the user',
 
     url='',
 
@@ -40,10 +40,10 @@ setup(
             'broker=broker.cli.main:main',
         ],
         'broker.execution.plugins': [
-            'sahara=broker.plugins.sahara.plugin:SaharaProvider',
+            'spark_sahara=broker.plugins.spark_sahara.plugin:SaharaProvider',
             'fake=broker.plugins.fake.plugin:FakeProvider',
             'spark_generic=broker.plugins.spark_generic.plugin:SparkGenericProvider',
-            'os_generic=broker.plugins.openstack_generic.plugin:OpenStackGenericProvider',
+            'openstack_generic=broker.plugins.openstack_generic.plugin:OpenStackGenericProvider',
             'chronos=broker.plugins.chronos.plugin:ChronosGenericProvider',
             'spark_mesos=broker.plugins.spark_mesos.plugin:SparkMesosProvider'
         ],
