@@ -1,4 +1,3 @@
-
 # Copyright (c) 2017 UFCG-LSD.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,13 +17,12 @@ import json
 import requests
 
 
-def _get_authorization_data(username, password):
-    authorization_data = "user=%s&pwd=%s" % (username, password)
-    return authorization_data
-
-
 def get_authorization(authorizer_url, username, password):
-    data = _get_authorization_data(username, password)
+    format_data = (lambda user, pwd: "user=%s&pwd=%s" % (user, pwd))
+
+    data = format_data(username, password)
     r = requests.post(authorizer_url, data=data)
-    content_dict = eval(r.content.replace("true", "True").replace("false", "False"))
+    content_dict = eval(r.content.replace("true", "True").replace("false",
+                                                                  "False"))
+
     return content_dict
