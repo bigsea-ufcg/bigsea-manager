@@ -8,7 +8,6 @@ The Broker component is the framework entry point for the user. It is responsibl
 * Python 2.7 or Python 3.5
 * Linux packages: python-dev and python-pip
 * Python packages: setuptools, tox and flake8
-* Works on Linux
 
 To **apt** distros, you can use [pre-install.sh](bigsea-manager/tools/pre-install.sh) to install the requirements.
 
