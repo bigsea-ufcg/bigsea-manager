@@ -12,25 +12,29 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import json
 import requests
 
 
-def _get_scaler_data(workers, data):
+def _get_controller_data(workers, data):
     data["scaling_parameters"]["instances"] = workers
-    start_scaler_body = json.dumps(data)
-    return start_scaler_body    
+    start_controller_body = json.dumps(data)
+    return start_controller_body    
 
-def start_scaler(controller_url, app_id, workers, data):
+
+def start_controller(controller_url, app_id, workers, data):
     request_url = controller_url + '/controller/start_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_scaler_data(workers, data)
+    data = _get_controller_data(workers, data)
     requests.post(request_url, data=data, headers=headers)
 
-def stop_scaler(controller_url, app_id):
+
+def stop_controller(controller_url, app_id):
     stop_scaling_url = controller_url + '/controller/stop_scaling/' + app_id
     headers = {'Content-type': 'application/json'}
     requests.post(stop_scaling_url, headers=headers)
+
 
 def _get_setup_environment_data(instances, cap, data):
     instances_cap = {}
@@ -48,4 +52,3 @@ def setup_environment(controller_url, instances, cap, data):
     headers = {'Content-type': 'application/json'}
     data = _get_setup_environment_data(instances, cap, data)
     requests.post(setup_enviroment_url, data=data, headers=headers)
-
