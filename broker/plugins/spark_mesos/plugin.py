@@ -16,9 +16,9 @@
 from broker import exceptions as ex
 from broker.plugins import base
 from broker.service import api
-from broker.utils import optimizer
-from broker.utils import monitor
-from broker.utils import controller
+from broker.utils.framework import optimizer
+from broker.utils.framework import monitor
+from broker.utils.framework import controller
 from broker.utils import mesos
 from broker.utils import ssh
 from broker.utils.logger import Log, configure_logging
