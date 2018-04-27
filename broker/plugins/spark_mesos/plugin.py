@@ -19,7 +19,7 @@ from broker.service import api
 from broker.utils.framework import optimizer
 from broker.utils.framework import monitor
 from broker.utils.framework import controller
-from broker.utils import mesos
+from broker.utils.plugins import mesos
 from broker.utils import ssh
 from broker.utils.logger import Log, configure_logging
 from broker.plugins.base import GenericApplicationExecutor

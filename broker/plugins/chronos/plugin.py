@@ -16,7 +16,7 @@ import time
 import json
 import requests
 
-from broker.utils.ManagerChronos import ManagerChronos
+from broker.utils.plugins.chronos import ManagerChronos
 from broker.plugins.base import GenericApplicationExecutor
 from broker.plugins import base
 from broker.utils.ids import ID_Generator
