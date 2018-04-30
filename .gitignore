@@ -1,6 +1,7 @@
 *.idea/
 .tox/
 manager.cfg
+broker.cfg
 Broker.egg-info/
 dist/
 build/
