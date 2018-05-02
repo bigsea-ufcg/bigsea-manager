@@ -1,4 +1,4 @@
-# Asperathos - Broker
+# BIGSEA Asperathos - Broker
 
 ## Overview
 The Broker component is the framework entry point for the user. It is responsible for receiving the user request and preparing its execution. On the process of executing a request, the broker is responsible for submitting the application for the execution infrastructure and interacts using REST API with all the other needed services that allow to monitor the application execution, to optimize the cluster size and to act on the cluster to provide assurance on meeting the application QoS.
