@@ -3,7 +3,7 @@
 ## Overview
 The Broker component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
 
-To more details about Broker, see [architecture.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/refactor/docs/architecture.md)
+To more info, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/refactor/docs/details.md)
 
 ## How does it works?
 The broker is implemented following a **plugin architecture**, providing flexibility to add or remove plugins when necessary.
