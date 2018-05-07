@@ -2,7 +2,7 @@
 .tox/
 manager.cfg
 broker.cfg
-Broker.egg-info/
+*.egg-info/
 dist/
 build/
 *.pyc
