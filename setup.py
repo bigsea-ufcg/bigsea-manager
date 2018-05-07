@@ -4,16 +4,16 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='Broker',
+    name='broker',
 
     version='0.1.0',
 
-    description='This component is the framework entry point for the user',
+    description='Entry point component of BIGSEA Asperathos framework',
 
     url='',
 
-    author='Telles Nobrega',
-    author_email='tellesnobrega@gmail.com',
+    author='Telles Nobrega, Roberto Nascimento Jr.',
+    author_email='tellesnobrega@gmail.com, robertonscjr@gmail.com',
 
     license='Apache 2.0',
 
@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.5',
 
     ],
-    keywords='webservice sahara application management',
+    keywords='webservice broker application management asperathos bigsea',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
