@@ -18,6 +18,7 @@ from broker.api.v10 import rest
 from broker.plugins import base as plugin_base
 from broker.service import api
 
+
 def main():
     plugin_base.setup_plugins()
     app = Flask(__name__)

@@ -20,7 +20,7 @@ from broker.service.api import v10 as api
 rest = u.Rest('v10', __name__)
 
 
-""" Run a new submission.
+""" Run a new submission and returns a submission id.
 
     Normal response codes: 202
     Error response codes: 400, 401
@@ -30,7 +30,7 @@ def run_submission(data):
     return u.render(api.run_submission(data)) 
 
 
-""" Stop a submission.
+""" Stop a running submission.
 
     Normal response codes: 204
     Error response codes: 400, 401
@@ -40,7 +40,7 @@ def stop_submission(submission_id, data):
     return u.render(api.stop_submission(submission_id, data))
 
 
-""" List all submissions.
+""" List all submissions (done or not).
 
     Normal response codes: 200
     Error response codes: 400, 401
@@ -50,7 +50,7 @@ def list_submissions():
     return u.render(api.list_submissions())
 
 
-""" Show status of a submission.
+""" Show status of a specific submission.
 
     Normal response codes: 200
     Error response codes: 400
@@ -60,7 +60,7 @@ def submission_status(submission_id):
     return u.render(api.submission_status(submission_id))
 
 
-""" Show log of a submission.
+""" Show log of a specific submission.
                                                                               
     Normal response codes: 200
     Error response codes: 400

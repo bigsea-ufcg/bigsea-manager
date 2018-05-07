@@ -27,8 +27,8 @@ submissions = {}
 
 
 def run_submission(data):
-    if ('username' not in data.keys() or 'password' not in data.keys()
-        or 'plugin' not in data.keys() or data['plugin'] not in api.plugins):
+    if ('username' not in data or 'password' not in data
+    or 'plugin' not in data or data['plugin'] not in api.plugins):
         API_LOG.log("Missing parameters in request")
         raise ex.BadRequestException()
     
@@ -51,7 +51,7 @@ def run_submission(data):
 
 
 def stop_submission(submission_id, data):
-    if 'username' not in data.keys() or 'password' not in data.keys():
+    if 'username' not in data or 'password' not in data:
         API_LOG.log("Missing parameters in request")
         raise ex.BadRequestException()
     
