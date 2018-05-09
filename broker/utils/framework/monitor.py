@@ -21,7 +21,7 @@ import requests
 def _get_monitor_data(plugin, info_plugin, collect_period):
     start_monitor_dict = {
         'plugin': plugin,
-        'info_plugin': info_plugin,
+        'plugin_info': info_plugin,
         'collect_period': collect_period
     }
     start_monitor_body = json.dumps(start_monitor_dict)
