@@ -30,13 +30,13 @@ def _get_monitor_data(plugin, info_plugin, collect_period):
 
 
 def start_monitor(monitor_url, app_id, plugin, info_plugin, collect_period):
-    request_url = monitor_url + '/start/' + app_id
+    request_url = monitor_url + '/monitoring/' + app_id
     headers = {'Content-type': 'application/json'}
     data = _get_monitor_data(plugin, info_plugin, collect_period)
     requests.post(request_url, data=data, headers=headers)
 
 
 def stop_monitor(monitor_url, app_id):
-    request_url = monitor_url + '/stop/' + app_id
+    request_url = monitor_url + '/monitoring/' + app_id + "/stop"
     headers = {'Content-type': 'application/json'}
     requests.post(request_url, headers=headers)
