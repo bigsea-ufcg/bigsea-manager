@@ -18,10 +18,10 @@ import json
 import requests
 
 
-def _get_monitor_data(plugin, info_plugin, collect_period):
+def _get_monitor_data(plugin, plugin_info, collect_period):
     start_monitor_dict = {
         'plugin': plugin,
-        'plugin_info': info_plugin,
+        'plugin_info': plugin_info,
         'collect_period': collect_period
     }
     start_monitor_body = json.dumps(start_monitor_dict)
@@ -29,10 +29,10 @@ def _get_monitor_data(plugin, info_plugin, collect_period):
     return start_monitor_body
 
 
-def start_monitor(monitor_url, app_id, plugin, info_plugin, collect_period):
+def start_monitor(monitor_url, app_id, plugin, plugin_info, collect_period):
     request_url = monitor_url + '/monitoring/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_monitor_data(plugin, info_plugin, collect_period)
+    data = _get_monitor_data(plugin, plugin_info, collect_period)
     requests.post(request_url, data=data, headers=headers)
 
 

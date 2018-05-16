@@ -19,19 +19,25 @@ import requests
 
 def _get_controller_data(workers, data):
     data["scaling_parameters"]["instances"] = workers
-    start_controller_body = json.dumps(data)
     return start_controller_body    
 
 
 def start_controller(controller_url, app_id, workers, data):
-    request_url = controller_url + '/controller/start_scaling/' + app_id
+    request_url = controller_url + '/scaling/' + app_id
     headers = {'Content-type': 'application/json'}
-    data = _get_controller_data(workers, data)
-    requests.post(request_url, data=data, headers=headers)
+
+    controller_data = {}
+    controller_data['username'] = data['username']
+    controller_data['password'] = data['password']
+    controller_data['plugin'] = data['scaler_plugin']
+    controller_data['plugin_info'] = data['scaling_parameters']
+    controller_data['plugin_info']['instances'] = workers
+    controller_body = json.dumps(controller_data)
+    requests.post(request_url, data=controller_body, headers=headers)
 
 
 def stop_controller(controller_url, app_id):
-    stop_scaling_url = controller_url + '/controller/stop_scaling/' + app_id
+    stop_scaling_url = controller_url + '/scaling/' + app_id + '/stop'
     headers = {'Content-type': 'application/json'}
     requests.post(stop_scaling_url, headers=headers)
 
@@ -48,7 +54,9 @@ def _get_setup_environment_data(instances, cap, data):
 
 
 def setup_environment(controller_url, instances, cap, data):
-    setup_enviroment_url = controller_url + '/controller/setup_env'
+    setup_enviroment_url = controller_url + '/setup'
     headers = {'Content-type': 'application/json'}
+    data['actuator_plugin'] = data['scaling_parameters']['actuator']
     data = _get_setup_environment_data(instances, cap, data)
+    
     requests.post(setup_enviroment_url, data=data, headers=headers)
