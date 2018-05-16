@@ -1,5 +1,5 @@
 # Asperathos execution workflow
-![Flow](https://github.com/bigsea-ufcg/bigsea-manager/blob/refactor/docs/flow.png)
+![Flow](https://github.com/bigsea-ufcg/bigsea-manager/blob/master/docs/flow.png)
 
 1. Submit application
 2. Prepare infrastructure to run application
