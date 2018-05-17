@@ -27,9 +27,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 		```
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
-
-  * **Code:** `401 UNAUTHORIZED` <br /> **Content:** ```{ error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` and `401 UNAUTHORIZED`<br />
 
 
 ## Stop submission
@@ -49,9 +47,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
   * **Code:** `204` <br />
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
-
-  * **Code:** `401 UNAUTHORIZED` <br /> **Content:** ```{ error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` and `401 UNAUTHORIZED`<br />
 
 ## List submissions
   List all submissions.
@@ -74,7 +70,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 		```
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` <br />
 
 ## Submission status
   Returns json data with detailed status of submission.
@@ -92,7 +88,7 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 		```
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` <br />
 
 ## Submission log
   Returns json data with log of submission.
@@ -110,4 +106,4 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 		```
 		
 * **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br /> **Content:** ``` { error : "Parameters missing" } ```
+  * **Code:** `400 BAD REQUEST` <br />
