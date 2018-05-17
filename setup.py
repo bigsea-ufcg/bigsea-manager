@@ -4,16 +4,16 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 setup(
-    name='Application Manager',
+    name='broker',
 
     version='0.1.0',
 
-    description='Python framework to control application progress on sahara',
+    description='Entry point component of BIGSEA Asperathos framework',
 
     url='',
 
-    author='Telles Nobrega',
-    author_email='tellesnobrega@gmail.com',
+    author='Telles Nobrega, Roberto Nascimento Jr.',
+    author_email='tellesnobrega@gmail.com, robertonscjr@gmail.com',
 
     license='Apache 2.0',
 
@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.5',
 
     ],
-    keywords='webservice sahara application management',
+    keywords='webservice broker application management asperathos bigsea',
 
     packages=find_packages(exclude=['contrib', 'docs', 'tests*']),
 
@@ -37,15 +37,15 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'application_manager=application_manager.cli.main:main',
+            'broker=broker.cli.main:main',
         ],
-        'application_manager.execution.plugins': [
-            'sahara=application_manager.plugins.sahara.plugin:SaharaProvider',
-            'fake=application_manager.plugins.fake.plugin:FakeProvider',
-            'spark_generic=application_manager.plugins.spark_generic.plugin:SparkGenericProvider',
-            'os_generic=application_manager.plugins.openstack_generic.plugin:OpenStackGenericProvider',
-            'chronos=application_manager.plugins.chronos.plugin:ChronosGenericProvider',
-            'spark_mesos=application_manager.plugins.spark_mesos.plugin:SparkMesosProvider'
+        'broker.execution.plugins': [
+            'spark_sahara=broker.plugins.spark_sahara.plugin:SaharaProvider',
+            'fake=broker.plugins.fake.plugin:FakeProvider',
+            'spark_generic=broker.plugins.spark_generic.plugin:SparkGenericProvider',
+            'openstack_generic=broker.plugins.openstack_generic.plugin:OpenStackGenericProvider',
+            'chronos=broker.plugins.chronos.plugin:ChronosGenericProvider',
+            'spark_mesos=broker.plugins.spark_mesos.plugin:SparkMesosProvider'
         ],
     },
 )

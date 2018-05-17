@@ -1,0 +1,16 @@
+# BIGSEA Asperathos execution workflow
+Before describing the adaptation policies architecture itself, Flow Image depicts the sequence of steps that represents a job submission using the Asperathos services.
+
+![Flow Image](https://github.com/bigsea-ufcg/bigsea-manager/blob/refactor/docs/flow.png)
+
+The following steps, depicted in the figure, illustrate the main functionalities of the Asperathos services:
+1. A user application, a client (command line or graphical), or a system process arrival triggers a request through the broker API.
+2. The description of the job to be executed is passed to the authentication service to verify if the requesting user has the adequate rights to the services and the data sources specified in the request.
+3. The resources needed to execute the job are provided by the optimization service that considers the job type and the deadline. This resource allocation will be used for the initial deployment.
+4. The request is forwarded to a driver that can instantiate the job in the underlying processing platform. As an example, the infrastructure driver may trigger the execution of a Spark job over a Mesos infrastructure (or with an alternative driver, a Spark job over a OpenStack infrastructure). At the end of this step, the application will be running in the infrastructure or an error will be signaled.
+5. Once the application is executed by the specific infrastructure driver, a monitoring driver is started to collect metrics from the application. The monitoring driver receives as input an API endpoint for the running application or platform. On some cases, applications may export progress metrics. On other cases, the metrics for the application progress may be exported by the platform (e.g., Hadoop and Spark have APIs for collecting progress of the running applications). The monitor’s responsibility is to convert from a framework-specific or application-specific metrics to general progress metrics (see BIGSEA Asperathos Monitor component for more information on customizing metrics in our monitoring system, Monasca).
+6. Once general progress metrics are being collected, a generic controller will be triggered to detect if control actions are needed. Because the controller consumes generic progress metrics (e.g., timeliness), it does not need to be aware of the application type. Nevertheless, the controller has a driver that is aware of the infrastructure type (e.g., Mesos, OpenStack).
+7. Now consider that the application progress is deviating from previously learned patterns. The application or platform-specific metrics are pulled from it by the monitor.
+8. After some format conversions (e.g., name of the metrics, units, normalization) the application metrics are published in a standardized form in Monasca.
+9. The Controller consumes the metrics and decide if an action needs to be taken. Depending on the Controller configurations, the trigger rules can be reactive (e.g., based on the resource usage) or pro-active (e.g., based on the deviation of the expected progress evolution).
+10. The Controller plugin will trigger an actuation on the infrastructure hosting the application. Depending on the specific Controller configuration, this action could be, for example, vertical CPU scaling or horizontal scaling in the number of execution workers.

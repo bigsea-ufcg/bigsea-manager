@@ -1,7 +1,8 @@
 *.idea/
 .tox/
 manager.cfg
-Application_Manager.egg-info/
+broker.cfg
+*.egg-info/
 dist/
 build/
 *.pyc
