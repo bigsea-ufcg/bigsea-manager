@@ -2,9 +2,9 @@
 This is an important step to enjoy all flexibility and features that this framework provides.
 
 ## Steps
-1. Create a new folder under *broker/plugins* with the desired plugin name and add *__init__.py*. In this tutorial, we will use Fake as the plugin name
+1. Create a new folder under *broker/plugins* with the desired plugin name and add *__init__.py*. In this tutorial, we will use MyNewPlugin as the plugin name
  
-2. Write a new python class under *broker/plugins/fake*
+2. Write a new python class under *broker/plugins/mynewplugin*
  
 It must implement the methods *get_title*, *get_description*, *to_dict* and *execute*.
  
@@ -26,13 +26,13 @@ It must implement the methods *get_title*, *get_description*, *to_dict* and *exe
 ```
 from broker.plugins import base
 
-class FakeProvider(base.PluginInterface):
+class MyNewPluginProvider(base.PluginInterface):
 
     def get_title(self):
-        return 'Fake Plugin '
+        return 'My New Plugin'
 
     def get_description(self):
-        return 'Fake Plugin'
+        return 'My New Plugin'
 
     def to_dict(self):
         return {
@@ -53,7 +53,7 @@ class FakeProvider(base.PluginInterface):
             'broker=broker.cli.main:main',
         ],
         'broker.execution.plugins': [
-            'new_plugin=broker.plugins.new_plugin.plugin:NewPluginProvider',
+            'my_new_plugin=broker.plugins.my_new_plugin.plugin:MyNewPluginProvider',
         ],
 ```
  
@@ -61,7 +61,7 @@ class FakeProvider(base.PluginInterface):
 
 ```
 [general]
-plugins = plugin1,plugin2,new_plugin
+plugins = plugin1,plugin2,my_new_plugin
 ```
  
 Note: Make sure that the name matches under *setup.py* and the *broker.cfg* otherwise the plugin won’t be loaded.
