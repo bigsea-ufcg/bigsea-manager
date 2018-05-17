@@ -11,62 +11,19 @@ authorization_url =
 [general]
 port =
 plugins = plugin1,plugin2,plugin3
-hosts = compute1,compute2,compute3
 
-[os-generic]
-public_key =
-key_path = 
-log_path =
-user =
-password =
-auth_ip =
-project_id =
-user_domain_name =
+[plugin1]
+p1_info1 = 
+p1_info2 =
+p1_info3 = 
 
-[spark-generic]
-swift_container =
-swift_logdir =
-remote_hdfs =
-number_of_attempts =
-public_key =
-key_path =
-log_path =
-user =
-password =
-auth_ip =
-project_id =
-user_domain_name =
-masters_ips =
+[plugin2]
+p2_info1 =
+p2_info2 =
 
-[spark-sahara]
-swift_container =
-swift_logdir =
-remote_hdfs =
-number_of_attempts =
-public_key =
-key_path =
-log_path =
-user =
-password =
-auth_ip =
-project_id =
-user_domain_name =
-dummy_opportunistic =
-
-[spark-mesos]
-mesos_url =
-mesos_port =
-cluster_username =
-cluster_password =
-key_path =
-one_url =
-one_username =
-one_password =
-spark_path =
-
-[chronos]
-url =
-username =
-password =
-supervisor_ip =
+[plugin3]
+p3_info1 =
+p3_info2 =
+p3_info3 =
+p3_info4 =
 ```
