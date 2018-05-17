@@ -3,7 +3,7 @@
 ## Overview
 The Broker component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
 
-To more info, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/details.md)
+To more info about Broker and how does it works in BIGSEA Asperathos environment, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/details.md) and [asperathos-workflow](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/asperathos-workflow.md)
 
 ## How does it works?
 The broker is implemented following a **plugin architecture**, providing flexibility to customize your deployment using only the plugins you need, avoiding to include unnecessary dependencies (from others plugins) to your deploy environment.
