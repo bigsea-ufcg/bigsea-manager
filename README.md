@@ -4,9 +4,9 @@
 ## Overview
 The **Broker** component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
 
-**Asperathos** was developed by the [**LSD-UFCG**](https://www.lsd.ufcg.edu.br/#/) *(Distributed Systems Laboratory at Federal University of Campina Grande)* as one of the existing tools in EUBra-BIGSEA ecosystem.
+**Asperathos** was developed by the [**LSD-UFCG**](https://www.lsd.ufcg.edu.br/#/) *(Distributed Systems Laboratory at Federal University of Campina Grande)* as one of the existing tools in **EUBra-BIGSEA** ecosystem.
 
-**About EUBra-BIGSEA**: *Is committed to making a significant contribution to the cooperation between Europe and Brazil in the area of advanced cloud services for Big Data applications. It facilitates the integration of European and Brazilian technologies and experiences to bring forward scientific innovation through a use case scenario approach that is important for both Europe and Brazil, furthermore it is looking into the current challenges, research and innovation opportunities and highlighting as well the relevant EU-Brazil joint effort initiatives in the areas addressed.* 
+**EUBra-BIGSEA** is committed to making a significant contribution to the **cooperation between Europe and Brazil** in the *area of advanced cloud services for Big Data applications*.
 
 To more info about **Broker** and how does it works in **BIGSEA Asperathos environment**, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/details.md) and [asperathos-workflow.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/asperathos-workflow.md).
 
