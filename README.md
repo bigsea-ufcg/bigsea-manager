@@ -1,9 +1,16 @@
-# BIGSEA Asperathos - Broker
+# Asperathos - Broker
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-The Broker component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
+The **Broker** component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
 
-To more info about Broker and how does it works in BIGSEA Asperathos environment, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/details.md) and [asperathos-workflow.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/asperathos-workflow.md).
+**Asperathos** was developed by the [**LSD-UFCG**](https://www.lsd.ufcg.edu.br/#/) *(Distributed Systems Laboratory at Federal University of Campina Grande)* as one of the existing tools in EUBra-BIGSEA ecosystem.
+
+**About EUBra-BIGSEA**: *Is committed to making a significant contribution to the cooperation between Europe and Brazil in the area of advanced cloud services for Big Data applications. It facilitates the integration of European and Brazilian technologies and experiences to bring forward scientific innovation through a use case scenario approach that is important for both Europe and Brazil, furthermore it is looking into the current challenges, research and innovation opportunities and highlighting as well the relevant EU-Brazil joint effort initiatives in the areas addressed.* 
+
+To more info about **Broker** and how does it works in **BIGSEA Asperathos environment**, see [details.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/details.md) and [asperathos-workflow.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/asperathos-workflow.md).
+
+See more about in [EUBra-BIGSEA website](http://www.eubra-bigsea.eu/).
 
 ## How does it works?
 The broker is implemented following a **plugin architecture**, providing flexibility to customize your deployment using only the plugins you need, avoiding to include unnecessary dependencies (from others plugins) to your deploy environment.
