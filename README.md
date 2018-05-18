@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
-The **Broker** component is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
+The **Broker** is the framework entry point for the user. It is responsible for receiving a submission from the user and preparing its execution.
 
 **Asperathos** was developed by the [**LSD-UFCG**](https://www.lsd.ufcg.edu.br/#/) *(Distributed Systems Laboratory at Federal University of Campina Grande)* as one of the existing tools in **EUBra-BIGSEA** ecosystem.
 
