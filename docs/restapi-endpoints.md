@@ -55,7 +55,6 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 * **URL**: `/submissions`
 * **Method:** `GET`
 * **Success Response:**
-* **Success Response:**
   * **Code:** `200` <br /> **Content:** 
 	  * ```javascript
 	    {
@@ -68,9 +67,6 @@ This section provides a detailed list of avaliable endpoints in Broker REST API.
 	       }		 
 	    }
 		```
-		
-* **Error Response:**
-  * **Code:** `400 BAD REQUEST` <br />
 
 ## Submission status
   Returns json data with detailed status of submission.
