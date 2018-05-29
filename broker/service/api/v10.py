@@ -27,8 +27,8 @@ submissions = {}
 
 
 def run_submission(data):
-    if ('username' not in data or 'password' not in data
-    or 'plugin' not in data or data['plugin'] not in api.plugins):
+    if ('username' not in data or 'password' not in data or
+        'plugin' not in data or 'plugin_info' not in data):
         API_LOG.log("Missing parameters in request")
         raise ex.BadRequestException()
     
@@ -43,8 +43,10 @@ def run_submission(data):
         raise ex.UnauthorizedException()
 
     else:
+        if data['plugin'] not in api.plugins: raise ex.BadRequestException()
+ 
         plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
-        submission_id, executor = plugin.execute(data)
+        submission_id, executor = plugin.execute(data['plugin_info'])
         submissions[submission_id] = executor
 
         return submission_id

@@ -114,7 +114,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
             job_binary_name = data['job_binary_name']
             job_binary_url = data['job_binary_url']
             image_id = data['image_id']
-            plugin_app = data['plugin']
+            monitor_plugin = data['monitor_plugin']
             expected_time = data['expected_time']
             collect_period = data['collect_period']
             number_of_jobs = data['number_of_jobs']
@@ -187,11 +187,11 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                        % (time.strftime("%H:%M:%S")))
 
             cluster_id = self._create_cluster(sahara, connector,
-                                              req_cluster_size,
-                                              pred_cluster_size,
-                                              public_key, net_id, image_id,
-                                              plugin, version, master_ng,
-                                              slave_ng, op_slave_ng)
+                                             req_cluster_size,
+                                             pred_cluster_size,
+                                             public_key, net_id, image_id,
+                                             plugin, version, master_ng,
+                                             slave_ng, op_slave_ng)
  
             self._log("%s | Cluster id: %s" % (time.strftime("%H:%M:%S"),
                                                     cluster_id))
@@ -215,7 +215,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                     (time.strftime("%H:%M:%S")))
 
                 controller.setup_environment(api.controller_url, workers_id,
-                                         starting_cap, data)
+                                             starting_cap, data)
 
                 if swift_path:
                     job_status = self._swift_spark_execution(
@@ -223,14 +223,14 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                         job_binary_url, user, password, job_template_name,
                         job_type, plugin, cluster_size, args, main_class,
                         cluster_id, spark_applications_ids, workers_id, app_id,
-                        expected_time, plugin_app, collect_period, 
+                        expected_time, monitor_plugin, collect_period, 
                         number_of_jobs, log_path, swift, container, data,
                         number_of_attempts)
                 else:
                     job_status = self._hdfs_spark_execution(
                         master, remote_hdfs, key_path, args, job_binary_url,
                         main_class, dependencies, spark_applications_ids,
-                        expected_time, plugin_app, collect_period,
+                        expected_time, monitor_plugin, collect_period,
                         number_of_jobs, workers_id, data, connector, swift,
                         swift_logdir, container, number_of_attempts)
 
@@ -381,7 +381,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
                                job_template_name, job_type, plugin,
                                cluster_size, args, main_class, cluster_id,
                                spark_applications_ids, workers_id, app_id,
-                               expected_time, plugin_app, collect_period,
+                               expected_time, monitor_plugin, collect_period,
                                number_of_jobs, log_path, swift, 
                                container, data, number_of_attempts):
 
@@ -433,7 +433,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
-                              plugin_app, info_plugin, collect_period)
+                              monitor_plugin, info_plugin, collect_period)
         self._log("%s | Starting controller" % (time.strftime("%H:%M:%S")))
         controller.start_controller(api.controller_url, spark_app_id, 
                             workers_id, data)
@@ -461,7 +461,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
     def _hdfs_spark_execution(self, master, remote_hdfs, key_path, args,
                               job_bin_url, main_class, dependencies,
                               spark_applications_ids, expected_time,
-                              plugin_app, collect_period, number_of_jobs,
+                              monitor_plugin, collect_period, number_of_jobs,
                               workers_id, data, connector, swift,
                               swift_logdir, container, number_of_attempts):
 
@@ -534,7 +534,7 @@ class OpenStackSparkApplicationExecutor(GenericApplicationExecutor):
 
         self._log("%s | Starting monitor" % (time.strftime("%H:%M:%S")))
         monitor.start_monitor(api.monitor_url, spark_app_id,
-                              plugin_app, info_plugin, collect_period)
+                              monitor_plugin, info_plugin, collect_period)
         self._log("%s | Starting controller" % (time.strftime("%H:%M:%S")))
         controller.start_controller(api.controller_url, spark_app_id,
                             workers_id, data)
