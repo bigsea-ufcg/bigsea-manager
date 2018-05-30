@@ -39,4 +39,4 @@ def start_monitor(monitor_url, app_id, plugin, plugin_info, collect_period):
 def stop_monitor(monitor_url, app_id):
     request_url = monitor_url + '/monitoring/' + app_id + "/stop"
     headers = {'Content-type': 'application/json'}
-    requests.post(request_url, headers=headers)
+    requests.put(request_url, headers=headers)

@@ -32,7 +32,7 @@ def start_controller(controller_url, app_id, workers, data):
 def stop_controller(controller_url, app_id):
     stop_scaling_url = controller_url + '/scaling/' + app_id + '/stop'
     headers = {'Content-type': 'application/json'}
-    requests.post(stop_scaling_url, headers=headers)
+    requests.put(stop_scaling_url, headers=headers)
 
 
 def setup_environment(controller_url, instances, cap, data):
