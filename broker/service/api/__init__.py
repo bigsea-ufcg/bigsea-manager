@@ -27,8 +27,9 @@ authorization_url = config.get('services', 'authorization_url')
 optimizer_url = config.get('services', 'optimizer_url')
 
 """ General configuration """
-plugins = config.get('general', 'plugins').split(',')
+host = config.get("general", "host")
 port = config.getint('general', 'port')
+plugins = config.get('general', 'plugins').split(',')
 
 if 'openstack_generic' in plugins:
     public_key = config.get('openstack_generic', 'public_key')
