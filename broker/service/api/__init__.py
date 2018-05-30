@@ -28,7 +28,6 @@ optimizer_url = config.get('services', 'optimizer_url')
 
 """ General configuration """
 plugins = config.get('general', 'plugins').split(',')
-hosts = config.get('general', 'hosts').split(',')
 port = config.getint('general', 'port')
 
 if 'openstack_generic' in plugins:
@@ -59,6 +58,7 @@ if 'spark_sahara' in plugins:
     number_of_attempts = config.getint('spark_sahara', 'number_of_attempts')
     dummy_opportunistic = config.getboolean('spark_sahara',
                                             'dummy_opportunistic')
+    hosts = config.get('spark_sahara', 'hosts').split(',')
 
 if 'spark_generic' in plugins:
     log_path = config.get('openstack_generic', 'log_path')
