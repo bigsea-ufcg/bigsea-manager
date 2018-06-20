@@ -1,4 +1,4 @@
-# Asperathos - Broker
+# Asperathos - Broker (Development)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Overview
@@ -44,10 +44,3 @@ $ tox -e venv -- broker
 
 ## Broker REST API
 Endpoints are avaliable on [restapi-endpoints.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/restapi-endpoints.md) documentation.
-
-## Avaliable plugins
-* [Spark Sahara](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_sahara.md)
-* [Spark Mesos](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_mesos.md)
-* [Spark Generic](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_mesos.md)
-* [Openstack Generic](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/openstack_generic.md)
-* [Chronos](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/chronos.md)
