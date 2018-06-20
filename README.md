@@ -48,6 +48,6 @@ Endpoints are avaliable on [restapi-endpoints.md](https://github.com/bigsea-ufcg
 ## Avaliable plugins
 * [Spark Sahara](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_sahara.md)
 * [Spark Mesos](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_mesos.md)
-* [Spark Generic](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_mesos.md)
+* [Spark Generic](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/spark_generic.md)
 * [Openstack Generic](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/openstack_generic.md)
 * [Chronos](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/docs/plugins/chronos.md)
