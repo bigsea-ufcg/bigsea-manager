@@ -22,7 +22,7 @@ See [plugin-development.md](https://github.com/bigsea-ufcg/bigsea-manager/tree/m
 * Linux packages: python-dev and python-pip
 * Python packages: setuptools, tox and flake8
 
-To **apt** distros, you can use [pre-install.sh](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/setup.sh) to install the requirements.
+To **apt** distros, you can use [pre-install.sh](https://github.com/bigsea-ufcg/bigsea-manager/tree/master/pre-install.sh) to install the requirements.
 
 ## Install
 Clone the [Broker repository](https://github.com/bigsea-ufcg/bigsea-manager.git) in your machine.
