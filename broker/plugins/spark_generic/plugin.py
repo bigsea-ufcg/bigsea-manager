@@ -273,7 +273,7 @@ class SparkGenericProvider(base.PluginInterface):
         self.applications = []
         self.spark_applications_ids = []
         self.id_generator = ID_Generator()
-        self.masters = {ip: False for ip in api.masters_ips}
+        self.masters = {}
 
     def get_title(self):
         return 'Spark Generic'
@@ -298,6 +298,10 @@ class SparkGenericProvider(base.PluginInterface):
 
     def execute(self, data):
         self.update_running_clusters()
+
+        for ip in api.masters_ips:
+            if ip not in masters:
+                self.masters[ip] = False
 
         set_masters = set(self.masters.values())
         if len(set_masters) == 1 and True in set_masters:
