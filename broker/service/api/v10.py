@@ -27,53 +27,22 @@ submissions = {}
 
 
 def run_submission(data):
-    if ('username' not in data or 'password' not in data or
-        'plugin' not in data or 'plugin_info' not in data):
-        API_LOG.log("Missing parameters in request")
-        raise ex.BadRequestException()
-    
-    username = data['username']
-    password = data['password']
-
-    authorization = authorizer.get_authorization(api.authorization_url,
-                                                 username, password)
-
-    if not authorization['success']:
-        API_LOG.log("Unauthorized request")
-        raise ex.UnauthorizedException()
-
-    else:
-        if data['plugin'] not in api.plugins: raise ex.BadRequestException()
+    if data['plugin'] not in api.plugins: raise ex.BadRequestException()
  
-        plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
-        submission_id, executor = plugin.execute(data['plugin_info'])
-        submissions[submission_id] = executor
+    plugin = plugin_base.PLUGINS.get_plugin(data['plugin'])
+    submission_id, executor = plugin.execute(data['plugin_info'])
+    submissions[submission_id] = executor
 
-        return submission_id
+    return submission_id
 
 
 def stop_submission(submission_id, data):
-    if 'username' not in data or 'password' not in data:
-        API_LOG.log("Missing parameters in request")
+    if submission_id not in submissions.keys():
         raise ex.BadRequestException()
-    
-    username = data['username']
-    password = data['password']
 
-    authorization = authorizer.get_authorization(api.authorization_url,
-                                                 username, password)
+    # TODO: Call the executor by submission_id and stop the execution.
 
-    if not authorization['success']:
-        API_LOG.log("Unauthorized request")
-        raise ex.UnauthorizedException()
-
-    else:
-        if submission_id not in submissions.keys():
-            raise ex.BadRequestException()
-
-        # TODO: Call the executor by submission_id and stop the execution.
-
-        return submissions[submission_id]
+    return submissions[submission_id]
 
 
 def list_submissions():
