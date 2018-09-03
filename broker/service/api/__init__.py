@@ -29,6 +29,7 @@ try:
     
     """ General configuration """
     host = config.get("general", "host")
+    print host
     port = config.getint('general', 'port')
     plugins = config.get('general', 'plugins').split(',')
 
@@ -37,6 +38,17 @@ try:
         if plugin not in config.sections():
             raise Exception("plugin '%s' section missing" % plugin)
     
+    if 'kubejobs' in plugins:
+        k8s_conf_path = config.get('kubejobs', 'k8s_conf_path')
+        redis_ip = config.get('kubejobs', 'redis_ip')
+        redis_port = config.get('kubejobs', 'redis_port')
+        redis_workload_path = config.get('kubejobs', 'redis_workload_path')
+        count_queue = config.get('kubejobs', 'count_queue')
+        scone_compose = config.get('kubejobs', 'scone_path')
+        scone_command = config.get('kubejobs', 'scone_cmd')
+
+
+
     if 'openstack_generic' in plugins:
         public_key = config.get('openstack_generic', 'public_key')
         key_path = config.get('openstack_generic', 'key_path')
