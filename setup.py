@@ -45,7 +45,8 @@ setup(
             'spark_generic=broker.plugins.spark_generic.plugin:SparkGenericProvider',
             'openstack_generic=broker.plugins.openstack_generic.plugin:OpenStackGenericProvider',
             'chronos=broker.plugins.chronos.plugin:ChronosGenericProvider',
-            'spark_mesos=broker.plugins.spark_mesos.plugin:SparkMesosProvider'
+            'spark_mesos=broker.plugins.spark_mesos.plugin:SparkMesosProvider',
+            'kubejobs=broker.plugins.kubejobs.plugin:KubeJobsProvider'
         ],
     },
 )

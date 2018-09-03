@@ -29,14 +29,29 @@ try:
     
     """ General configuration """
     host = config.get("general", "host")
+    print host
     port = config.getint('general', 'port')
     plugins = config.get('general', 'plugins').split(',')
 
     """ Validate if really exists a section to listed plugins """
     for plugin in plugins:
-        if plugin not in config.sections():
+        if plugin != '' and plugin not in config.sections():
             raise Exception("plugin '%s' section missing" % plugin)
     
+    if 'kubejobs' in plugins:
+        k8s_conf_path = config.get('kubejobs', 'k8s_conf_path')
+        count_queue = config.get('kubejobs', 'count_queue')
+        redis_ip = config.get('kubejobs', 'redis_ip')
+        swift_username = config.get('kubejobs', 'S_USERNAME')
+        swift_password = config.get('kubejobs', 'PASSWORD')
+        swift_authurl = config.get('kubejobs', 'AUTH_URL')
+        swift_projectid = config.get('kubejobs', 'PROJECT_ID')
+        swift_projectname = config.get('kubejobs', 'PROJECT_NAME')
+        swift_domainname = config.get('kubejobs', 'PROJECT_DOMAIN_NAME')
+        swift_userdname = config.get('kubejobs', 'USER_DOMAIN_NAME')
+        swift_container = config.get('kubejobs', 'CONTAINER_NAME')
+
+        
     if 'openstack_generic' in plugins:
         public_key = config.get('openstack_generic', 'public_key')
         key_path = config.get('openstack_generic', 'key_path')
