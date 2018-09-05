@@ -35,7 +35,7 @@ try:
 
     """ Validate if really exists a section to listed plugins """
     for plugin in plugins:
-        if plugin not in config.sections():
+        if plugin != '' and plugin not in config.sections():
             raise Exception("plugin '%s' section missing" % plugin)
     
     if 'kubejobs' in plugins:
@@ -46,7 +46,7 @@ try:
         count_queue = config.get('kubejobs', 'count_queue')
         scone_compose = config.get('kubejobs', 'scone_path')
         scone_command = config.get('kubejobs', 'scone_cmd')
-
+        home_path = config.get('kubejobs', 'home_path')
 
 
     if 'openstack_generic' in plugins:

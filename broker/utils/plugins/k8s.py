@@ -20,88 +20,65 @@ import redis
 from broker.service import api
 
 
-def create_job(app_id, cmd, img, init_size,
-               config_id="", 
-               cas_addr="",
-               scone_heap="200M",
-               las_addr="172.17.0.1:18766",
-               scone_hw="hw",
-               scone_queues="4",
-               scone_version="1",
-               isgx="dev-isgx",
-               devisgx="/dev/isgx",
-               ):
-
+def create_job(app_id, cmd, img, init_size, env, volumes):
     kube.config.load_kube_config(api.k8s_conf_path)
 
     obj_meta = kube.client.V1ObjectMeta(
         name=app_id)
-    scone_heap = kube.client.V1EnvVar(
-        name="SCONE_HEAP",
-        value=scone_heap)
-    cas_addr = kube.client.V1EnvVar(
-        name="SCONE_CAS_ADDR",
-        value=cas_addr)
-    las_addr = kube.client.V1EnvVar(
-        name="SCONE_LAS_ADDR",
-        value=las_addr)
-    scone_config_id = kube.client.V1EnvVar(
-        name="SCONE_CONFIG_ID",
-        value=config_id)
-    scone_hw = kube.client.V1EnvVar(
-        name="SCONE_MODE",
-        value=scone_hw
-    )
-    scone_queues = kube.client.V1EnvVar(
-        name="SCONE_QUEUES",
-        value=scone_queues
-    )
 
-    scone_version = kube.client.V1EnvVar(
-        name="SCONE_VERSION",
-        value=scone_version
-    )
-    # add redis address to ``args``
+    # Populate environment variables.
+    env_vars = []
+    if env is not None:
+        for e in env:
+            env_vars.append(
+                kube.client.V1EnvVar(
+                    name=e,
+                    value=env[e]
+                )
+            )
 
-    isgx = kube.client.V1VolumeMount(
-        mount_path="/dev/isgx",
-        name=isgx
-    )
-
-    devisgx = kube.client.V1Volume(
-        name="dev-isgx",
-        host_path=kube.client.V1HostPathVolumeSource(
-            path=devisgx
-        )
-    )
-
+    # Populate volumes and mounts.
+    # All the volumes are considered to be hostpath mounts.
+    # The key-pair values will be interpreted as:
+    # "volume-mount":"host-path"
+    vols = []
+    mounts = []
+    if volumes is not None:
+        for v in volumes:
+            vols.append(kube.client.V1Volume(
+                name=v,
+                host_path={"path": volumes[v]}
+            ))
+            mounts.append(kube.client.V1VolumeMount(
+                name=v,
+                mount_path=volumes[v]
+            ))
+    
     container_spec = kube.client.V1Container(
         command=cmd,
-        env=[
-            scone_heap,
-            scone_config_id,
-            scone_queues,
-            cas_addr,
-            las_addr
-        ],
+        env=env_vars,
         image=img,
         image_pull_policy="Always",
         name=app_id,
         tty=True,
-        volume_mounts=[isgx],
+        volume_mounts=mounts,
         security_context=kube.client.V1SecurityContext(
             privileged=True
         ))
+
     pod_spec = kube.client.V1PodSpec(
         containers=[container_spec],
-        restart_policy="OnFailure",
-        volumes=[devisgx])
+        volumes=vols,
+        restart_policy="OnFailure")
+            
     pod = kube.client.V1PodTemplateSpec(
         metadata=obj_meta,
         spec=pod_spec)
+
     job_spec = kube.client.V1JobSpec(
         parallelism=init_size,
         template=pod)
+
     job = kube.client.V1Job(
         api_version="batch/v1",
         kind="Job",
@@ -112,7 +89,6 @@ def create_job(app_id, cmd, img, init_size,
     batch_v1.create_namespaced_job("default", job)
 
     return job
-
 
 
 def provision_redis_or_die(app_id, namespace="default", redis_port=6379, timeout=60):

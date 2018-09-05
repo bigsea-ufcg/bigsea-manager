@@ -24,7 +24,6 @@ from broker.plugins import base
 from broker.utils.ids import ID_Generator
 from broker.utils.logger import Log
 from broker.utils.plugins import k8s
-from broker.utils.plugins import scone
 from broker.utils.framework import monitor
 from broker.utils.framework import controller
 from broker.service import api
@@ -41,17 +40,19 @@ class KubeJobsExecutor(GenericApplicationExecutor):
 
     def start_application(self, data):
         try:
+            # FIXME: refactor submission error flows (i.e. remove everything 
+            # from this giant try/except block)
+	    # FIXME: check if request body is okay before downloading items
+	    # and provisioning stuff
 
             # Download files that contains the items
-            # jobs = data['redis_workload'].split('\n')[:-1]
-            jobs = requests.get(data['redis_workload']).text.\
-                                split('\n')[:-1]
-
+            jobs = requests.get(data['redis_workload']).text.split('\n')[:-1]
 
             # Provision a redis database for the job. Die in case of error.
             # TODO(clenimar): configure ``timeout`` via a request param,
             # e.g. api.redis_creation_timeout.
-            redis_ip, redis_port = k8s.provision_redis_or_die(self.app_id)
+            # FIXME: remove hardcoded redis
+            redis_ip, redis_port = k8s.provision_redis_or_die(data['redis_name'])
 
             rds = redis.StrictRedis(host=redis_ip, port=redis_port)
             queue_size = len(jobs)
@@ -60,129 +61,57 @@ class KubeJobsExecutor(GenericApplicationExecutor):
             for job in jobs:
                 rds.rpush("job", job)
 
-            # # Load to scone
-            print "Loading scone"
-            compose_scone = scone.load_yaml("redis-%s" % self.app_id)
-            print "Configured yaml file"
-            scone.split(compose_scone)
-
-            # print "Uploading worker"
-            # rds.rpush("job:worker", data['worker'])
-
             print "Creating Job"
 
-            k8s.create_job(self.app_id,
-                           data['cmd'], data['img'],
-                           data['init_size'], config_id=data["config_id"], 
-                           cas_addr=data["cas_addr"])
+            k8s.create_job(self.app_id, data['cmd'], data['img'],
+                           data['init_size'], data['env'], data['volumes'])
 
-            starting_time = datetime.datetime.now().\
-                strftime('%Y-%m-%dT%H:%M:%S.%fGMT')
+            starting_time = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fGMT')
             
             # Starting monitor
-            data['monitor_info'].update({'count_jobs_url': api.count_queue,
-                                         'number_of_jobs': queue_size,
-                                         'submission_time': starting_time,
-                                         'redis_ip': redis_ip,
-                                         'redis_port': redis_port,
-                                         'graphic_metrics': data['graphic_metrics']})
+            if 'monitor_plugin' in data:
+                data['monitor_info'].update({'count_jobs_url': api.count_queue,
+                                            'number_of_jobs': queue_size,
+                                            'submission_time': starting_time,
+                                            'redis_ip': redis_ip,
+                                            'redis_port': redis_port,
+                                            'graphic_metrics': data['graphic_metrics']})
 
-            monitor.start_monitor(api.monitor_url, self.app_id,
-                                  data['monitor_plugin'],
-                                  data['monitor_info'], 2)
+                monitor.start_monitor(api.monitor_url, self.app_id,
+                                    data['monitor_plugin'],
+                                    data['monitor_info'], 2)
 
             # Starting controller
-            data.update({'redis_ip': redis_ip, 'redis_port': redis_port})
-            controller.start_controller_k8s(api.controller_url,
-                                            self.app_id, data)
+            if 'controller_plugin' in data:
+                data.update({'redis_ip': redis_ip, 'redis_port': redis_port})
+                controller.start_controller_k8s(api.controller_url,
+                                                self.app_id, data)
 
             job_completed = False
 
             while not job_completed:
                 time.sleep(1)
+		print 'job is still running...'
                 job_completed = k8s.completed(self.app_id)
 
             # Stop monitor and controller
             print "job finished"
-            monitor.stop_monitor(api.monitor_url, self.app_id)
-            controller.stop_controller(api.controller_url, self.app_id)
-            print "stoped services"
+	    
+	    if 'monitor_plugin' in data:
+                monitor.stop_monitor(api.monitor_url, self.app_id)
+            
+	    if 'controller_plugin' in data:
+	        controller.stop_controller(api.controller_url, self.app_id)
+
+            print "stopped services"
             # delete redis resources
-            time.sleep(float(30))#api.termination_grace_period))
+            time.sleep(float(30)) #api.termination_grace_period))
             k8s.delete_redis_resources(self.app_id)
 
         except Exception as ex:
             print "ERROR: %s" % ex
 
         print "Application finished."
-
-
-    # def start_application(self, data):
-    #     try:
-
-    #         # Download files that contains the items
-    #         jobs = requests.get(data['redis_workload']).text.\
-    #             split('\n')[:-1]
-            
-    #         # Provision a redis database for the job. Die in case of error.
-    #         # TODO(clenimar): configure ``timeout`` via a request param, 
-    #         # e.g. api.redis_creation_timeout.
-    #         redis_ip, redis_port = k8s.provision_redis_or_die(self.app_id)
-
-    #         rds = redis.StrictRedis(host=redis_ip, port=redis_port)
-    #         queue_size = len(jobs)
-
-    #         print "Creating Redis queue"
-    #         for job in jobs:
-    #             rds.rpush(self.app_id, job)
-
-    #         print "Creating Job"
-    #         k8s.create_job(self.app_id, data['env_name'],
-    #                        data['env_value'], data['args'],
-    #                        data['cmd'], data['img'],
-    #                        data['working_dir'], data['init_size'])
-
-    #         starting_time = datetime.datetime.now().\
-    #             strftime('%Y-%m-%dT%H:%M:%S.%fGMT')
-    #         # Starting monitor
-    #         data['monitor_info'].update({'count_jobs_url': api.count_queue,
-    #                                      'number_of_jobs': queue_size,
-    #                                      'submission_time': starting_time,
-    #                                      'redis_ip': redis_ip,
-    #                                      'redis_port': redis_port,
-    #                                      'grafic_metrics': data['grafic_metrics']})
-
-    #         monitor.start_monitor(api.monitor_url, self.app_id,
-    #                               data['monitor_plugin'],
-    #                               data['monitor_info'], 2)
-
-    #         # Starting controller
-    #         data.update({'redis_ip': redis_ip, 'redis_port': redis_port})
-    #         controller.start_controller(api.controller_url,
-    #                             self.app_id, data)
-
-    #         jobs_completed = requests.get('%s/redis-%s/%s:results/count' % (api.count_queue,
-    #                                                                         self.app_id,
-    #                                                                         self.app_id)).json()
-
-    #         while jobs_completed < queue_size - 1:
-    #             jobs_completed = requests.get('%s/redis-%s/%s:results/count' % (api.count_queue,
-    #                                                                             self.app_id,
-    #                                                                             self.app_id)).json()
-    #             time.sleep(1)
-
-    #         # Stop monitor and controller
-
-    #         monitor.stop_monitor(api.monitor_url, self.app_id)
-    #         controller.stop_controller(api.controller_url, self.app_id)
-
-    #         # delete redis resources
-    #         k8s.delete_redis_resources(self.app_id)
-
-    #     except Exception as ex:
-    #         print "ERROR: %s" % ex.message
-
-    #     print "Application finished."
 
 
 class KubeJobsProvider(base.PluginInterface):
