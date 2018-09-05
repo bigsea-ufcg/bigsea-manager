@@ -48,8 +48,6 @@ try:
         scone_command = config.get('kubejobs', 'scone_cmd')
         home_path = config.get('kubejobs', 'home_path')
 
-
-
     if 'openstack_generic' in plugins:
         public_key = config.get('openstack_generic', 'public_key')
         key_path = config.get('openstack_generic', 'key_path')
