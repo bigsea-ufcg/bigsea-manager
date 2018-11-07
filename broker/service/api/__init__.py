@@ -29,14 +29,21 @@ try:
     
     """ General configuration """
     host = config.get("general", "host")
+    print host
     port = config.getint('general', 'port')
     plugins = config.get('general', 'plugins').split(',')
 
     """ Validate if really exists a section to listed plugins """
     for plugin in plugins:
-        if plugin not in config.sections():
+        if plugin != '' and plugin not in config.sections():
             raise Exception("plugin '%s' section missing" % plugin)
     
+    if 'kubejobs' in plugins:
+        k8s_conf_path = config.get('kubejobs', 'k8s_conf_path')
+        count_queue = config.get('kubejobs', 'count_queue')
+        redis_ip = config.get('kubejobs', 'redis_ip')
+
+        
     if 'openstack_generic' in plugins:
         public_key = config.get('openstack_generic', 'public_key')
         key_path = config.get('openstack_generic', 'key_path')
