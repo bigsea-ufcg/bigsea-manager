@@ -24,7 +24,6 @@ from broker.plugins import base
 from broker.utils.ids import ID_Generator
 from broker.utils.logger import Log
 from broker.utils.plugins import k8s
-from broker.utils.plugins import scone
 from broker.utils.framework import monitor
 from broker.utils.framework import controller
 from broker.service import api
